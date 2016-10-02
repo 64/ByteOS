@@ -1,4 +1,5 @@
 #include <drivers/pit.h>
+#include <isr.h>
 #include <io.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +33,7 @@ void pit_handler(struct regs *r) {
         abort();
     }
     ++pit_tick_count;
+    irq_ack(r->int_no - 32);
 }
 
 uint32_t pit_ticks() {

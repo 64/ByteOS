@@ -33,6 +33,7 @@ stack_smash.o \
 kernel.o \
 drivers/vga/vga_textmode.o \
 drivers/pit/pit.o \
+drivers/ps2/kbd.o \
 
 OBJS=\
 util/crti.o \

@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <descriptors.h>
 #include <drivers/pit.h>
+#include <drivers/ps2/kbd.h>
 
 #define PIC1		 0x20		/* IO base address for master PIC */
 #define PIC2		 0xA0		/* IO base address for slave PIC */
@@ -49,7 +50,7 @@ void irq_install_handler(uint32_t index, void (*handler)(struct regs *)) {
     irq_handlers[index] = handler;
 }
 
-void irq_send_eoi(uint8_t irq_num) {
+void irq_ack(uint8_t irq_num) {
     if (irq_num >= 8)
         io_outportb(PIC2_COMMAND, PIC_EOI);
     io_outportb(PIC1_COMMAND, PIC_EOI);
@@ -77,6 +78,7 @@ void irq_install() {
 
 	// Install main IRQ handlers
     pit_install();
+	keyboard_install();
 }
 
 void irq_handler(struct regs *r) {
@@ -84,6 +86,6 @@ void irq_handler(struct regs *r) {
         irq_handlers[r->int_no - 32](r);
     } else {
 		printf("%s Recieved unhandled IRQ number %d\n", info_header, r->int_no - 32);
+		irq_ack(r->int_no - 32);
 	}
-	irq_send_eoi(r->int_no - 32);
 }

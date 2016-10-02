@@ -14,10 +14,10 @@ void kernel_early(uint32_t mboot_magic, const void *mboot_header) {
 
 void kernel_main(void) {
 	printf("%s Hello, Kernel World!\n", info_header);
-	char c = 0;
+	/*char c = 0;
 	while(1) {
 		char new = io_inportb(0x60);
 		if (new != c)
 			printf("%c", (c = new));
-	}
+	}*/
 }
