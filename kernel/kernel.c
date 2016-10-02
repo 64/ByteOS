@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include <kernel/tty.h>
-#include <kernel/memory.h>
+#include <tty.h>
+#include <memory.h>
 
 char error_header[] = { '[', 27, '[', '3', '1', 'm', 'E', 'R', 'R', 'O', 'R', 27, '[', '0', 'm', ']', '\0' };
 char info_header[] = { '[', 27, '[', '3', '6', 'm', 'I', 'N', 'F', 'O', 27, '[', '0', 'm', ']', '\0' };

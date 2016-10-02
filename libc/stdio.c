@@ -6,7 +6,7 @@
 #include <string.h>
 
 #if defined(__is_libk)
-#include <kernel/tty.h>
+#include <tty.h>
 #endif
 
 static bool print(const char* data, size_t length) {

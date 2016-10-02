@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
-#include <arch/i386/descriptors.h>
+#include <descriptors.h>
 
 static const char *exception_messages[32] = {
 	"Division by zero",

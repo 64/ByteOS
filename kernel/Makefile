@@ -28,11 +28,11 @@ cpu/idt_load.o \
 cpu/isr.o \
 cpu/isrs.o \
 cpu/irq.o \
-pit.o \
 memory.o \
 stack_smash.o \
 kernel.o \
 drivers/vga/vga_textmode.o \
+drivers/pit/pit.o \
 
 OBJS=\
 util/crti.o \

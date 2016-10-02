@@ -1,5 +1,5 @@
-#include <kernel/memory.h>
-#include <arch/i386/multiboot.h>
+#include <memory.h>
+#include <multiboot.h>
 #include <stdlib.h>
 #include <stdio.h>
 

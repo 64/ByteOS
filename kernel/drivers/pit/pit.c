@@ -1,5 +1,5 @@
-#include <arch/i386/pit.h>
-#include <arch/i386/io.h>
+#include <drivers/pit.h>
+#include <io.h>
 #include <stdio.h>
 #include <stdlib.h>
 

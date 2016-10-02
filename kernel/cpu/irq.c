@@ -1,8 +1,8 @@
-#include <arch/i386/io.h>
+#include <io.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stddef.h>
-#include <arch/i386/descriptors.h>
+#include <descriptors.h>
 
 #define PIC1		 0x20		/* IO base address for master PIC */
 #define PIC2		 0xA0		/* IO base address for slave PIC */

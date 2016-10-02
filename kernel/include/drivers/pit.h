@@ -1,8 +1,8 @@
 #pragma once
 
 #include <stdint.h>
-#include <arch/i386/io.h>
-#include <arch/i386/system.h>
+#include <io.h>
+#include <system.h>
 
 void pit_set_timer_phase(int16_t hz);
 void pit_install(void);

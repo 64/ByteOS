@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/cdefs.h>
-#include <arch/i386/descriptors.h>
+#include <descriptors.h>
 
 static struct {
     idt_entry entries[256];

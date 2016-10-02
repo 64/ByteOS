@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <sys/cdefs.h>
-#include <arch/i386/system.h>
+#include <system.h>
 
 typedef struct {
     uint16_t limit_low;

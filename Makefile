@@ -30,10 +30,10 @@ clean:
 rebuild: clean build
 
 debug-server: bin/byteos.iso
-	qemu-system-$(shell ./scripts/target-triplet-to-arch.sh $(HOST)) -s -cdrom bin/byteos.iso
+	qemu-system-i386 -s -cdrom bin/byteos.iso
 
 debug-gdb:
 	sudo ../vendor/gdb/gdb/gdb
 
 run: bin/byteos.iso
-	qemu-system-$(shell ./scripts/target-triplet-to-arch.sh $(HOST)) -cdrom bin/byteos.iso
+	qemu-system-i386 -cdrom bin/byteos.iso
