@@ -1,0 +1,9 @@
+*.iso
+*.d
+*.o
+*.a
+.DS_Store
+bin
+isodir
+sysroot
+.gdbinit
