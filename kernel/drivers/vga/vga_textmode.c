@@ -78,11 +78,7 @@ static inline unsigned char vga_textmode_getentryat(size_t x, size_t y) {
 void vga_textmode_shiftscreen(void) {
 	size_t current_row = 0;
     while (current_row++ < VGA_HEIGHT) {
-		size_t current_col = 0;
-	    if (current_row != 0) {
-	        while (current_col++ < VGA_WIDTH)
-	            vga_textmode_putentryat(vga_textmode_getentryat(current_col - 1, current_row), current_style.color, current_col - 1, current_row - 1);
-		}
+		memcpy(&VGA_MEMORY[(current_row - 1) * VGA_WIDTH], &VGA_MEMORY[current_row * VGA_WIDTH], VGA_WIDTH);
 	}
 }
 
@@ -113,6 +109,7 @@ static inline void _vga_textmode_display_char(char c) {
 			break;
 		case '\b':
 			if (vga_textmode_column != 0) vga_textmode_column--;
+			break;
 		default:
 			vga_textmode_putentryat(c, current_style.color, vga_textmode_column, vga_textmode_row);
 			vga_textmode_addcol();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 
 struct regs {
 	uint32_t gs, fs, es, ds;

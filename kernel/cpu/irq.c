@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <descriptors.h>
+#include <drivers/pit.h>
 
 #define PIC1		 0x20		/* IO base address for master PIC */
 #define PIC2		 0xA0		/* IO base address for slave PIC */
@@ -74,7 +75,7 @@ void irq_install() {
     IRQ_INSTALL_HANDLER(14);
     IRQ_INSTALL_HANDLER(15);
 
-    extern void pit_install(void);
+	// Install main IRQ handlers
     pit_install();
 }
 
