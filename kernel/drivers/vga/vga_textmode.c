@@ -51,6 +51,7 @@ void vga_textmode_initialize(void) {
 	vga_textmode_row = 0;
 	vga_textmode_column = 0;
 	_vga_textmode_reset_styles();
+	vga_textmode_setcursor(vga_textmode_column, vga_textmode_row);
 	vga_textmode_buffer = VGA_MEMORY;
 	for (size_t y = 0; y < VGA_HEIGHT; y++) {
 		for (size_t x = 0; x < VGA_WIDTH; x++) {
