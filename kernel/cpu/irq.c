@@ -75,10 +75,6 @@ void irq_install() {
     IRQ_INSTALL_HANDLER(13);
     IRQ_INSTALL_HANDLER(14);
     IRQ_INSTALL_HANDLER(15);
-
-	// Install main IRQ handlers
-    pit_install();
-	keyboard_install();
 }
 
 void irq_handler(struct regs *r) {

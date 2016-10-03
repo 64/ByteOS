@@ -4,11 +4,13 @@
 #include <string.h>
 
 #include <tty.h>
+#include <io.h>
 
 #include <drivers/vga.h>
 
 #define _ANSI_MAX_SEQUENCE_LENGTH 6
 #define _ANSI_IS_SEQUENCE_DELIM(c) ((c) == 'm' || (c) == ';')
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
 
 enum _vga_textmode_putchar_states {
 	_T_STATE_WRITING,
@@ -58,6 +60,14 @@ void vga_textmode_initialize(void) {
 	}
 }
 
+void vga_textmode_setcursor(size_t x, size_t y) {
+	uint16_t position = (y * VGA_WIDTH) + x;
+	io_outportb(0x3D4, 0x0F);
+	io_outportb(0x3D5, (uint8_t)(position & 0xFF));
+	io_outportb(0x3D4, 0x0E);
+	io_outportb(0x3D5, (uint8_t)((position>>8) & 0xFF));
+}
+
 void vga_textmode_clearscreen(void) {
 	memset(vga_textmode_buffer, 0x0, sizeof(uint16_t) * VGA_WIDTH * VGA_HEIGHT);
 }
@@ -78,7 +88,7 @@ static inline unsigned char vga_textmode_getentryat(size_t x, size_t y) {
 void vga_textmode_shiftscreen(void) {
 	size_t current_row = 0;
     while (current_row++ < VGA_HEIGHT) {
-		memcpy(&VGA_MEMORY[(current_row - 1) * VGA_WIDTH], &VGA_MEMORY[current_row * VGA_WIDTH], VGA_WIDTH);
+		memcpy(&VGA_MEMORY[(current_row - 1) * VGA_WIDTH], &VGA_MEMORY[current_row * VGA_WIDTH], VGA_WIDTH * sizeof(uint16_t));
 	}
 }
 
@@ -87,6 +97,7 @@ static inline void vga_textmode_addrow(void) {
         vga_textmode_shiftscreen();
         vga_textmode_row--;
     }
+	vga_textmode_setcursor(vga_textmode_column, vga_textmode_row);
 }
 
 static inline void vga_textmode_addcol(void) {
@@ -94,6 +105,7 @@ static inline void vga_textmode_addcol(void) {
         vga_textmode_column = 0;
         vga_textmode_addrow();
     }
+	vga_textmode_setcursor(vga_textmode_column, vga_textmode_row);
 }
 
 static inline void _vga_textmode_display_char(char c) {
@@ -109,6 +121,7 @@ static inline void _vga_textmode_display_char(char c) {
 			break;
 		case '\b':
 			if (vga_textmode_column != 0) vga_textmode_column--;
+			vga_textmode_setcursor(vga_textmode_column, vga_textmode_row);
 			break;
 		default:
 			vga_textmode_putentryat(c, current_style.color, vga_textmode_column, vga_textmode_row);

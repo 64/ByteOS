@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/cdefs.h>
 #include <descriptors.h>
+#include <isr.h>
 
 static struct {
     idt_entry entries[256];
@@ -62,8 +63,6 @@ void idt_install(void) {
     INSTALL_ISR(30);
     INSTALL_ISR(31);
 
-    idt_load((uintptr_t)idt_p);
-
-    extern void irq_install(void);
     irq_install();
+    idt_load((uintptr_t)idt_p);
 }

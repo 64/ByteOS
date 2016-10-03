@@ -39,10 +39,6 @@ static const char *exception_messages[32] = {
 	"Reserved"
 };
 
-void test_fn() {
-	printf("Testing...\n");
-}
-
 void isr_fault_handler(struct regs *r) {
     printf("%s Unhandled Exception: %s\n", error_header, exception_messages[r->int_no]);
 	abort();
