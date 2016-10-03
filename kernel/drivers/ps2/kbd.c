@@ -49,6 +49,45 @@ const uint8_t keyboard_us_lowercase[128] = {
     0,	                                             /* All other keys are undefined */
 };
 
+const uint8_t keyboard_us_uppercase[128] = {
+	0, 27,
+	'!','@','#','$','%','^','&','*','(',')',
+	'_','+','\b',
+	'\t',                                                  /* Tab */
+	'Q','W','E','R','T','Y','U','I','O','P','{','}','\n',
+	0,                                                     /* control */
+	'A','S','D','F','G','H','J','K','L',':','"', '~',
+	0,                                                     /* left shift */
+	'|','Z','X','C','V','B','N','M','<','>','?',
+	0,                                                     /* right shift */
+	'*',
+	0,                                                     /* alt */
+	' ',                                                   /* space */
+	0,                                                     /* caps lock */
+	0,                                                     /* F1 [59] */
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0,                                                     /* ... F10 */
+	0,                                                     /* 69 num lock */
+	0,                                                     /* scroll lock */
+	0,                                                     /* home */
+	0,                                                     /* up */
+	0,                                                     /* page up */
+	'-',
+	0,                                                     /* left arrow */
+	0,
+	0,                                                     /* right arrow */
+	'+',
+	0,                                                     /* 79 end */
+	0,                                                     /* down */
+	0,                                                     /* page down */
+	0,                                                     /* insert */
+	0,                                                     /* delete */
+	0, 0, 0,
+	0,                                                     /* F11 */
+	0,                                                     /* F12 */
+	0,                                                     /* everything else */
+};
+
 static inline uint8_t keyboard_scancode_convert(uint8_t scancode) {
     return keyboard_us_lowercase[scancode];
 }

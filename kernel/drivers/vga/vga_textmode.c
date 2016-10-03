@@ -47,6 +47,14 @@ static inline void _vga_textmode_reset_styles(void) {
 	current_style.color = vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
 }
 
+void vga_textmode_setcursor(size_t x, size_t y) {
+	uint16_t position = (y * VGA_WIDTH) + x;
+	io_outportb(0x3D4, 0x0F);
+	io_outportb(0x3D5, (uint8_t)(position & 0xFF));
+	io_outportb(0x3D4, 0x0E);
+	io_outportb(0x3D5, (uint8_t)((position>>8) & 0xFF));
+}
+
 void vga_textmode_initialize(void) {
 	vga_textmode_row = 0;
 	vga_textmode_column = 0;
@@ -59,14 +67,6 @@ void vga_textmode_initialize(void) {
 			vga_textmode_buffer[index] = vga_entry(' ', current_style.color);
 		}
 	}
-}
-
-void vga_textmode_setcursor(size_t x, size_t y) {
-	uint16_t position = (y * VGA_WIDTH) + x;
-	io_outportb(0x3D4, 0x0F);
-	io_outportb(0x3D5, (uint8_t)(position & 0xFF));
-	io_outportb(0x3D4, 0x0E);
-	io_outportb(0x3D5, (uint8_t)((position>>8) & 0xFF));
 }
 
 void vga_textmode_clearscreen(void) {
