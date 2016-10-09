@@ -73,4 +73,4 @@ extern void abort(void);
 	#define klog_detail_nohdr(fmt, ...) do { ((void)0); } while(0)
 #endif
 
-#define klog_assert(predicate) if (!(predicate)) { klog_fatal("Assertion fail: " #predicate); abort(); }
+#define klog_assert(predicate) if (!(predicate)) { klog_fatal("Assertion fail: " #predicate "\n"); abort(); }

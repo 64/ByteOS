@@ -3,7 +3,6 @@
 #include <tty.h>
 #include <memory/memory.h>
 #include <klog.h>
-#include <io.h>
 #include <drivers/ps2/kbd.h>
 #include <drivers/pit.h>
 

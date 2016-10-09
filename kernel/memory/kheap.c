@@ -205,7 +205,7 @@ void kheap_free(void *p, kheap_heap *heap) {
 		return;
 
 	kheap_header *header = (kheap_header*)((uintptr_t)p - sizeof(kheap_header));
-	kheap_footer *footer = (kheap_footer*)((uintptr_t)p + header->size - sizeof(kheap_footer));
+	kheap_footer *footer = (kheap_footer*)((uintptr_t)header + header->size - sizeof(kheap_footer));
 
 	klog_assert(header->magic == KHEAP_MAGIC);
 	klog_assert(footer->magic == KHEAP_MAGIC);
@@ -258,16 +258,25 @@ void kheap_free(void *p, kheap_heap *heap) {
 }
 
 uintptr_t kmalloc_internal(uint32_t size, bool align, uint32_t *phys) {
-	if (align == 1 && (placement_address & 0xFFFFF000)) {
-		placement_address &= 0xFFFFF000;
-		placement_address += PAGE_SIZE;
+	uintptr_t temp;
+	if (kheap != NULL) {
+		temp = (uintptr_t)kheap_alloc(size, align, kheap);
+		if (phys != NULL) {
+			uint32_t *page = paging_get(temp, 0, kernel_directory);
+			*phys = ((*page & 0xFFFFF000) >> 12) * PAGE_SIZE + (temp & 0xFFF);
+		}
+	} else {
+		if (align == 1 && (placement_address & 0xFFFFF000)) {
+			placement_address &= 0xFFFFF000;
+			placement_address += PAGE_SIZE;
+		}
+
+		if (phys != NULL)
+			*phys = placement_address;
+
+		temp = placement_address;
+		placement_address += size;
 	}
-
-	if (phys != NULL)
-		*phys = placement_address;
-
-	uintptr_t temp = placement_address;
-	placement_address += size;
 	return temp;
 }
 
@@ -285,4 +294,8 @@ uintptr_t kmalloc_ap(uint32_t size, uint32_t *phys) {
 
 uintptr_t kmalloc(uint32_t size) {
 	return kmalloc_internal(size, 0, NULL);
+}
+
+void kfree(void *p) {
+	return kheap_free(p, kheap);
 }
