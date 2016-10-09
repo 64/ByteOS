@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <algs/oarray.h>
 
-#define KHEAP_START         0xC0000000
-#define KHEAP_INITIAL_SIZE  0x100000
+#define KHEAP_START        0xC0000000
+#define KHEAP_INITIAL_SIZE 0x100000
 #define KHEAP_INDEX_SIZE   0x20000
 #define KHEAP_MAGIC        0x123890AB
 #define KHEAP_MIN_SIZE     0x70000
@@ -33,8 +33,10 @@ typedef struct {
 	bool readonly;
 } kheap_heap;
 
+extern kheap_heap *kheap;
+
 kheap_heap *kheap_create(uintptr_t start, uintptr_t end, uintptr_t max, bool supervisor, bool readonly);
-void *kheap_alloc(uint32_t size, uint8_t page_align, kheap_heap *heap);
+void *kheap_alloc(uint32_t size, bool page_align, kheap_heap *heap);
 void kheap_free(void *p, kheap_heap *heap);
 
 uintptr_t kmalloc_internal(uint32_t size, bool align, uint32_t *phys); // Internal use only.

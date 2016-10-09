@@ -25,12 +25,21 @@ void paging_init() {
 	current_directory = kernel_directory;
 
 	uint32_t i = 0;
-	while (i < placement_address) {
+	for (i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i += PAGE_SIZE)
+		paging_get(i, 1, kernel_directory);
+
+	i = 0;
+	while (i < placement_address + PAGE_SIZE) {
 		paging_alloc_frame(paging_get(i, 1, kernel_directory), 0, 0);
 		i += PAGE_SIZE;
 	}
+
+	for (i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i += PAGE_SIZE)
+		paging_alloc_frame(paging_get(i, 1, kernel_directory), 0, 0);
+
 	isr_install_handler(14, paging_fault);
 	paging_change_dir(kernel_directory);
+	kheap = kheap_create(KHEAP_START, KHEAP_START + KHEAP_INITIAL_SIZE, 0xCFFFF000, 0, 0);
 }
 
 void paging_change_dir(page_directory *dir) {

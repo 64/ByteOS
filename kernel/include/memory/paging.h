@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <memory/kheap.h>
 #include <sys/cdefs.h>
 
 #define PAGE_SIZE 0x1000

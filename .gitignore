@@ -4,7 +4,6 @@
 *.a
 .DS_Store
 bin
-!bin/byteos.S
 isodir
 sysroot
 .gdbinit

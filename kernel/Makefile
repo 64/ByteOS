@@ -65,7 +65,7 @@ all: byteos.bin
 byteos.bin: $(OBJS) util/linker.ld
 	$(CC) -T util/linker.ld -o $@ $(CFLAGS) $(LINK_LIST)
 	@grub-file --is-x86-multiboot byteos.bin
-	@$(HOST)-objdump -S --disassemble $@ > ../bin/myos.S
+	@$(HOST)-objdump -S --disassemble $@ > ../bin/byteos.S
 
 crtbegin.o crtend.o:
 	@OBJ=`$(CC) $(CFLAGS) $(LDFLAGS) -print-file-name=$(@F)` && cp "$$OBJ" $@
