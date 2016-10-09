@@ -61,7 +61,7 @@ install: install-headers install-libs
 
 install-headers:
 	@mkdir -p $(DESTDIR)$(INCLUDEDIR)
-	-@cp -R include/. $(DESTDIR)$(INCLUDEDIR)/.
+	@rsync -quraE ./include/. $(DESTDIR)$(INCLUDEDIR)/.
 
 install-libs: $(BINARIES)
 	@mkdir -p $(DESTDIR)$(LIBDIR)
