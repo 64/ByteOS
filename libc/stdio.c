@@ -80,6 +80,22 @@ int printf(const char* restrict format, ...) {
 				return -1;
 			written += len;
 
+		} else if (*format == 'x') {
+			format++;
+			int d = (int)va_arg(parameters, int);
+			char buffer[20];
+			const char* str = itoa(d, buffer, 16);
+			size_t len = strlen(str);
+			if (maxrem < len) {
+				// TODO: Set errno to EOVERFLOW.
+				return -1;
+			}
+			if (!print("0x", 2))
+				return -1;
+			if (!print(str, len))
+				return -1;
+			written += len + 2;
+
 		} else {
 			format = format_begun_at;
 			size_t len = strlen(format);

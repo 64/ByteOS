@@ -2,12 +2,10 @@
 
 #include <tty.h>
 #include <memory.h>
+#include <klog.h>
 #include <io.h>
 #include <drivers/ps2/kbd.h>
 #include <drivers/pit.h>
-
-char error_header[] = { '[', 27, '[', '3', '1', 'm', 'E', 'R', 'R', 'O', 'R', 27, '[', '0', 'm', ']', '\0' };
-char info_header[] = { '[', 27, '[', '3', '6', 'm', 'I', 'N', 'F', 'O', 27, '[', '0', 'm', ']', '\0' };
 
 void kernel_early(uint32_t mboot_magic, const void *mboot_header) {
 	vga_textmode_initialize();
@@ -15,7 +13,7 @@ void kernel_early(uint32_t mboot_magic, const void *mboot_header) {
 }
 
 void kernel_main(void) {
-	printf("%s Hello, Kernel World!\n", info_header);
+	klog_info("Hello, Kernel World!\n");
 
 	// Install main IRQ handlers
 	pit_install();

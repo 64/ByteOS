@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <stdio.h>
+#include <klog.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
 #include <descriptors.h>
@@ -39,7 +39,22 @@ static const char *exception_messages[32] = {
 	"Reserved"
 };
 
+static void (*isr_handlers[32])(struct regs *r) = {
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0
+};
+
+void isr_install_handler(uint32_t index, void (*handler)(struct regs *r)) {
+	isr_handlers[index] = handler;
+}
+
 void isr_fault_handler(struct regs *r) {
-    printf("%s Unhandled Exception: %s\n", error_header, exception_messages[r->int_no]);
-	abort();
+	if (isr_handlers[r->int_no] != 0)
+		isr_handlers[r->int_no](r);
+	else {
+		klog_fatal("Unhandled Exception: %s\n", exception_messages[r->int_no]);
+		abort();
+	}
 }

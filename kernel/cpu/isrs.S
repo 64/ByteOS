@@ -2,24 +2,24 @@
 .align 4
 
 .macro ISR_ERR_HANDLER index, has_error=0
-    .global _isr\index
-    _isr\index:
-        cli
-        .ifeq \has_error
-            push $0
-        .endif
-        push $\index
-        jmp isr_common
+	.global _isr\index
+	_isr\index:
+		cli
+		.ifeq \has_error
+			push $0
+		.endif
+		push $\index
+		jmp isr_common
 .endm
 
 .macro IRQ_HANDLER index byte
-    .global _irq\index
-    .type _irq\index, @function
-    _irq\index:
-        cli
-        push $0
-        push $\byte
-        jmp irq_common
+	.global _irq\index
+	.type _irq\index, @function
+	_irq\index:
+		cli
+		push $0
+		push $\byte
+		jmp irq_common
 .endm
 
 ISR_ERR_HANDLER 0
@@ -79,53 +79,53 @@ IRQ_HANDLER 15, 47
 .type irq_handler, @function
 
 isr_common:
-    pusha
+	pusha
 
-    push %ds
-    push %es
-    push %fs
-    push %gs
-    mov $0x10, %ax
-    mov %ax, %ds
-    mov %ax, %es
-    mov %ax, %fs
-    mov %ax, %gs
+	push %ds
+	push %es
+	push %fs
+	push %gs
+	mov $0x10, %ax
+	mov %ax, %ds
+	mov %ax, %es
+	mov %ax, %fs
+	mov %ax, %gs
 
-    push %esp
-    call isr_fault_handler
-    add $4, %esp
+	push %esp
+	call isr_fault_handler
+	add $4, %esp
 
-    pop %gs
-    pop %fs
-    pop %es
-    pop %ds
+	pop %gs
+	pop %fs
+	pop %es
+	pop %ds
 
-    popa
-    add $8, %esp
-    iret
+	popa
+	add $8, %esp
+	iret
 
 irq_common:
-    pusha
+	pusha
 
-    push %ds
-    push %es
-    push %fs
-    push %gs
-    mov $0x10, %ax
-    mov %ax, %ds
-    mov %ax, %es
-    mov %ax, %fs
-    mov %ax, %gs
+	push %ds
+	push %es
+	push %fs
+	push %gs
+	mov $0x10, %ax
+	mov %ax, %ds
+	mov %ax, %es
+	mov %ax, %fs
+	mov %ax, %gs
 
-    push %esp
-    call irq_handler
-    add $4, %esp
+	push %esp
+	call irq_handler
+	add $4, %esp
 
-    pop %gs
-    pop %fs
-    pop %es
-    pop %ds
+	pop %gs
+	pop %fs
+	pop %es
+	pop %ds
 
-    popa
-    add $8, %esp
-    iret
+	popa
+	add $8, %esp
+	iret

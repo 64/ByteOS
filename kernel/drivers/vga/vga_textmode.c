@@ -83,29 +83,29 @@ void vga_textmode_putentryat(unsigned char c, uint8_t color, size_t x, size_t y)
 }
 
 static inline unsigned char vga_textmode_getentryat(size_t x, size_t y) {
-    return vga_textmode_buffer[y * VGA_WIDTH + x];
+	return vga_textmode_buffer[y * VGA_WIDTH + x];
 }
 
 void vga_textmode_shiftscreen(void) {
 	size_t current_row = 0;
-    while (current_row++ < VGA_HEIGHT) {
+	while (current_row++ < VGA_HEIGHT) {
 		memcpy(&VGA_MEMORY[(current_row - 1) * VGA_WIDTH], &VGA_MEMORY[current_row * VGA_WIDTH], VGA_WIDTH * sizeof(uint16_t));
 	}
 }
 
 static inline void vga_textmode_addrow(void) {
 	if (++vga_textmode_row == VGA_HEIGHT) {
-        vga_textmode_shiftscreen();
-        vga_textmode_row--;
-    }
+		vga_textmode_shiftscreen();
+		vga_textmode_row--;
+	}
 	vga_textmode_setcursor(vga_textmode_column, vga_textmode_row);
 }
 
 static inline void vga_textmode_addcol(void) {
 	if (++vga_textmode_column == VGA_WIDTH) {
-        vga_textmode_column = 0;
-        vga_textmode_addrow();
-    }
+		vga_textmode_column = 0;
+		vga_textmode_addrow();
+	}
 	vga_textmode_setcursor(vga_textmode_column, vga_textmode_row);
 }
 

@@ -9,7 +9,7 @@ EXEC_PREFIX?=$(PREFIX)
 BOOTDIR?=$(EXEC_PREFIX)/boot
 INCLUDEDIR?=$(PREFIX)/include
 
-CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -fmax-errors=1
+CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -fmax-errors=1 -Werror -Wno-unused-function
 CPPFLAGS:=$(CPPFLAGS) -D__is_kernel -Iinclude
 LDFLAGS:=$(LDFLAGS)
 LIBS:=$(LIBS) -nostdlib -lk -lgcc
@@ -31,6 +31,8 @@ cpu/irq.o \
 memory.o \
 stack_smash.o \
 kernel.o \
+memory/paging.o \
+memory/kheap.o \
 drivers/vga/vga_textmode.o \
 drivers/pit/pit.o \
 drivers/ps2/kbd.o \
