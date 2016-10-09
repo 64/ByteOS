@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <sys/cdefs.h>
 
+#define PAGE_SIZE 0x1000
+
 #define PAGE_TABLE_PRESENT (1 << 0)
 #define PAGE_TABLE_RW (1 << 1)
 #define PAGE_TABLE_USER (1 << 2)
@@ -33,8 +35,12 @@ typedef struct {
 	uint32_t physical_addr;
 } page_directory;
 
+extern page_directory *kernel_directory;
+extern page_directory *current_directory;
+
 void paging_init();
-void paging_change_dir(page_directory *dir);
-uint32_t *paging_get(uintptr_t address, bool make, page_directory *dir);
+void paging_change_dir(page_directory *);
+uint32_t *paging_get(uintptr_t, bool, page_directory *);
 void paging_fault(struct regs *r);
 void paging_alloc_frame(uint32_t *, bool, bool);
+void paging_free_frame(uintptr_t);

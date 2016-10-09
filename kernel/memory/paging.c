@@ -16,7 +16,7 @@ page_directory *current_directory = 0;
 
 void paging_init() {
 	uintptr_t mem_end_page = 0x1000000;
-	n_frames = mem_end_page / 0x1000;
+	n_frames = mem_end_page / PAGE_SIZE;
 	frames = (uint32_t*)kmalloc(INDEX_FROM_BIT(n_frames));
 	memset(frames, 0, INDEX_FROM_BIT(n_frames));
 
@@ -27,7 +27,7 @@ void paging_init() {
 	uint32_t i = 0;
 	while (i < placement_address) {
 		paging_alloc_frame(paging_get(i, 1, kernel_directory), 0, 0);
-		i += 0x1000;
+		i += PAGE_SIZE;
 	}
 	isr_install_handler(14, paging_fault);
 	paging_change_dir(kernel_directory);
@@ -55,14 +55,14 @@ void paging_change_dir(page_directory *dir) {
 }
 
 uint32_t *paging_get(uintptr_t address, bool make, page_directory *dir) {
-	address /= 0x1000;
+	address /= PAGE_SIZE;
 	uint32_t table_index = address / 1024;
 	if (dir->tables[table_index])
 		return &dir->tables[table_index]->pages[address % 1024];
 	else if (make) {
 		uint32_t tmp;
 		dir->tables[table_index] = (page_table*)kmalloc_ap(sizeof(page_table), &tmp);
-		memset(dir->tables[table_index], 0, 0x1000);
+		memset(dir->tables[table_index], 0, PAGE_SIZE);
 		dir->tables_physical[table_index] = tmp | 0x7;
 		return &dir->tables[table_index]->pages[address % 1024];
 	} else
@@ -94,21 +94,21 @@ void paging_fault(struct regs *regs) {
 }
 
 static void paging_set_frame(uintptr_t frame_addr) {
-	uint32_t frame = frame_addr / 0x1000;
+	uint32_t frame = frame_addr / PAGE_SIZE;
         uint32_t idx = INDEX_FROM_BIT(frame);
         uint32_t off = OFFSET_FROM_BIT(frame);
         frames[idx] |= (0x1 << off);
 }
 
 static void paging_clear_frame(uintptr_t frame_addr) {
-	uint32_t frame = frame_addr / 0x1000;
+	uint32_t frame = frame_addr / PAGE_SIZE;
 	uint32_t idx = INDEX_FROM_BIT(frame);
 	uint32_t off = OFFSET_FROM_BIT(frame);
 	frames[idx] &= ~(0x1 << off);
 }
 
 static uint32_t paging_test_frame(uintptr_t frame_addr) {
-	uint32_t frame = frame_addr / 0x1000;
+	uint32_t frame = frame_addr / PAGE_SIZE;
 	uint32_t idx = INDEX_FROM_BIT(frame);
 	uint32_t off = OFFSET_FROM_BIT(frame);
 	return (frames[idx] & (0x1 << off));
@@ -136,7 +136,7 @@ void paging_alloc_frame(uint32_t *page, bool is_kernel, bool is_writeable) {
 	uint32_t idx = paging_first_frame();
 	if (idx == (uint32_t)-1)
 		abort();
-	paging_set_frame(idx * 0x1000);
+	paging_set_frame(idx * PAGE_SIZE);
 	*page |= PAGE_TABLE_PRESENT;
 	*page |= (is_writeable) ? PAGE_TABLE_RW : 0;
 	*page |= (is_kernel) ? 0 : PAGE_TABLE_USER;

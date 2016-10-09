@@ -1,4 +1,4 @@
-#include <memory.h>
+#include <memory/memory.h>
 #include <multiboot.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -55,7 +55,4 @@ void mem_init(uint32_t multiboot_magic, const void *multiboot_header) {
 	klog_detail("Bootloader courtesy of %s\n", mem_info.bootloader_name);
 
 	paging_init();
-	uint32_t *ptr = (uint32_t*)0xA0000000;
-   	volatile uint32_t do_page_fault = *ptr;
-	(void)do_page_fault;
 }

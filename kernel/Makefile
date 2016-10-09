@@ -28,14 +28,15 @@ cpu/idt_load.o \
 cpu/isr.o \
 cpu/isrs.o \
 cpu/irq.o \
-memory.o \
 stack_smash.o \
 kernel.o \
+memory/memory.o \
 memory/paging.o \
 memory/kheap.o \
 drivers/vga/vga_textmode.o \
 drivers/pit/pit.o \
 drivers/ps2/kbd.o \
+algs/oarray.o \
 
 OBJS=\
 util/crti.o \

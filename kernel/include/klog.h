@@ -2,6 +2,7 @@
 
 // Don't #include <stdio.h>, it will only increase compile time
 extern int printf(const char* __restrict, ...);
+extern void abort(void);
 
 #define KLOG_LEVEL_NONE 0
 #define KLOG_LEVEL_FATAL 1
@@ -15,7 +16,7 @@ extern int printf(const char* __restrict, ...);
 #define KLOG_FATAL_HEADER "[" ANSI_SEQ_BEGIN "1;31mFATAL" ANSI_SEQ_BEGIN "0m]"
 #define KLOG_ERROR_HEADER "[" ANSI_SEQ_BEGIN "31mERROR" ANSI_SEQ_BEGIN "0m]"
 #define KLOG_WARN_HEADER "["ANSI_SEQ_BEGIN "33mWARNING" ANSI_SEQ_BEGIN "0m]"
-#define KLOG_INFO_HEADER "[" ANSI_SEQ_BEGIN "35mINFO" ANSI_SEQ_BEGIN "0m]"
+#define KLOG_INFO_HEADER "[" ANSI_SEQ_BEGIN "1;34mINFO" ANSI_SEQ_BEGIN "0m]"
 #define KLOG_NOTICE_HEADER "[" ANSI_SEQ_BEGIN "36mNOTICE" ANSI_SEQ_BEGIN "0m]"
 #define KLOG_DETAIL_HEADER "[" ANSI_SEQ_BEGIN "32mDETAIL" ANSI_SEQ_BEGIN "0m]"
 
@@ -71,3 +72,5 @@ extern int printf(const char* __restrict, ...);
 	#define klog_detail(fmt, ...) do { ((void)0); } while(0)
 	#define klog_detail_nohdr(fmt, ...) do { ((void)0); } while(0)
 #endif
+
+#define klog_assert(predicate) if (!(predicate)) { klog_fatal("Assertion fail: " #predicate); abort(); }

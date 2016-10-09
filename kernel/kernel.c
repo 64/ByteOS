@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include <tty.h>
-#include <memory.h>
+#include <memory/memory.h>
 #include <klog.h>
 #include <io.h>
 #include <drivers/ps2/kbd.h>
