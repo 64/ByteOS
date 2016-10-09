@@ -81,7 +81,7 @@ void irq_handler(struct regs *r) {
 	if (irq_handlers[r->int_no - 32] != NULL) {
 		irq_handlers[r->int_no - 32](r);
 	} else {
-		klog_notice("Recieved unhandled IRQ number %d\n", r->int_no - 32);
+		klog_detail("Recieved unhandled IRQ number %d\n", r->int_no - 32);
 		irq_ack(r->int_no - 32);
 	}
 }

@@ -84,12 +84,12 @@ void paging_fault(struct regs *regs) {
 	uint8_t id = regs->err_code & 0x10;
 
 	klog_fatal("Page fault: 0x%x\n\t", faulting_addr);
-	if (present) printf("- Page not present\n\t");
-	if (rw) printf("- Page not writeable\n\t");
-	if (us) printf("- Page not writeable from user-mode\n\t");
-	if (reserved) printf("- Page reserved bits overwritten\n\t");
-	if (id) printf("ID: %d", id);
-	printf("\n");
+	if (present) klog_fatal_nohdr("- Page not present\n\t");
+	if (rw) klog_fatal_nohdr("- Page not writeable\n\t");
+	if (us) klog_fatal_nohdr("- Page not writeable from user-mode\n\t");
+	if (reserved) klog_fatal_nohdr("- Page reserved bits overwritten\n\t");
+	if (id) klog_fatal_nohdr("- ID: %d\n", id);
+	klog_fatal_nohdr("\n");
 	abort();
 }
 
