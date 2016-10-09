@@ -1,6 +1,7 @@
 #pragma once
 
-#include <stdio.h>
+// Don't #include <stdio.h>, it will only increase compile time
+extern int printf(const char* __restrict, ...);
 
 #define KLOG_LEVEL_NONE 0
 #define KLOG_LEVEL_FATAL 1
