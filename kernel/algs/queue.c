@@ -1,10 +1,12 @@
 #include <algs/queue.h>
+#include <string.h>
 
 #define Q_INDEX_OFFSET(front, len, max) q->data[((front) + (len)) % (max)]
 
 queue_int *queue_int_create(size_t length) {
 	queue_int *ret = (queue_int *)kmalloc(sizeof(queue_int));
 	ret->data = (uint32_t *)kmalloc(sizeof(uint32_t) * length);
+	memset(ret->data, 0, sizeof(uint32_t) * length);
 	ret->length = 0;
 	ret->front = 0;
 	ret->capacity = length ? length : 1; // Prevent subtle errors
@@ -24,8 +26,8 @@ uint32_t queue_int_peek(queue_int *q, bool *err) {
 	}
 }
 
-uint32_t queue_int_push(uint32_t data, queue_int *q, bool *err) {
-	if (queue_int_isfull(q) || q->length == (q->capacity - 1)) {
+uint32_t queue_int_push(queue_int *q, uint32_t data, bool *err) {
+	if (queue_int_isfull(q)) {
 		*err = 1;
 		return data;
 	} else {
@@ -41,8 +43,10 @@ uint32_t queue_int_pop(queue_int *q, bool *err) {
 		return 0;
 	} else {
 		q->length--;
-		q->front = (q->front == 0) ? q->capacity - 1 : q->front - 1;
-		return q->data[q->front];
+		uint32_t rv = q->data[q->front];
+		if (q->length != 0)
+			q->front = (q->front == (q->capacity - 1)) ? 0 : q->front + 1;
+		return rv;
 	}
 }
 

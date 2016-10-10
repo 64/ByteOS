@@ -2,11 +2,15 @@
 #include <isr.h>
 #include <klog.h>
 #include <io.h>
+#include <algs/queue.h>
 
-#define KEY_PENDING 0x64
+#define KBD_COMMAND 0x64
+#define KBD_LED_SCROLL (1 << 0)
+#define KBD_LED_NUM (1 << 1)
+#define KBD_LED_CAPS (1 << 2)
 
 static inline void keyboard_wait(void) {
-	while (io_inportb(KEY_PENDING) & 2)
+	while (io_inportb(KBD_COMMAND) & 2)
 		;
 }
 
@@ -89,7 +93,15 @@ const uint8_t keyboard_us_uppercase[128] = {
 };
 
 static inline uint8_t keyboard_scancode_convert(uint8_t scancode) {
-	return keyboard_us_lowercase[scancode];
+	return keyboard_us_uppercase[scancode];
+}
+
+void keyboard_set_led(uint8_t flags) {
+	if (flags == 0)
+		return;
+	flags &= 0x6F; // Only use last 3 bits
+	io_outportb(KBD_COMMAND, 0x8E); keyboard_wait();
+	io_outportb(KBD_COMMAND, flags); keyboard_wait();
 }
 
 void keyboard_handler(struct regs *r) {
@@ -103,11 +115,19 @@ void keyboard_handler(struct regs *r) {
 		printf("%c", keyboard_scancode_convert(scancode));
 }
 
+queue_int *kbd_cmdq;
+
 void keyboard_install(void) {
 	klog_notice("Initializing PS/2 keyboard driver...\n");
-	irq_install_handler(1, keyboard_handler);
 	uint8_t test = 0;
-	while(((test = io_inportb(KEY_PENDING)) & 1) == 1) {
+	while(((test = io_inportb(KBD_COMMAND)) & 1) == 1) {
 	   io_inportb(0x60);
 	}
+	kbd_cmdq = queue_int_create(20);
+	irq_install_handler(1, keyboard_handler);
+	keyboard_set_led(KBD_LED_CAPS | KBD_LED_SCROLL | KBD_LED_NUM);
+}
+
+void keyboard_cleanup(void) {
+	queue_int_free(kbd_cmdq);
 }
