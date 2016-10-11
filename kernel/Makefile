@@ -37,7 +37,6 @@ drivers/vga/vga_textmode.o \
 drivers/pit/pit.o \
 drivers/ps2/kbd.o \
 algs/oarray.o \
-algs/queue.o \
 
 OBJS=\
 util/crti.o \
