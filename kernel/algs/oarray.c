@@ -30,8 +30,7 @@ oarray oarray_place(void *addr, uint32_t max_size, lthan_predicate less_than) {
 }
 
 void oarray_destroy(oarray *array) {
-	//kfree(array->array)
-	(void)array;
+	kfree(array->array);
 }
 void oarray_insert(void *item, oarray *array) {
 	klog_assert(array->less_than);

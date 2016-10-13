@@ -4,10 +4,10 @@
 
 
 
-
 // Scancode (set 1) to keycode mappings for each key
+// Remember that KBD_K_NONE is just a #define to KBD_K_INVALID
 const uint8_t keyboard_us_offsets[128] = {
-	KBD_K_NONE,
+	KBD_K_INVALID,
 	KBD_K_NONE,
 	KBD_K_ONE,
 	KBD_K_TWO,

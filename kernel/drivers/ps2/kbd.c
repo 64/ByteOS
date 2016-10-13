@@ -74,7 +74,10 @@ void keyboard_handler(struct regs *r) {
 		keyboard_clear_key(offset);
 	} else {
 		keyboard_set_key(offset);
-		printf("%c", keyboard_scancode_to_char(scancode));
+		char c = keyboard_scancode_to_char(scancode);
+		if (keyboard_test_key(KBD_K_LSHIFT) || keyboard_test_key(KBD_K_RSHIFT))
+			c -= ('A' - 'a');
+		printf("%c", c);
 	}
 }
 
