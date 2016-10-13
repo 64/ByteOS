@@ -10,7 +10,7 @@
 #define PIT_CHANNEL2       (PIT_BASE + 2)
 #define PIT_COMMAND        (PIT_BASE + 3)
 #define PIT_SPEED          1193180
-#define PIT_TIMER_CONSTANT 1000
+#define PIT_CONSTANT 1000
 #define PIT_SET            0x36
 
 volatile uint32_t pit_tick_count = 0;
@@ -23,7 +23,7 @@ void pit_set_timer_phase(int16_t hz) {
 }
 
 void pit_install(void) {
-	pit_set_timer_phase(PIT_TIMER_CONSTANT);
+	pit_set_timer_phase(PIT_CONSTANT);
 	irq_install_handler(0, pit_handler);
 }
 
@@ -40,15 +40,15 @@ uint32_t pit_ticks() {
 	return pit_tick_count;
 }
 
-void pit_timer_wait(uint32_t seconds) {
-	uint32_t desired_ticks = pit_tick_count + (seconds * PIT_TIMER_CONSTANT);
+void pit_wait(uint32_t seconds) {
+	uint32_t desired_ticks = pit_tick_count + (seconds * PIT_CONSTANT);
 	while (desired_ticks > pit_tick_count) {
 		asm volatile ("sti//hlt//cli");
 	}
 }
 
-void pit_timer_wait_ms(uint32_t ms) {
-	uint32_t desired_ticks = pit_tick_count + (ms * (PIT_TIMER_CONSTANT / 1000));
+void pit_wait_ms(uint32_t ms) {
+	uint32_t desired_ticks = pit_tick_count + (ms * (PIT_CONSTANT / 1000));
 	while (desired_ticks > pit_tick_count) {
 		asm volatile ("sti//hlt//cli");
 	}

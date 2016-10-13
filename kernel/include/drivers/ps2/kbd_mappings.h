@@ -1,8 +1,8 @@
 #pragma once
 
-#define KBD_K_COLUMN(num) (((num) & 0x7) << 5)
-#define KBD_K_ROW(num) ((num) & 0x1F)
-#define KBD_K_ENTRY(r, c) ((int)KBD_K_COLUMN(c) & (int)KBD_K_ROW(r))
+#define KBD_K_ROW(num) (((num) & 0x7) << 5)
+#define KBD_K_COLUMN(num) ((num) & 0x1F)
+#define KBD_K_ENTRY(r, c) ((int)KBD_K_COLUMN(c) | (int)KBD_K_ROW(r))
 #define KBD_K_NONE KBD_K_INVALID
 
 enum kbd_keycode {

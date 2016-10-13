@@ -11,6 +11,9 @@
 #define KBD_DATA  0x60
 #define KBD_STATUS 0x64
 #define KBD_RELEASE_MASK 0x80
+#define KBD_CMD_ACK 0xFA
+#define KBD_CMD_RESEND 0xFE
+#define KBD_CMD_LED 0xED
 #define KBD_LED_SCROLL (1 << 0)
 #define KBD_LED_NUM (1 << 1)
 #define KBD_LED_CAPS (1 << 2)
@@ -27,28 +30,39 @@ static inline void keyboard_wait(void) {
 }
 
 static inline uint8_t keyboard_scancode_to_offset(uint8_t scancode) {
-	return keyboard_us_offsets[scancode];
+	return keyboard_us_offsets[((scancode & KBD_RELEASE_MASK) ? scancode - KBD_RELEASE_MASK : scancode)];
 }
 
 static inline uint8_t keyboard_scancode_to_char(uint8_t scancode) {
 	return keyboard_us_uppercase[scancode];
 }
 
+void keyboard_set_key(size_t index) {
+	key_states.cache[index / KBD_CACHE_BITS] |= (1 << (index % KBD_CACHE_BITS));
+}
+
+void keyboard_clear_key(size_t index) {
+	key_states.cache[index / KBD_CACHE_BITS] &= ~(1 << (index % KBD_CACHE_BITS));
+}
+
+bool keyboard_test_key(size_t index) {
+	return (key_states.cache[index / KBD_CACHE_BITS] & (1 << (index % KBD_CACHE_BITS)));
+}
+
 void keyboard_set_led(uint8_t flags) {
 	if (flags == 0)
 		return;
 	flags &= 0x07; // Only use last 3 bits
-	io_outportb(KBD_DATA, 0xED); keyboard_wait();
+	io_outportb(KBD_DATA, KBD_CMD_LED); keyboard_wait();
 	io_outportb(KBD_DATA, flags); keyboard_wait();
 	uint8_t temp = 0;
-	while (temp != 0xFA) {
+	while (temp != KBD_CMD_ACK) {
 		temp = io_inportb(KBD_DATA);
-		if (temp == 0xFE) {
-			io_outportb(KBD_DATA, 0xED); keyboard_wait();
+		if (temp == KBD_CMD_RESEND) {
+			io_outportb(KBD_DATA, KBD_CMD_LED); keyboard_wait();
 			io_outportb(KBD_DATA, flags); keyboard_wait();
 		}
 	}
-
 }
 
 void keyboard_handler(struct regs *r) {
@@ -57,9 +71,9 @@ void keyboard_handler(struct regs *r) {
 	irq_ack(r->int_no - 32);
 	uint8_t offset = keyboard_scancode_to_offset(scancode);
 	if (scancode & KBD_RELEASE_MASK) {
-		(void)offset;
+		keyboard_clear_key(offset);
 	} else {
-		(void)offset;
+		keyboard_set_key(offset);
 		printf("%c", keyboard_scancode_to_char(scancode));
 	}
 }
