@@ -18,8 +18,6 @@
 #define KBD_LED_SCROLL (1 << 0)
 #define KBD_LED_NUM (1 << 1)
 #define KBD_LED_CAPS (1 << 2)
-#define KBD_CAPITALS (keyboard_test_persist(KBD_CAPSLOCK_MASK) == !(keyboard_test_key(KBD_K_LSHIFT) || keyboard_test_key(KBD_K_RSHIFT)))
-#define KBD_CTRL (keyboard_test_key(KBD_K_LCTRL) || keyboard_test_key(KBD_K_RCTRL))
 
 extern const uint8_t keyboard_us_offsets[];
 extern const uint8_t keyboard_us_uppercase[];
@@ -36,14 +34,19 @@ static inline uint8_t keyboard_scancode_to_offset(uint8_t scancode) {
 	return keyboard_us_offsets[((scancode & KBD_RELEASE_MASK) ? scancode - KBD_RELEASE_MASK : scancode)];
 }
 
-static inline uint8_t keyboard_scancode_to_char(uint8_t scancode, bool uppercase, bool control, bool *force_print) {
+static inline uint8_t keyboard_scancode_to_char(uint8_t scancode, key_modifiers mod, bool *force_print) {
 	uint8_t val = 0;
-	if (uppercase)
+	if (mod.shift)
 		val = keyboard_us_uppercase[scancode];
 	else
 		val = keyboard_us_lowercase[scancode];
 
-	if (control) {
+	if (mod.capslock == !mod.shift)
+		val = toupper(val);
+	else
+		val = tolower(val);
+
+	if (mod.control) {
 		*force_print = 1;
 		if (isalpha(val))
 			val = tolower(val) - 'a' + 1;
@@ -88,8 +91,6 @@ bool keyboard_test_persist(uint8_t mask) {
 }
 
 void keyboard_set_led(uint8_t flags) {
-	if (flags == 0)
-		return;
 	flags &= 0x07; // Only use last 3 bits
 	io_outportb(KBD_DATA, KBD_CMD_LED); keyboard_wait();
 	io_outportb(KBD_DATA, flags); keyboard_wait();
@@ -123,11 +124,17 @@ void keyboard_handler(struct regs *r) {
 	if (scancode & KBD_RELEASE_MASK) {
 		keyboard_clear_key(offset);
 	} else {
+		key_modifiers mods = {
+			keyboard_test_key(KBD_K_LSHIFT) || keyboard_test_key(KBD_K_RSHIFT),
+			keyboard_test_key(KBD_K_LCTRL) || keyboard_test_key(KBD_K_RCTRL),
+			keyboard_test_persist(KBD_CAPSLOCK_MASK),
+			keyboard_test_key(KBD_K_LALT) || keyboard_test_key(KBD_K_RALT)
+		};
 		keyboard_set_key(offset);
 		if (offset == KBD_K_CAPS)
 			keyboard_capslock_update();
 		bool force_print = 0;
-		char c = keyboard_scancode_to_char(scancode, KBD_CAPITALS, KBD_CTRL, &force_print);
+		char c = keyboard_scancode_to_char(scancode, mods, &force_print);
 		if (!(c != 0 || isprint(c)) && !force_print)
 			return;
 		printf("%c", c);
