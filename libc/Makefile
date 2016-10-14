@@ -23,6 +23,7 @@ OBJS=\
 stdlib.o \
 stdio.o \
 string.o \
+ctype.o \
 
 LIBK_OBJS:=$(OBJS:.o=.libk.o)
 

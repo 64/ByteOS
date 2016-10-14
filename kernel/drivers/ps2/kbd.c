@@ -4,6 +4,7 @@
 #include <io.h>
 #include <drivers/pit.h>
 #include <string.h>
+#include <ctype.h>
 
 // Include the array definitions for the keyboard conversion lookup tables
 #include "kbd_mappings.c"
@@ -17,6 +18,8 @@
 #define KBD_LED_SCROLL (1 << 0)
 #define KBD_LED_NUM (1 << 1)
 #define KBD_LED_CAPS (1 << 2)
+#define KBD_CAPITALS (keyboard_test_persist(KBD_CAPSLOCK_MASK) == !(keyboard_test_key(KBD_K_LSHIFT) || keyboard_test_key(KBD_K_RSHIFT)))
+#define KBD_CTRL (keyboard_test_key(KBD_K_LCTRL) || keyboard_test_key(KBD_K_RCTRL))
 
 extern const uint8_t keyboard_us_offsets[];
 extern const uint8_t keyboard_us_uppercase[];
@@ -33,8 +36,39 @@ static inline uint8_t keyboard_scancode_to_offset(uint8_t scancode) {
 	return keyboard_us_offsets[((scancode & KBD_RELEASE_MASK) ? scancode - KBD_RELEASE_MASK : scancode)];
 }
 
-static inline uint8_t keyboard_scancode_to_char(uint8_t scancode) {
-	return keyboard_us_uppercase[scancode];
+static inline uint8_t keyboard_scancode_to_char(uint8_t scancode, bool uppercase, bool control, bool *force_print) {
+	uint8_t val = 0;
+	if (uppercase)
+		val = keyboard_us_uppercase[scancode];
+	else
+		val = keyboard_us_lowercase[scancode];
+
+	if (control) {
+		*force_print = 1;
+		if (isalpha(val))
+			val = tolower(val) - 'a' + 1;
+		else {
+			// TODO: Is there a better way to do this?
+			switch(val) {
+				case '@':
+					val = '\x00'; break;
+				case '[':
+					val = '\x1B'; break;
+				case ']':
+					val = '\x1D'; break;
+				case '\\':
+					val = '\x1C'; break;
+				case '^':
+					val = '\x1E'; break;
+				case '_':
+					val = '\x1F'; break;
+				default:
+					*force_print = 0; break;
+			}
+		}
+	} else
+		*force_print = 0;
+	return val;
 }
 
 void keyboard_set_key(size_t index) {
@@ -47,6 +81,10 @@ void keyboard_clear_key(size_t index) {
 
 bool keyboard_test_key(size_t index) {
 	return (key_states.cache[index / KBD_CACHE_BITS] & (1 << (index % KBD_CACHE_BITS)));
+}
+
+bool keyboard_test_persist(uint8_t mask) {
+	return (key_states.persist && mask);
 }
 
 void keyboard_set_led(uint8_t flags) {
@@ -65,6 +103,18 @@ void keyboard_set_led(uint8_t flags) {
 	}
 }
 
+void keyboard_capslock_update() {
+	if (keyboard_test_persist(KBD_CAPSLOCK_MASK)) {
+		// Disable capslock
+		key_states.persist &= ~KBD_CAPSLOCK_MASK;
+		keyboard_set_led(0);
+	} else {
+		// Enable capslock
+		key_states.persist |= KBD_CAPSLOCK_MASK;
+		keyboard_set_led(KBD_LED_CAPS);
+	}
+}
+
 void keyboard_handler(struct regs *r) {
 	keyboard_wait();
 	uint8_t scancode = io_inportb(KBD_DATA);
@@ -74,9 +124,12 @@ void keyboard_handler(struct regs *r) {
 		keyboard_clear_key(offset);
 	} else {
 		keyboard_set_key(offset);
-		char c = keyboard_scancode_to_char(scancode);
-		if (keyboard_test_key(KBD_K_LSHIFT) || keyboard_test_key(KBD_K_RSHIFT))
-			c -= ('A' - 'a');
+		if (offset == KBD_K_CAPS)
+			keyboard_capslock_update();
+		bool force_print = 0;
+		char c = keyboard_scancode_to_char(scancode, KBD_CAPITALS, KBD_CTRL, &force_print);
+		if (!(c != 0 || isprint(c)) && !force_print)
+			return;
 		printf("%c", c);
 	}
 }

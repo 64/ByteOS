@@ -2,8 +2,6 @@
 
 #include <drivers/ps2/kbd_mappings.h>
 
-
-
 // Scancode (set 1) to keycode mappings for each key
 // Remember that KBD_K_NONE is just a #define to KBD_K_INVALID
 const uint8_t keyboard_us_offsets[128] = {
