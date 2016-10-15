@@ -5,6 +5,7 @@
 #include <klog.h>
 #include <drivers/ps2/kbd.h>
 #include <drivers/pit.h>
+#include <drivers/acpi.h>
 
 void kernel_early(uint32_t mboot_magic, const void *mboot_header) {
 	vga_textmode_initialize();
@@ -17,6 +18,7 @@ void kernel_main(void) {
 	// Install main IRQ handlers
 	pit_install();
 	keyboard_install();
+	//acpi_init();
 
 	// Ensure kernel never exits
 	while(1);

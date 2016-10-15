@@ -90,6 +90,16 @@ bool keyboard_test_persist(uint8_t mask) {
 	return (key_states.persist && mask);
 }
 
+key_modifiers keyboard_get_key_modifiers() {
+	key_modifiers mods = {
+		keyboard_test_key(KBD_K_LSHIFT) || keyboard_test_key(KBD_K_RSHIFT),
+		keyboard_test_key(KBD_K_LCTRL) || keyboard_test_key(KBD_K_RCTRL),
+		keyboard_test_persist(KBD_CAPSLOCK_MASK),
+		keyboard_test_key(KBD_K_LALT) || keyboard_test_key(KBD_K_RALT)
+	};
+	return mods;
+}
+
 void keyboard_set_led(uint8_t flags) {
 	flags &= 0x07; // Only use last 3 bits
 	io_outportb(KBD_DATA, KBD_CMD_LED); keyboard_wait();
@@ -104,7 +114,7 @@ void keyboard_set_led(uint8_t flags) {
 	}
 }
 
-void keyboard_capslock_update() {
+void keyboard_capslock_toggle() {
 	if (keyboard_test_persist(KBD_CAPSLOCK_MASK)) {
 		// Disable capslock
 		key_states.persist &= ~KBD_CAPSLOCK_MASK;
@@ -124,15 +134,10 @@ void keyboard_handler(struct regs *r) {
 	if (scancode & KBD_RELEASE_MASK) {
 		keyboard_clear_key(offset);
 	} else {
-		key_modifiers mods = {
-			keyboard_test_key(KBD_K_LSHIFT) || keyboard_test_key(KBD_K_RSHIFT),
-			keyboard_test_key(KBD_K_LCTRL) || keyboard_test_key(KBD_K_RCTRL),
-			keyboard_test_persist(KBD_CAPSLOCK_MASK),
-			keyboard_test_key(KBD_K_LALT) || keyboard_test_key(KBD_K_RALT)
-		};
+		key_modifiers mods = keyboard_get_key_modifiers();
 		keyboard_set_key(offset);
 		if (offset == KBD_K_CAPS)
-			keyboard_capslock_update();
+			keyboard_capslock_toggle();
 		bool force_print = 0;
 		char c = keyboard_scancode_to_char(scancode, mods, &force_print);
 		if (!(c != 0 || isprint(c)) && !force_print)
