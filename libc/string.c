@@ -55,3 +55,72 @@ size_t strlen(const char* str) {
 		len++;
 	return len;
 }
+
+// TODO: Finish these
+char *strcpy(char * restrict s1, char * restrict s2) {
+	return NULL;
+}
+
+char *strncpy(char * restrict s1, char * restrict s2, size_t n) {
+	return NULL;
+}
+
+char *strcat(char * restrict s1, char * restrict s2) {
+	return NULL;
+}
+
+char *strncat(char * restrict s1, char * restrict s2) {
+	return NULL;
+}
+
+char *strcmp(char * restrict s1, char * restrict s2) {
+	return NULL;
+}
+
+char *strncmp(char * restrict s1, char * restrict s2, size_t n) {
+	return NULL;
+}
+
+int strcoll(const char *s1, const char *s2) {
+	return 0;
+}
+
+size_t strxfrm(char * restrict s1, const char * restrict s2, size_t n) {
+	return 0;
+}
+
+void *memchr(const void *s, int c, size_t n) {
+	return NULL;
+}
+
+char *strchr(const char *s, int c) {
+	return NULL;
+}
+
+char *strrchr(const char *s, int c) {
+	return NULL;
+}
+
+size_t strcspn(const char *s1, const char *s2) {
+	return 0;
+}
+
+char *strpbrk(const char *s1, const char *s2) {
+	return NULL;
+}
+
+size_t strspn(const char *s1, const char *s2) {
+	return 0;
+}
+
+char *strstr(const char *s1, const char *s2) {
+	return NULL;
+}
+
+char *strtok(char * restrict s1, const char * restrict s2) {
+	return NULL;
+}
+
+char *strerror(int errnum) {
+	return NULL;
+}
