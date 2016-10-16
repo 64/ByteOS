@@ -21,10 +21,6 @@ void kernel_main(void) {
 	keyboard_install();
 	acpi_init();
 
-	char buf[20] = "12345";
-	strncat(buf, "6789", 5);
-	klog_detail("%s\n", buf);
-
 	// Ensure kernel never exits
 	while(1);
 }
