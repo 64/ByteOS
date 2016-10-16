@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <system.h>
 #include <sys/cdefs.h>
 
 struct acpi_table_header {
@@ -97,6 +98,7 @@ struct acpi_fadt {
 };
 
 bool acpi_find_rsdt(void);
+void acpi_sci_interrupt_handler(struct regs *r);
 bool acpi_find_table(char *signature, struct acpi_table_header **out);
 bool acpi_check_header(struct acpi_table_header *header, char *signature);
 void acpi_init(void);

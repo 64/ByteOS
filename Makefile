@@ -10,13 +10,14 @@ build:
 	@./scripts/build.sh
 
 bin/byteos.iso: isodir/boot/byteos.bin isodir/boot/grub/grub.cfg
-	grub-mkrescue -o $@ isodir
+	@grub-mkrescue -o $@ isodir 2> /dev/null
 
 isodir/boot/byteos.bin: build
-	@mkdir -p isodir/boot/grub
-	@cp sysroot/boot/byteos.bin isodir/boot/byteos.bin
+	@mkdir -p isodir/boot
+	@rsync -quraE sysroot/boot/byteos.bin isodir/boot/byteos.bin
 
 isodir/boot/grub/grub.cfg: build
+	@mkdir -p isodir/boot/grub
 	@printf "menuentry \"byteos\" {\n\tmultiboot /boot/byteos.bin \n}\n" > isodir/boot/grub/grub.cfg
 
 clean:

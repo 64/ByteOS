@@ -1,8 +1,9 @@
 #include <drivers/acpi.h>
+#include <drivers/pit.h>
+#include <isr.h>
 #include <io.h>
 #include <string.h>
 #include <klog.h>
-#include <drivers/pit.h>
 
 struct acpi_rsdt_header *rsdt;
 uint32_t rsdt_entries;
@@ -62,8 +63,15 @@ void acpi_init(void) {
 		return;
 	}
 
-	klog_detail("Power management profile: %s\n", fadt->power_management_profile == 1 ? "Desktop" : "Laptop");
-	
+	klog_detail("Power management profile: %s\n",
+		fadt->power_management_profile == 1 ? "Desktop" : "Laptop");
+	// Not even sure if this works
+	irq_install_handler(fadt->sci_interrupt, acpi_sci_interrupt_handler);
+}
+
+void acpi_sci_interrupt_handler(struct regs *r) {
+	printf("Shutting down...\n");
+	(void)r;
 }
 
 void acpi_shutdown(void) {

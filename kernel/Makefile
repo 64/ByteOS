@@ -90,6 +90,6 @@ install-headers:
 
 install-kernel: byteos.bin
 	@mkdir -p $(DESTDIR)$(BOOTDIR)
-	@cp byteos.bin $(DESTDIR)$(BOOTDIR)
+	@rsync -quraE byteos.bin $(DESTDIR)$(BOOTDIR)
 
 -include $(OBJS:.o=.d)
