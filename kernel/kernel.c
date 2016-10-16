@@ -2,6 +2,7 @@
 
 #include <tty.h>
 #include <memory/memory.h>
+#include <string.h>
 #include <klog.h>
 #include <drivers/ps2/kbd.h>
 #include <drivers/pit.h>
@@ -19,6 +20,10 @@ void kernel_main(void) {
 	pit_install();
 	keyboard_install();
 	acpi_init();
+
+	char buf[20] = "12345";
+	strncat(buf, "6789", 5);
+	klog_detail("%s\n", buf);
 
 	// Ensure kernel never exits
 	while(1);

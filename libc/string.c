@@ -57,20 +57,38 @@ size_t strlen(const char* str) {
 }
 
 // TODO: Finish these
-char *strcpy(char * restrict s1, char * restrict s2) {
-	return NULL;
+char *strcpy(char * restrict s1, const char * restrict s2) {
+	char *rv = s1;
+	while (*s2)
+		*s1++ = *s2++;
+	*s1 = '\0';
+	return rv;
 }
 
-char *strncpy(char * restrict s1, char * restrict s2, size_t n) {
-	return NULL;
+char *strncpy(char * restrict s1, const char * restrict s2, size_t n) {
+	char *rv = s1;
+	while (*s2 && n-- != 0)
+		*s1++ = *s2++;
+	while (n-- != 0)
+		*s1++ = '\0';
+	return rv;
 }
 
-char *strcat(char * restrict s1, char * restrict s2) {
-	return NULL;
+char *strcat(char * restrict s1, const char * restrict s2) {
+	// Scan until null byte
+	char *rv = s1;
+	while (*s1)
+		s1++;
+	strcpy(s1, s2);
+	return rv;
 }
 
-char *strncat(char * restrict s1, char * restrict s2) {
-	return NULL;
+char *strncat(char * restrict s1, const char * restrict s2, size_t n) {
+	char *rv = s1;
+	while (*s1)
+		s1++;
+	strncpy(s1, s2, n);
+	return rv;
 }
 
 char *strcmp(char * restrict s1, char * restrict s2) {
