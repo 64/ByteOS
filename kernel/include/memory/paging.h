@@ -43,5 +43,5 @@ void paging_init();
 void paging_change_dir(page_directory *);
 uint32_t *paging_get(uintptr_t, bool, page_directory *);
 void paging_fault(struct regs *r);
-void paging_alloc_frame(uint32_t *, bool, bool);
+void paging_alloc_frame(uint32_t *, bool, bool, uintptr_t);
 void paging_free_frame(uintptr_t);

@@ -18,7 +18,7 @@ void kernel_main(void) {
 	// Install main IRQ handlers
 	pit_install();
 	keyboard_install();
-	//acpi_init();
+	acpi_init();
 
 	// Ensure kernel never exits
 	while(1);

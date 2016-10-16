@@ -51,7 +51,8 @@ static void kheap_expand(uint32_t new_size, kheap_heap *heap) {
 		paging_alloc_frame(
 			paging_get(heap->start_addr + i, 1, kernel_directory),
 			(heap->supervisor) ? 1 : 0,
-			(heap->readonly) ? 0 : 1
+			(heap->readonly) ? 0 : 1,
+			0
 		);
 		i += PAGE_SIZE;
 	}
@@ -173,10 +174,8 @@ void *kheap_alloc(uint32_t size, bool page_align, kheap_heap *heap) {
 
 kheap_heap *kheap_create(uintptr_t start, uintptr_t end, uintptr_t max, bool supervisor, bool readonly) {
 	kheap_heap *heap = (kheap_heap*)kmalloc(sizeof(kheap_heap));
-
 	klog_assert(start % PAGE_SIZE == 0);
 	klog_assert(end % PAGE_SIZE == 0);
-
 	heap->index = oarray_place((void*)start, KHEAP_INDEX_SIZE, &kheap_less_than);
 	start += sizeof(void*) * KHEAP_INDEX_SIZE;
 

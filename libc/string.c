@@ -40,6 +40,15 @@ void* memset(void* bufptr, int value, size_t size) {
 	return bufptr;
 }
 
+// My own function, helps with checksums
+size_t memsum(void *ptr, size_t size) {
+	size_t total = 0;
+	unsigned char *p = ptr;
+	while(size--)
+		total += *p++;
+	return total;
+}
+
 size_t strlen(const char* str) {
 	size_t len = 0;
 	while (str[len])

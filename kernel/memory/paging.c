@@ -25,17 +25,25 @@ void paging_init() {
 	current_directory = kernel_directory;
 
 	uint32_t i = 0;
+
 	for (i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i += PAGE_SIZE)
 		paging_get(i, 1, kernel_directory);
 
+	// TODO: This needs improving...
+	paging_get(0x7FE18DC, 1, kernel_directory); // QEMU APIC information page
+	paging_get(0x3FF0000, 1, kernel_directory); // VirtualBox APIC information page
+
 	i = 0;
 	while (i < placement_address + PAGE_SIZE) {
-		paging_alloc_frame(paging_get(i, 1, kernel_directory), 0, 0);
+		paging_alloc_frame(paging_get(i, 1, kernel_directory), 0, 0, 0);
 		i += PAGE_SIZE;
 	}
 
+	paging_alloc_frame(paging_get(0x7FE18DC, 0, kernel_directory), 0, 0, 0x7FE18DC);
+	paging_alloc_frame(paging_get(0x3FF0000, 0, kernel_directory), 0, 0, 0x3FF0000);
+
 	for (i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i += PAGE_SIZE)
-		paging_alloc_frame(paging_get(i, 1, kernel_directory), 0, 0);
+		paging_alloc_frame(paging_get(i, 0, kernel_directory), 0, 0, 0);
 
 	isr_install_handler(14, paging_fault);
 	paging_change_dir(kernel_directory);
@@ -92,7 +100,7 @@ void paging_fault(struct regs *regs) {
 	bool reserved = regs->err_code & 0x8;
 	uint8_t id = regs->err_code & 0x10;
 
-	klog_fatal("Page fault: 0x%x\n\t", faulting_addr);
+	klog_fatal("Page fault: %x\n\t", faulting_addr);
 	if (present) klog_fatal_nohdr("- Page not present\n\t");
 	if (rw) klog_fatal_nohdr("- Page not writeable\n\t");
 	if (us) klog_fatal_nohdr("- Page not writeable from user-mode\n\t");
@@ -138,13 +146,18 @@ static uintptr_t paging_first_frame() {
 	abort();
 }
 
-void paging_alloc_frame(uint32_t *page, bool is_kernel, bool is_writeable) {
+void paging_alloc_frame(uint32_t *page, bool is_kernel, bool is_writeable, uintptr_t phys) {
 	if ((*page >> 12 & 0x000FFFFF) != 0)
 		return;
 
-	uint32_t idx = paging_first_frame();
-	if (idx == (uint32_t)-1)
-		abort();
+	uintptr_t idx;
+	if (phys == 0) {
+		idx = paging_first_frame();
+		if (idx == (uint32_t)-1)
+			abort();
+	} else
+		idx = phys / PAGE_SIZE;
+
 	paging_set_frame(idx * PAGE_SIZE);
 	*page |= PAGE_TABLE_PRESENT;
 	*page |= (is_writeable) ? PAGE_TABLE_RW : 0;

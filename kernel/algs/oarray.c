@@ -26,7 +26,6 @@ oarray oarray_place(void *addr, uint32_t max_size, lthan_predicate less_than) {
 	returner.max_size = max_size;
 	returner.less_than = less_than;
 	return returner;
-
 }
 
 void oarray_destroy(oarray *array) {
