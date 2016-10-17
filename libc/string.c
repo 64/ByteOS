@@ -59,17 +59,16 @@ size_t strlen(const char* str) {
 // TODO: Finish these
 char *strcpy(char * restrict s1, const char * restrict s2) {
 	char *rv = s1;
-	while (*s2)
-		*s1++ = *s2++;
-	*s1 = '\0';
+	while ((*s1++ = *s2++))
+		;
 	return rv;
 }
 
 char *strncpy(char * restrict s1, const char * restrict s2, size_t n) {
 	char *rv = s1;
-	while (*s2 && n-- != 0)
-		*s1++ = *s2++;
-	while (n-- != 0)
+	while ((n > 0) && (*s1++ = *s2++))
+		n--;
+	while (n-- > 1)
 		*s1++ = '\0';
 	return rv;
 }
@@ -87,44 +86,85 @@ char *strncat(char * restrict s1, const char * restrict s2, size_t n) {
 	char *rv = s1;
 	while (*s1)
 		s1++;
-	strncpy(s1, s2, n);
+	while(n && (*s1++ = *s2++))
+		n--;
+	if (n == 0)
+		*s1 = '\0';
 	return rv;
 }
 
-char *strcmp(char * restrict s1, char * restrict s2) {
-	return NULL;
+int strcmp(const char * s1, const char * s2) {
+	while (*s1 && (*s1 == *s2))
+		s1++, s2++;
+	return *((unsigned char * restrict)s1) - *((unsigned char * restrict)s2);
 }
 
-char *strncmp(char * restrict s1, char * restrict s2, size_t n) {
-	return NULL;
+int strncmp(const char * s1, const char * s2, size_t n) {
+	while (*s1 && n && (*s1 == *s2)) {
+		s1++, s2++;
+		n--;
+	}
+	if (n == 0)
+		return 0;
+	return *((const unsigned char *)s1) - *((const unsigned char *)s2);
 }
 
 int strcoll(const char *s1, const char *s2) {
-	return 0;
+	return strcmp(s1, s2); // TODO: This needs to be dependend on locale
 }
 
 size_t strxfrm(char * restrict s1, const char * restrict s2, size_t n) {
-	return 0;
+	size_t len = strlen(s2);
+	if (len > n)
+		while (n-- && (*s1++ = *s2++))
+			;
+	return len;
 }
 
 void *memchr(const void *s, int c, size_t n) {
+	const unsigned char *p = s;
+	while (n--) {
+		if (*p == (unsigned char)c)
+			return (void*)p;
+		p++;
+	}
 	return NULL;
 }
 
 char *strchr(const char *s, int c) {
+	const char *p = s;
+	while (*p) {
+		if (*p == (char)c)
+			return (char *)p;
+		p++;
+	}
 	return NULL;
 }
 
 char *strrchr(const char *s, int c) {
+	size_t len = strlen(s);
+	const char *end = s + len; // Includes null byte
+	do {
+		if (*end == c)
+			return (char *)end;
+		end--;
+	} while (end != s);
 	return NULL;
 }
 
 size_t strcspn(const char *s1, const char *s2) {
-	return 0;
+	size_t len = 0;
+	while (*s1 && strchr(s2, *s1++) == NULL)
+		len++;
+	return len;
 }
 
 char *strpbrk(const char *s1, const char *s2) {
-	return NULL;
+	while (*s1 && strchr(s2, *s1) != NULL)
+		;
+	if (*s1 == 0)
+		return NULL;
+	return (char *)s1;
 }
 
 size_t strspn(const char *s1, const char *s2) {
