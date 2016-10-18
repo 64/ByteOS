@@ -160,25 +160,81 @@ size_t strcspn(const char *s1, const char *s2) {
 }
 
 char *strpbrk(const char *s1, const char *s2) {
-	while (*s1 && strchr(s2, *s1) != NULL)
-		;
-	if (*s1 == 0)
-		return NULL;
-	return (char *)s1;
+	const char *p1 = s1;
+	const char *p2 = s2;
+	while (*p1) {
+		p2 = s2;
+		while (*p2) {
+			if (*p2++ == *p1)
+				return (char *)p1;
+		}
+		p1++;
+	}
+	return NULL;
 }
 
 size_t strspn(const char *s1, const char *s2) {
-	return 0;
+	size_t len = 0;
+	while (*s1 && strchr(s2, *s1++) != NULL)
+		len++;
+	return len;
 }
 
 char *strstr(const char *s1, const char *s2) {
+	const char *p1 = s1;
+	const char *p2 = s2;
+	while (*s1) {
+		p2 = s2;
+		while (*p2 && (*p2 == *p1))
+			p1++, p2++;
+
+		if (*p2 == 0)
+			return (char *)s1;
+
+		s1++;
+		p1 = s1;
+	}
 	return NULL;
 }
 
 char *strtok(char * restrict s1, const char * restrict s2) {
-	return NULL;
+	static char *temp = NULL;
+	const char *p = s2;
+
+	if (s1 == NULL) {
+		if (temp == NULL)
+			return NULL;
+		s1 = temp;
+	} else
+		temp = s1;
+
+	while ( *p && *s1 ) {
+		if ( *s1 == *p ) {
+			s1++;
+			p = s2;
+			continue;
+		}
+		p++;
+	}
+
+	if (*s1 == 0)
+		return (temp = NULL);
+
+	temp = s1;
+	while (*temp) {
+		p = s2;
+		while (*p)
+			if (*temp == *p++) {
+				*temp++ = '\0';
+				return s1;
+			}
+		temp++;
+	}
+
+	temp = NULL;
+	return s1;
 }
 
 char *strerror(int errnum) {
-	return NULL;
+	return (char *)"Unknown Error (TODO)";
 }

@@ -153,5 +153,5 @@ void keyboard_install(void) {
 	while(((test = io_inportb(KBD_STATUS)) & 1) == 1)
 		io_inportb(KBD_DATA);
 	irq_install_handler(1, keyboard_handler);
-	keyboard_set_led(KBD_LED_CAPS | KBD_LED_SCROLL | KBD_LED_NUM);
+	keyboard_set_led(0);
 }

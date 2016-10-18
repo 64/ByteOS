@@ -21,10 +21,6 @@ void kernel_main(void) {
 	keyboard_install();
 	acpi_init();
 
-	char abcde[] = "abcde";
-	// FAILED
-	printf("%d\n", strpbrk(abcde, "x") == NULL);
-
 	// Ensure kernel never exits
 	while(1);
 }
