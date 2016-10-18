@@ -5,10 +5,11 @@
 #include <string.h>
 #include <klog.h>
 
-struct acpi_rsdt_header *rsdt;
-struct acpi_fadt *fadt;
-struct acpi_dsdt *dsdt;
-uint32_t rsdt_entries;
+struct acpi_rsdt_header *rsdt= NULL;
+struct acpi_fadt *fadt = NULL;
+struct acpi_dsdt *dsdt = NULL;
+struct acpi_info acpi_info;
+uint32_t rsdt_entries = 0;
 bool acpi_ready = 0;
 
 bool acpi_find_rsdt(void) {
@@ -59,8 +60,6 @@ void acpi_init(void) {
 	}
 
 	rsdt_entries = (rsdt->h.length - sizeof(rsdt->h)) / 4;
-	fadt = NULL;
-	dsdt = NULL;
 
 	if (!acpi_find_table("FACP", (struct acpi_table_header **)&fadt)) {
 		klog_warn("ACPI: FADT not found!\n");
@@ -69,17 +68,59 @@ void acpi_init(void) {
 
 	// Not even sure if this works
 	irq_install_handler(fadt->sci_interrupt, acpi_sci_interrupt_handler);
-
-	dsdt = (struct acpi_dsdt *)fadt->dsdt;
+	dsdt = fadt->dsdt;
+	memset(&acpi_info, 0, sizeof(acpi_info));
 
 	if (!acpi_check_header(&dsdt->header, "DSDT")) {
 		klog_warn("ACPI: DSDT not found!\n");
 		return;
 	}
 
-	klog_notice("ACPI successfully initialized\n");
+	if (!acpi_parse_dsdt(&acpi_info)) {
+		klog_warn("ACPI: Failed to parse DSDT.\n");
+		return;
+	}
 
+	klog_notice("ACPI successfully initialized\n");
 	acpi_ready = 1;
+}
+
+bool acpi_parse_dsdt(struct acpi_info *info) {
+	uint32_t dsdt_len = dsdt->header.length;
+	int8_t *s5_addr = (int8_t *)&dsdt->def_block;
+
+	klog_warn("%x\n", s5_addr);
+	klog_info("Length: %d\n", dsdt_len);
+	while (0 < dsdt_len) {
+		if (memcmp(s5_addr, "_S5_", 4) == 0)
+			break;
+		s5_addr++;
+		dsdt_len--;
+	}
+
+	if (dsdt_len == 0)
+		return 0;
+
+	if (!((s5_addr[-1] == 0x08 || ( s5_addr[-2] == 0x08 && s5_addr[-1] == '\\'))
+	 	&& s5_addr[4] == 0x12))
+		return 0;
+
+	s5_addr += 5;
+	s5_addr += ((*s5_addr & 0xC0) >> 6) + 2;
+
+	if (*s5_addr == 0x0A)
+		s5_addr++;
+
+	info->slp_typa = *(s5_addr) << 10;
+	s5_addr++;
+
+	if (*s5_addr == 0x0A)
+		s5_addr++;
+
+	info->slp_typb = *(s5_addr) << 10;
+	info->slp_en = 1 << 13;
+
+	return 1;
 }
 
 bool acpi_enable() {
@@ -113,7 +154,7 @@ bool acpi_enable() {
 		klog_fatal("ACPI enabling failed!\n");
 		return 0;
 	}
-	
+
 	return 1;
 }
 
@@ -129,4 +170,11 @@ void acpi_shutdown(void) {
 	}
 
 	printf("Shutting down...\n");
+
+	// Send shutdown command
+	io_outportw((uint32_t)fadt->pm1a_control_block, acpi_info.slp_typa | acpi_info.slp_en);
+	if (fadt->pm1b_control_block != 0)
+		io_outportw((uint32_t)fadt->pm1b_control_block, acpi_info.slp_typb | acpi_info.slp_en);
+
+	klog_fatal("Shutdown failed! Trying to resume normal execution...\n");
 }

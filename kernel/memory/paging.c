@@ -33,6 +33,8 @@ void paging_init() {
 	paging_get(0x7FE0040, 1, kernel_directory); // QEMU Lower APIC information page
 	paging_get(0x7FE18DC, 1, kernel_directory); // QEMU Higher APIC information page
 	paging_get(0x3FF0000, 1, kernel_directory); // VirtualBox APIC information page
+	paging_get(0x3FF1000, 1, kernel_directory); // VirtualBox APIC information page
+	paging_get(0x3FF2000, 1, kernel_directory); // VirtualBox APIC information page
 
 	i = 0;
 	while (i < placement_address + PAGE_SIZE) {
@@ -43,6 +45,8 @@ void paging_init() {
 	paging_alloc_frame(paging_get(0x7FE0040, 0, kernel_directory), 0, 0, 0x7FE0040);
 	paging_alloc_frame(paging_get(0x7FE18DC, 0, kernel_directory), 0, 0, 0x7FE18DC);
 	paging_alloc_frame(paging_get(0x3FF0000, 0, kernel_directory), 0, 0, 0x3FF0000);
+	paging_alloc_frame(paging_get(0x3FF1000, 0, kernel_directory), 0, 0, 0x3FF1000);
+	paging_alloc_frame(paging_get(0x3FF2000, 0, kernel_directory), 0, 0, 0x3FF2000);
 
 	for (i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i += PAGE_SIZE)
 		paging_alloc_frame(paging_get(i, 0, kernel_directory), 0, 0, 0);

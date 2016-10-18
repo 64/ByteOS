@@ -40,10 +40,15 @@ struct acpi_generic_address {
 	uint64_t address;
 } COMPILER_ATTR_PACKED;
 
+struct acpi_dsdt {
+	struct acpi_table_header header;
+	uint8_t *def_block;
+};
+
 struct acpi_fadt {
 	struct acpi_table_header header;
 	uint32_t firmware_ctrl;
-	uint32_t dsdt;
+	struct acpi_dsdt *dsdt;
 	uint8_t  reserved; // Unused
 	uint8_t  power_management_profile;
 	uint16_t sci_interrupt;
@@ -97,15 +102,17 @@ struct acpi_fadt {
 	struct acpi_generic_address x_gpe1_block;
 };
 
-struct acpi_dsdt {
-	struct acpi_table_header header;
-	uint8_t *def_block;
+struct acpi_info {
+	uint16_t slp_typa;
+	uint16_t slp_typb;
+	uint16_t slp_en;
 };
 
 bool acpi_find_rsdt(void);
 void acpi_sci_interrupt_handler(struct regs *r);
 bool acpi_find_table(char *signature, struct acpi_table_header **out);
 bool acpi_enable();
+bool acpi_parse_dsdt(struct acpi_info *info);
 bool acpi_check_header(struct acpi_table_header *header, char *signature);
 void acpi_init(void);
 void acpi_shutdown(void);

@@ -3,6 +3,7 @@
 #include <klog.h>
 #include <io.h>
 #include <drivers/pit.h>
+#include <drivers/acpi.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -48,6 +49,10 @@ static inline uint8_t keyboard_scancode_to_char(uint8_t scancode, key_modifiers 
 
 	if (mod.control) {
 		*force_print = 1;
+
+		if (val == 'c')
+			acpi_shutdown();
+
 		if (isalpha(val))
 			val = tolower(val) - 'a' + 1;
 		else {
