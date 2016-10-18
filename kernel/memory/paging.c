@@ -30,7 +30,8 @@ void paging_init() {
 		paging_get(i, 1, kernel_directory);
 
 	// TODO: This needs improving...
-	paging_get(0x7FE18DC, 1, kernel_directory); // QEMU APIC information page
+	paging_get(0x7FE0040, 1, kernel_directory); // QEMU Lower APIC information page
+	paging_get(0x7FE18DC, 1, kernel_directory); // QEMU Higher APIC information page
 	paging_get(0x3FF0000, 1, kernel_directory); // VirtualBox APIC information page
 
 	i = 0;
@@ -39,6 +40,7 @@ void paging_init() {
 		i += PAGE_SIZE;
 	}
 
+	paging_alloc_frame(paging_get(0x7FE0040, 0, kernel_directory), 0, 0, 0x7FE0040);
 	paging_alloc_frame(paging_get(0x7FE18DC, 0, kernel_directory), 0, 0, 0x7FE18DC);
 	paging_alloc_frame(paging_get(0x3FF0000, 0, kernel_directory), 0, 0, 0x3FF0000);
 

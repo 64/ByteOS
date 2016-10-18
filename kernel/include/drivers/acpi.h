@@ -38,7 +38,7 @@ struct acpi_generic_address {
 	uint8_t bit_offset;
 	uint8_t access_size;
 	uint64_t address;
-};
+} COMPILER_ATTR_PACKED;
 
 struct acpi_fadt {
 	struct acpi_table_header header;
@@ -79,27 +79,33 @@ struct acpi_fadt {
 	uint8_t  century;
 
 	// All of the below is unused in ACPI 1.0, and can be ignored
-	uint16_t BootArchitectureFlags;
-	uint8_t  Reserved2;
-	uint32_t Flags;
-	struct acpi_generic_address ResetReg;
-	uint8_t  ResetValue;
-	uint8_t  Reserved3[3];
-	uint64_t X_FirmwareControl;
-	uint64_t X_Dsdt;
-	struct acpi_generic_address X_PM1aEventBlock;
-	struct acpi_generic_address X_PM1bEventBlock;
-	struct acpi_generic_address X_PM1aControlBlock;
-	struct acpi_generic_address X_PM1bControlBlock;
-	struct acpi_generic_address X_PM2ControlBlock;
-	struct acpi_generic_address X_PMTimerBlock;
-	struct acpi_generic_address X_GPE0Block;
-	struct acpi_generic_address X_GPE1Block;
+	uint16_t boot_arch_flags;
+	uint8_t  reserved_2;
+	uint32_t flags;
+	struct acpi_generic_address reset_reg;
+	uint8_t  reset_value;
+	uint8_t  reserved_3[3];
+	uint64_t x_firmware_control;
+	uint64_t x_dsdt;
+	struct acpi_generic_address x_pm1a_event_block;
+	struct acpi_generic_address x_pm1b_event_block;
+	struct acpi_generic_address x_pm1a_control_block;
+	struct acpi_generic_address x_pm1b_control_block;
+	struct acpi_generic_address x_pm2_control_block;
+	struct acpi_generic_address x_pm_timer_block;
+	struct acpi_generic_address x_gpe0_block;
+	struct acpi_generic_address x_gpe1_block;
+};
+
+struct acpi_dsdt {
+	struct acpi_table_header header;
+	uint8_t *def_block;
 };
 
 bool acpi_find_rsdt(void);
 void acpi_sci_interrupt_handler(struct regs *r);
 bool acpi_find_table(char *signature, struct acpi_table_header **out);
+bool acpi_enable();
 bool acpi_check_header(struct acpi_table_header *header, char *signature);
 void acpi_init(void);
 void acpi_shutdown(void);
