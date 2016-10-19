@@ -2,14 +2,14 @@
 #include <memory/kheap.h>
 #include <stdlib.h>
 #include <string.h>
-#include <isr.h>
+#include <interrupt.h>
 #include <klog.h>
 
 uint32_t *frames;
 uint32_t n_frames;
 
-page_directory *kernel_directory = 0;
-page_directory *current_directory = 0;
+struct page_directory *kernel_directory = 0;
+struct page_directory *current_directory = 0;
 
 #define INDEX_FROM_BIT(a) (a / (8 * 4))
 #define OFFSET_FROM_BIT(a) (a % (8 * 4))
@@ -20,8 +20,8 @@ void paging_init() {
 	frames = (uint32_t*)kmalloc(INDEX_FROM_BIT(n_frames));
 	memset(frames, 0, INDEX_FROM_BIT(n_frames));
 
-	kernel_directory = (page_directory*)kmalloc_a(sizeof(page_directory));
-	memset(kernel_directory, 0, sizeof(page_directory));
+	kernel_directory = (struct page_directory*)kmalloc_a(sizeof(struct page_directory));
+	memset(kernel_directory, 0, sizeof(struct page_directory));
 	current_directory = kernel_directory;
 
 	uint32_t i = 0;
@@ -56,7 +56,7 @@ void paging_init() {
 	kheap = kheap_create(KHEAP_START, KHEAP_START + KHEAP_INITIAL_SIZE, 0xCFFFF000, 0, 0);
 }
 
-void paging_change_dir(page_directory *dir) {
+void paging_change_dir(struct page_directory *dir) {
 	current_directory = dir;
 	asm volatile (
 		"mov %0, %%cr3"
@@ -77,14 +77,14 @@ void paging_change_dir(page_directory *dir) {
 	);
 }
 
-uint32_t *paging_get(uintptr_t address, bool make, page_directory *dir) {
+uint32_t *paging_get(uintptr_t address, bool make, struct page_directory *dir) {
 	address /= PAGE_SIZE;
 	uint32_t table_index = address / 1024;
 	if (dir->tables[table_index])
 		return &dir->tables[table_index]->pages[address % 1024];
 	else if (make) {
 		uint32_t tmp;
-		dir->tables[table_index] = (page_table*)kmalloc_ap(sizeof(page_table), &tmp);
+		dir->tables[table_index] = (struct page_table*)kmalloc_ap(sizeof(struct page_table), &tmp);
 		memset(dir->tables[table_index], 0, PAGE_SIZE);
 		dir->tables_physical[table_index] = tmp | 0x7;
 		return &dir->tables[table_index]->pages[address % 1024];

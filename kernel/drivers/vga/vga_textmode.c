@@ -17,17 +17,17 @@ enum _vga_textmode_putchar_states {
 	_T_STATE_READING
 };
 
-typedef struct _ansi_sequence { char data[_ANSI_MAX_SEQUENCE_LENGTH + 1]; } _ansi_sequence;
-typedef struct _ansi_styles {
+struct _ansi_sequence { char data[_ANSI_MAX_SEQUENCE_LENGTH + 1]; };
+struct _ansi_styles {
 	bool bold;
 	bool italic;
 	bool underline;
 	bool inverse;
 	uint8_t color;
-} _ansi_styles; // TODO: Make this more efficient
+}; // TODO: Make this more efficient
 
-static _ansi_styles current_style;
-static _ansi_sequence sequence_buffer;
+static struct _ansi_styles current_style;
+static struct _ansi_sequence sequence_buffer;
 
 static const size_t VGA_WIDTH = 80;
 static const size_t VGA_HEIGHT = 25;
@@ -150,7 +150,7 @@ void _vga_textmode_set_inverse(bool value) {
 }
 
 #define _ANSI_SEQUENCE_OFFSET(entry) (isBeginning ? (seq.data[2 + entry]) : (seq.data[entry]))
-static inline void _vga_textmode_execute_ansi(_ansi_sequence seq, size_t size, bool isBeginning) {
+static inline void _vga_textmode_execute_ansi(struct _ansi_sequence seq, size_t size, bool isBeginning) {
 	if (isBeginning && size < 4) {
 		vga_textmode_writeb(seq.data, size);
 		return;

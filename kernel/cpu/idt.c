@@ -4,11 +4,11 @@
 #include <string.h>
 #include <sys/cdefs.h>
 #include <descriptors.h>
-#include <isr.h>
+#include <interrupt.h>
 
 static struct {
-	idt_entry entries[256];
-	idt_pointer pointer;
+	struct idt_entry entries[256];
+	struct idt_pointer pointer;
 } idt COMPILER_ATTR_USED;
 
 void idt_set_entry(uint8_t index, idt_gate base, uint16_t selector, uint8_t flags) {
@@ -25,7 +25,7 @@ void idt_set_entry(uint8_t index, idt_gate base, uint16_t selector, uint8_t flag
 	}
 
 void idt_install(void) {
-	idt_pointer *idt_p = &idt.pointer;
+	struct idt_pointer *idt_p = &idt.pointer;
 	idt_p->size = (uint16_t)(sizeof(idt.entries) - 1);
 	idt_p->base = (uintptr_t)(idt.entries);
 	memset((void*)idt.entries, 0, sizeof(idt.entries));

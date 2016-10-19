@@ -57,6 +57,11 @@ void isr_fault_handler(struct regs *r) {
 		isr_handlers[r->int_no](r);
 	else {
 		klog_fatal("Unhandled Exception: %s\n", exception_messages[r->int_no]);
+		klog_fatal_nohdr("\tinterrupt no. %d\n", r->int_no);
+		klog_fatal_nohdr("\tgs: %x, fs: %x, es: %x, ds: %x\n", r->gs, r->fs, r->es, r->ds);
+		klog_fatal_nohdr("\tedi: %x, esi: %x, ebp: %x, esp: %x\n", r->edi, r->esi, r->ebp, r->esp);
+		klog_fatal_nohdr("\tebx: %x, edx: %x, ecx: %x, eax: %x", r->ebx, r->edx, r->ecx, r->eax);
+		klog_fatal_nohdr("\teip: %x, eflags: %x", r->eip, r->eflags);
 		abort();
 	}
 }

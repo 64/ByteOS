@@ -1,5 +1,5 @@
 #include <drivers/ps2/kbd.h>
-#include <isr.h>
+#include <interrupt.h>
 #include <klog.h>
 #include <io.h>
 #include <drivers/pit.h>
@@ -24,7 +24,7 @@ extern const uint8_t keyboard_us_offsets[];
 extern const uint8_t keyboard_us_uppercase[];
 extern const uint8_t keyboard_us_lowercase[];
 
-kbd_state key_states;
+struct kbd_state key_states;
 
 static inline void keyboard_wait(void) {
 	while (io_inportb(KBD_STATUS) & 2)
@@ -35,7 +35,7 @@ static inline uint8_t keyboard_scancode_to_offset(uint8_t scancode) {
 	return keyboard_us_offsets[((scancode & KBD_RELEASE_MASK) ? scancode - KBD_RELEASE_MASK : scancode)];
 }
 
-static inline uint8_t keyboard_scancode_to_char(uint8_t scancode, key_modifiers mod, bool *force_print) {
+static inline uint8_t keyboard_scancode_to_char(uint8_t scancode, struct key_modifiers mod, bool *force_print) {
 	uint8_t val = 0;
 	if (mod.shift)
 		val = keyboard_us_uppercase[scancode];
@@ -95,8 +95,8 @@ bool keyboard_test_persist(uint8_t mask) {
 	return (key_states.persist && mask);
 }
 
-key_modifiers keyboard_get_key_modifiers() {
-	key_modifiers mods = {
+struct key_modifiers keyboard_get_key_modifiers() {
+	struct key_modifiers mods = {
 		keyboard_test_key(KBD_K_LSHIFT) || keyboard_test_key(KBD_K_RSHIFT),
 		keyboard_test_key(KBD_K_LCTRL) || keyboard_test_key(KBD_K_RCTRL),
 		keyboard_test_persist(KBD_CAPSLOCK_MASK),
@@ -139,7 +139,7 @@ void keyboard_handler(struct regs *r) {
 	if (scancode & KBD_RELEASE_MASK) {
 		keyboard_clear_key(offset);
 	} else {
-		key_modifiers mods = keyboard_get_key_modifiers();
+		struct key_modifiers mods = keyboard_get_key_modifiers();
 		keyboard_set_key(offset);
 		if (offset == KBD_K_CAPS)
 			keyboard_capslock_toggle();
@@ -152,11 +152,11 @@ void keyboard_handler(struct regs *r) {
 }
 
 void keyboard_install(void) {
-	klog_notice("Initializing PS/2 keyboard driver...\n");
 	memset(&key_states, 0, sizeof(key_states));
 	uint8_t test = 0;
 	while(((test = io_inportb(KBD_STATUS)) & 1) == 1)
 		io_inportb(KBD_DATA);
 	irq_install_handler(1, keyboard_handler);
 	keyboard_set_led(0);
+	klog_notice("PS/2 keyboard driver successfully initialized!\n");
 }

@@ -13,31 +13,31 @@
 
 extern uintptr_t placement_address;
 
-typedef struct {
+struct kheap_header {
 	uint32_t magic;
 	bool is_hole;
 	uint32_t size;
-} kheap_header;
+};
 
-typedef struct {
+struct kheap_footer {
 	uint32_t magic;
-	kheap_header *header;
-} kheap_footer;
+	struct kheap_header *header;
+};
 
-typedef struct {
-	oarray index;
+struct kheap_heap {
+	struct oarray index;
 	uintptr_t start_addr;
 	uintptr_t end_addr;
 	uintptr_t max_addr;
 	bool supervisor;
 	bool readonly;
-} kheap_heap;
+};
 
-extern kheap_heap *kheap;
+extern struct kheap_heap *kheap;
 
-kheap_heap *kheap_create(uintptr_t start, uintptr_t end, uintptr_t max, bool supervisor, bool readonly);
-void *kheap_alloc(uint32_t size, bool page_align, kheap_heap *heap);
-void kheap_free(void *p, kheap_heap *heap);
+struct kheap_heap *kheap_create(uintptr_t start, uintptr_t end, uintptr_t max, bool supervisor, bool readonly);
+void *kheap_alloc(uint32_t size, bool page_align, struct kheap_heap *heap);
+void kheap_free(void *p, struct kheap_heap *heap);
 
 uintptr_t kmalloc_internal(uint32_t size, bool align, uint32_t *phys); // Internal use only.
 uintptr_t kmalloc_a(uint32_t size);  // Page aligned.

@@ -1,6 +1,6 @@
 #include <drivers/acpi.h>
 #include <drivers/pit.h>
-#include <isr.h>
+#include <interrupt.h>
 #include <io.h>
 #include <string.h>
 #include <klog.h>
@@ -81,7 +81,7 @@ void acpi_init(void) {
 		return;
 	}
 
-	klog_notice("ACPI successfully initialized\n");
+	klog_notice("ACPI successfully initialized!\n");
 	acpi_ready = 1;
 }
 
@@ -89,8 +89,6 @@ bool acpi_parse_dsdt(struct acpi_info *info) {
 	uint32_t dsdt_len = dsdt->header.length;
 	int8_t *s5_addr = (int8_t *)&dsdt->def_block;
 
-	klog_warn("%x\n", s5_addr);
-	klog_info("Length: %d\n", dsdt_len);
 	while (0 < dsdt_len) {
 		if (memcmp(s5_addr, "_S5_", 4) == 0)
 			break;

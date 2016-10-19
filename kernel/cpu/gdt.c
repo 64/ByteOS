@@ -5,8 +5,8 @@
 #include <descriptors.h>
 
 static struct {
-	gdt_entry entries[6];
-	gdt_pointer pointer;
+	struct gdt_entry entries[6];
+	struct gdt_pointer pointer;
 } gdt COMPILER_ATTR_USED;
 
 void gdt_set_entry(uint8_t index, uint64_t base, uint64_t limit, uint8_t access, uint8_t granularity) {
@@ -20,7 +20,7 @@ void gdt_set_entry(uint8_t index, uint64_t base, uint64_t limit, uint8_t access,
 }
 
 void gdt_install(void) {
-	gdt_pointer *gdt_p = &gdt.pointer;
+	struct gdt_pointer *gdt_p = &gdt.pointer;
 	gdt_p->size = sizeof(gdt.entries) - 1;
 	gdt_p->base = (uintptr_t)&(gdt.entries[0]);
 

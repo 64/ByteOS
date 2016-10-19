@@ -1,5 +1,5 @@
 #include <drivers/pit.h>
-#include <isr.h>
+#include <interrupt.h>
 #include <io.h>
 #include <klog.h>
 #include <stdlib.h>
