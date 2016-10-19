@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #if defined(__is_libk)
 #include <tty.h>
@@ -13,8 +14,8 @@ static bool print(const char* data, size_t length) {
 	const unsigned char* bytes = (const unsigned char*) data;
 	for (size_t i = 0; i < length; i++)
 		if (putchar(bytes[i]) == EOF)
-			return false;
-	return true;
+			return 0;
+	return 1;
 }
 
 int printf(const char* restrict format, ...) {
@@ -33,7 +34,7 @@ int printf(const char* restrict format, ...) {
 			while (format[amount] && format[amount] != '%')
 				amount++;
 			if (maxrem < amount) {
-				// TODO: Set errno to EOVERFLOW.
+				errno = EOVERFLOW;
 				return -1;
 			}
 			if (!print(format, amount))
@@ -49,7 +50,7 @@ int printf(const char* restrict format, ...) {
 			format++;
 			char c = (char) va_arg(parameters, int /* char promotes to int */);
 			if (!maxrem) {
-				// TODO: Set errno to EOVERFLOW.
+				errno = EOVERFLOW;
 				return -1;
 			}
 			if (!print(&c, sizeof(c)))
@@ -60,7 +61,7 @@ int printf(const char* restrict format, ...) {
 			const char* str = va_arg(parameters, const char*);
 			size_t len = strlen(str);
 			if (maxrem < len) {
-				// TODO: Set errno to EOVERFLOW.
+				errno = EOVERFLOW;
 				return -1;
 			}
 			if (!print(str, len))
@@ -73,7 +74,7 @@ int printf(const char* restrict format, ...) {
 			const char* str = itoa(d, buffer, 10);
 			size_t len = strlen(str);
 			if (maxrem < len) {
-				// TODO: Set errno to EOVERFLOW.
+				errno = EOVERFLOW;
 				return -1;
 			}
 			if (!print(str, len))
@@ -87,7 +88,7 @@ int printf(const char* restrict format, ...) {
 			const char* str = itoa(d, buffer, 16);
 			size_t len = strlen(str);
 			if (maxrem < len) {
-				// TODO: Set errno to EOVERFLOW.
+				errno = EOVERFLOW;
 				return -1;
 			}
 			if (!print(str, len))
@@ -98,7 +99,7 @@ int printf(const char* restrict format, ...) {
 			format = format_begun_at;
 			size_t len = strlen(format);
 			if (maxrem < len) {
-				// TODO: Set errno to EOVERFLOW.
+				errno = EOVERFLOW;
 				return -1;
 			}
 			if (!print(format, len))

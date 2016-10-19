@@ -24,6 +24,7 @@ stdlib.o \
 stdio.o \
 string.o \
 ctype.o \
+errno.o \
 
 LIBK_OBJS:=$(OBJS:.o=.libk.o)
 
