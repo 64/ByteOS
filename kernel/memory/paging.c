@@ -14,7 +14,8 @@ struct page_directory *current_directory = 0;
 #define INDEX_FROM_BIT(a) (a / (8 * 4))
 #define OFFSET_FROM_BIT(a) (a % (8 * 4))
 
-void paging_init() {
+void paging_init(multiboot_memory_map_t *mmap, uintptr_t mmap_end) {
+	// TODO: This whole unit needs a big rewrite...
 	uintptr_t mem_end_page = 0x1000000;
 	n_frames = mem_end_page / PAGE_SIZE;
 	frames = (uint32_t*)kmalloc(INDEX_FROM_BIT(n_frames));
@@ -29,12 +30,18 @@ void paging_init() {
 	for (i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i += PAGE_SIZE)
 		paging_get(i, 1, kernel_directory);
 
-	// TODO: This needs improving...
-	paging_get(0x7FE0040, 1, kernel_directory); // QEMU Lower APIC information page
-	paging_get(0x7FE18DC, 1, kernel_directory); // QEMU Higher APIC information page
-	paging_get(0x3FF0000, 1, kernel_directory); // VirtualBox APIC information page
-	paging_get(0x3FF1000, 1, kernel_directory); // VirtualBox APIC information page
-	paging_get(0x3FF2000, 1, kernel_directory); // VirtualBox APIC information page
+	multiboot_memory_map_t *saved = mmap;
+	while((uintptr_t)mmap < mmap_end) {
+		if (mmap->type != 1) {
+			// Memory is reserved, so we should allocate pages for it.
+			uintptr_t iter = mmap->addr_low; // Always 32-bit pointers
+			while (iter <= mmap->addr_low + mmap->len_low) {
+				paging_get(iter, 1, kernel_directory);
+				iter += PAGE_SIZE;
+			}
+		}
+		mmap = (multiboot_memory_map_t*)((uint32_t)mmap + mmap->size + sizeof(mmap->size));
+	}
 
 	i = 0;
 	while (i < placement_address + PAGE_SIZE) {
@@ -42,11 +49,18 @@ void paging_init() {
 		i += PAGE_SIZE;
 	}
 
-	paging_alloc_frame(paging_get(0x7FE0040, 0, kernel_directory), 0, 0, 0x7FE0040);
-	paging_alloc_frame(paging_get(0x7FE18DC, 0, kernel_directory), 0, 0, 0x7FE18DC);
-	paging_alloc_frame(paging_get(0x3FF0000, 0, kernel_directory), 0, 0, 0x3FF0000);
-	paging_alloc_frame(paging_get(0x3FF1000, 0, kernel_directory), 0, 0, 0x3FF1000);
-	paging_alloc_frame(paging_get(0x3FF2000, 0, kernel_directory), 0, 0, 0x3FF2000);
+	mmap = saved;
+	while((uintptr_t)mmap < mmap_end) {
+		if (mmap->type != 1) {
+			// Memory is reserved, so we should allocate pages for it.
+			uintptr_t iter = mmap->addr_low; // Always 32-bit pointers
+			while (iter <= mmap->addr_low + mmap->len_low) {
+				paging_alloc_frame(paging_get(iter, 0, kernel_directory), 0, 0, iter);
+				iter += PAGE_SIZE;
+			}
+		}
+		mmap = (multiboot_memory_map_t*)((uint32_t)mmap + mmap->size + sizeof(mmap->size));
+	}
 
 	for (i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i += PAGE_SIZE)
 		paging_alloc_frame(paging_get(i, 0, kernel_directory), 0, 0, 0);

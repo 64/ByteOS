@@ -54,13 +54,13 @@ void mem_init(uint32_t multiboot_magic, const void *multiboot_header) {
 	klog_detail("Memory map address: %x\n", header->mmap_addr);
 	klog_detail("Memory map length: %d\n", header->mmap_length);
 
-	multiboot_memory_map_t *mmap = (multiboot_memory_map_t*)header->mmap_addr;
-	for (mmap = (multiboot_memory_map_t *)header->mmap_addr; (uint32_t)mmap < header->mmap_addr + header->mmap_length;
-		mmap = (multiboot_memory_map_t *)((uint32_t) mmap + mmap->size + sizeof (mmap->size))) {
+	multiboot_memory_map_t *mmap = (multiboot_memory_map_t *)header->mmap_addr;
+	while((uint32_t)mmap < header->mmap_addr + header->mmap_length) {
 		klog_detail("Memory map entry: \n");
-		klog_detail_nohdr("\tsize = 0x%x, base_addr = 0x%x%x, ", (uint32_t)mmap->size, mmap->addr >> 32, mmap->addr & 0xFFFFFFFF);
-		klog_detail_nohdr("length = 0x%x%x, type = 0x%x\n", mmap->len >> 32, mmap->len & 0xFFFFFFFF, (uint32_t)mmap->type);
+		klog_detail_nohdr("\tsize = 0x%x, base_addr = 0x%x%x, ", (uint32_t)mmap->size, mmap->addr_high, mmap->addr_low);
+		klog_detail_nohdr("length = 0x%x%x, type = 0x%x\n", mmap->len_high, mmap->len_low, (uint32_t)mmap->type);
+		mmap = (multiboot_memory_map_t*)((uint32_t)mmap + mmap->size + sizeof(mmap->size));
 	}
 
-	paging_init();
+	paging_init((multiboot_memory_map_t *)header->mmap_addr, (uintptr_t)(header->mmap_addr + header->mmap_length));
 }

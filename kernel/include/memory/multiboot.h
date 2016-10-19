@@ -199,8 +199,10 @@ typedef struct multiboot_info multiboot_info_t;
 struct multiboot_mmap_entry
 {
     multiboot_uint32_t size;
-    multiboot_uint64_t addr;
-    multiboot_uint64_t len;
+    multiboot_uint32_t addr_low;  // This was giving me issues as uint64_t's
+    multiboot_uint32_t addr_high; // Please leave this as uint32_t from now on
+    multiboot_uint32_t len_low;
+    multiboot_uint32_t len_high;
     #define MULTIBOOT_MEMORY_AVAILABLE              1
     #define MULTIBOOT_MEMORY_RESERVED               2
     multiboot_uint32_t type;

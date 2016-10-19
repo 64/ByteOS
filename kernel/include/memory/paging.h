@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <memory/kheap.h>
 #include <sys/cdefs.h>
+#include <memory/multiboot.h>
 
 #define PAGE_SIZE 0x1000
 
@@ -39,7 +40,7 @@ struct page_directory {
 extern struct page_directory *kernel_directory;
 extern struct page_directory *current_directory;
 
-void paging_init();
+void paging_init(multiboot_memory_map_t *mmap, uintptr_t mmap_end);
 void paging_change_dir(struct page_directory *);
 uint32_t *paging_get(uintptr_t, bool, struct page_directory *);
 void paging_fault(struct regs *r);
