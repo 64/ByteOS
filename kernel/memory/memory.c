@@ -1,5 +1,5 @@
 #include <memory/memory.h>
-#include <multiboot.h>
+#include <memory/multiboot.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
@@ -50,6 +50,17 @@ void mem_init(uint32_t multiboot_magic, const void *multiboot_header) {
 	mem_info.lower = header->mem_lower;
 	mem_info.upper = header->mem_upper;
 	mem_info.bootloader_name = (int8_t *)header->boot_loader_name;
+
+	klog_detail("Memory map address: %x\n", header->mmap_addr);
+	klog_detail("Memory map length: %d\n", header->mmap_length);
+
+	multiboot_memory_map_t *mmap = (multiboot_memory_map_t*)header->mmap_addr;
+	for (mmap = (multiboot_memory_map_t *)header->mmap_addr; (uint32_t)mmap < header->mmap_addr + header->mmap_length;
+		mmap = (multiboot_memory_map_t *)((uint32_t) mmap + mmap->size + sizeof (mmap->size))) {
+		klog_detail("Memory map entry: \n");
+		klog_detail_nohdr("\tsize = 0x%x, base_addr = 0x%x%x, ", (uint32_t)mmap->size, mmap->addr >> 32, mmap->addr & 0xFFFFFFFF);
+		klog_detail_nohdr("length = 0x%x%x, type = 0x%x\n", mmap->len >> 32, mmap->len & 0xFFFFFFFF, (uint32_t)mmap->type);
+	}
 
 	paging_init();
 }
