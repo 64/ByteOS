@@ -21,7 +21,7 @@ struct kbd_state {
 	uint8_t persist;
 };
 
-void keyboard_install(void);
+void keyboard_init(void);
 void keyboard_set_key(size_t index);
 void keyboard_clear_key(size_t index);
 bool keyboard_test_key(size_t index);

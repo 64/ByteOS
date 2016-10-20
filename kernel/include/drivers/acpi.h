@@ -106,6 +106,7 @@ struct acpi_info {
 	uint16_t slp_typa;
 	uint16_t slp_typb;
 	uint16_t slp_en;
+	uint8_t power_management_profile;
 };
 
 bool acpi_find_rsdt(void);

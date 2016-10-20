@@ -22,7 +22,7 @@ void pit_set_timer_phase(int16_t hz) {
 	io_outportb(PIT_CHANNEL0, divisor >> 8);     /* Set high byte of divisor */
 }
 
-void pit_install(void) {
+void pit_init(void) {
 	pit_set_timer_phase(PIT_CONSTANT);
 	irq_install_handler(0, pit_handler);
 }

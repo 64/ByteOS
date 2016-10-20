@@ -151,7 +151,7 @@ void keyboard_handler(struct regs *r) {
 	}
 }
 
-void keyboard_install(void) {
+void keyboard_init(void) {
 	memset(&key_states, 0, sizeof(key_states));
 	uint8_t test = 0;
 	while(((test = io_inportb(KBD_STATUS)) & 1) == 1)

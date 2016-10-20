@@ -51,16 +51,6 @@ void mem_init(uint32_t multiboot_magic, const void *multiboot_header) {
 	mem_info.upper = header->mem_upper;
 	mem_info.bootloader_name = (int8_t *)header->boot_loader_name;
 
-	klog_detail("Memory map address: %x\n", header->mmap_addr);
-	klog_detail("Memory map length: %d\n", header->mmap_length);
-
-	multiboot_memory_map_t *mmap = (multiboot_memory_map_t *)header->mmap_addr;
-	while((uint32_t)mmap < header->mmap_addr + header->mmap_length) {
-		klog_detail("Memory map entry: \n");
-		klog_detail_nohdr("\tsize = 0x%x, base_addr = 0x%x%x, ", (uint32_t)mmap->size, mmap->addr_high, mmap->addr_low);
-		klog_detail_nohdr("length = 0x%x%x, type = 0x%x\n", mmap->len_high, mmap->len_low, (uint32_t)mmap->type);
-		mmap = (multiboot_memory_map_t*)((uint32_t)mmap + mmap->size + sizeof(mmap->size));
-	}
-
+	// Pass multiboot information so it can allocate pages for reserved areas of memory
 	paging_init((multiboot_memory_map_t *)header->mmap_addr, (uintptr_t)(header->mmap_addr + header->mmap_length));
 }

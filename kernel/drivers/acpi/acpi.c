@@ -49,6 +49,7 @@ bool acpi_find_table(char *signature, struct acpi_table_header **out) {
 }
 
 void acpi_init(void) {
+	memset(&acpi_info, 0, sizeof(struct acpi_info));
 	if (!acpi_find_rsdt()) {
 		klog_warn("ACPI: RSDP not found!\n");
 		return;
@@ -66,10 +67,10 @@ void acpi_init(void) {
 		return;
 	}
 
-	// Not even sure if this works
+	// Not even sure if this works or what it may do
 	irq_install_handler(fadt->sci_interrupt, acpi_sci_interrupt_handler);
 	dsdt = fadt->dsdt;
-	memset(&acpi_info, 0, sizeof(acpi_info));
+	acpi_info.power_management_profile = fadt->power_management_profile;
 
 	if (!acpi_check_header(&dsdt->header, "DSDT")) {
 		klog_warn("ACPI: DSDT not found!\n");

@@ -37,6 +37,7 @@ drivers/vga/vga_textmode.o \
 drivers/pit/pit.o \
 drivers/ps2/kbd.o \
 drivers/acpi/acpi.o \
+drivers/cmos/cmos.o \
 algs/oarray.o \
 
 OBJS=\
