@@ -52,5 +52,5 @@ void mem_init(uint32_t multiboot_magic, const void *multiboot_header) {
 	mem_info.bootloader_name = (int8_t *)header->boot_loader_name;
 
 	// Pass multiboot information so it can allocate pages for reserved areas of memory
-	paging_init((multiboot_memory_map_t *)header->mmap_addr, (uintptr_t)(header->mmap_addr + header->mmap_length));
+	paging_init(header, (uintptr_t)(header->mmap_addr + header->mmap_length));
 }

@@ -12,3 +12,5 @@ struct mem_info {
 	uintptr_t upper;
 	int8_t *bootloader_name;
 };
+
+uintptr_t virt_to_phys(void *);
