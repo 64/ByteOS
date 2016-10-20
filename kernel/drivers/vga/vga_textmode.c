@@ -124,6 +124,14 @@ static inline void _vga_textmode_display_char(char c) {
 			if (vga_textmode_column != 0) vga_textmode_column--;
 			vga_textmode_setcursor(vga_textmode_column, vga_textmode_row);
 			break;
+		case '\r':
+			vga_textmode_setcursor(vga_textmode_column = 0, vga_textmode_row);
+			break;
+		// TODO: Not sure what to do with these
+		case '\f':
+			break;
+		case '\v':
+			break;
 		default:
 			vga_textmode_putentryat(c, current_style.color, vga_textmode_column, vga_textmode_row);
 			vga_textmode_addcol();

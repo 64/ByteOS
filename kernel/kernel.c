@@ -16,7 +16,7 @@ void kernel_early(uint32_t mboot_magic, const void *mboot_header) {
 void kernel_main(void) {
 	klog_info("Hello, Kernel World!\n");
 
-	// Install main IRQ handlers
+	// Initialise subsystems
 	pit_install();
 	acpi_init();
 	keyboard_install();
