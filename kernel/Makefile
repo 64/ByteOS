@@ -21,6 +21,7 @@ LIBS:=$(LIBS)
 
 KERNEL_OBJS=\
 boot.o \
+kernel.o \
 cpu/gdt_load.o \
 cpu/gdt.o \
 cpu/idt.o \
@@ -28,10 +29,9 @@ cpu/idt_load.o \
 cpu/isr.o \
 cpu/isrs.o \
 cpu/irq.o \
-stack_smash.o \
-kernel.o \
 memory/memory.o \
 memory/paging.o \
+memory/stack_smash.o \
 memory/kheap.o \
 drivers/vga/vga_textmode.o \
 drivers/pit/pit.o \

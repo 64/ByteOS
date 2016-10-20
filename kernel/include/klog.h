@@ -8,9 +8,10 @@ extern void abort(void);
 #define KLOG_LEVEL_FATAL 1
 #define KLOG_LEVEL_ERROR 2
 #define KLOG_LEVEL_WARN 3
-#define KLOG_LEVEL_INFO 4
-#define KLOG_LEVEL_NOTICE 5
-#define KLOG_LEVEL_DETAIL 6
+#define KLOG_LEVEL_SERIAL 4
+#define KLOG_LEVEL_INFO 5
+#define KLOG_LEVEL_NOTICE 6
+#define KLOG_LEVEL_DETAIL 7
 
 #define ANSI_SEQ_BEGIN "\x1B["
 #define KLOG_FATAL_HEADER "[" ANSI_SEQ_BEGIN "1;31mFATAL" ANSI_SEQ_BEGIN "0m]"
@@ -48,6 +49,8 @@ extern void abort(void);
 	#define klog_warn(fmt, ...) do { ((void)0); } while(0)
 	#define klog_warn_nohdr(fmt, ...) do { ((void)0); } while(0)
 #endif
+
+void klog_serial(uint8_t *bytes);
 
 #if KLOG_LEVEL >= KLOG_LEVEL_INFO
 	#define klog_info(fmt, ...) printf(KLOG_INFO_HEADER " " fmt, ##__VA_ARGS__)
