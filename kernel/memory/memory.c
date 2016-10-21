@@ -57,7 +57,6 @@ void mem_init(uint32_t multiboot_magic, const void *multiboot_header) {
 		mmap = (multiboot_memory_map_t*)((uint32_t)mmap + mmap->size + sizeof(mmap->size));
 	}
 
-
 	// Pass multiboot information so it can allocate pages for reserved areas of memory
 	paging_init(header, (uintptr_t)(header->mmap_addr + header->mmap_length), mem_info.upper);
 }

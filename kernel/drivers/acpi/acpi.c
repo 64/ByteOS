@@ -2,10 +2,11 @@
 #include <drivers/pit.h>
 #include <interrupt.h>
 #include <io.h>
+#include <memory/memory.h>
 #include <string.h>
 #include <klog.h>
 
-struct acpi_rsdt_header *rsdt= NULL;
+struct acpi_rsdt_header *rsdt = NULL;
 struct acpi_fadt *fadt = NULL;
 struct acpi_dsdt *dsdt = NULL;
 struct acpi_info acpi_info;
@@ -61,7 +62,6 @@ void acpi_init(void) {
 	}
 
 	rsdt_entries = (rsdt->h.length - sizeof(rsdt->h)) / 4;
-
 	if (!acpi_find_table("FACP", (struct acpi_table_header **)&fadt)) {
 		klog_warn("ACPI: FADT not found!\n");
 		return;
@@ -88,7 +88,7 @@ void acpi_init(void) {
 
 bool acpi_parse_dsdt(struct acpi_info *info) {
 	uint32_t dsdt_len = dsdt->header.length;
-	int8_t *s5_addr = (int8_t *)&dsdt->def_block;
+	int8_t *s5_addr = (int8_t*)&dsdt->def_block;
 
 	while (0 < dsdt_len) {
 		if (memcmp(s5_addr, "_S5_", 4) == 0)
@@ -158,8 +158,10 @@ bool acpi_enable() {
 }
 
 void acpi_sci_interrupt_handler(struct regs *r) {
-	// TODO: Finish this
 	(void)r;
+	// TODO: Finish this
+	klog_notice("Power off button press detected.\n");
+	acpi_shutdown();
 }
 
 void acpi_shutdown(void) {

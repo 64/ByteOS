@@ -20,7 +20,7 @@ struct oarray oarray_create(uint32_t max_size, lthan_predicate less_than) {
 
 struct oarray oarray_place(void *addr, uint32_t max_size, lthan_predicate less_than) {
 	struct oarray returner;
-	returner.array = (void*)addr;
+	returner.array = addr;
 	memset(returner.array, 0, max_size * sizeof(void *));
 	returner.size = 0;
 	returner.max_size = max_size;

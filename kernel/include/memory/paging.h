@@ -14,7 +14,7 @@
 #define PAGE_TABLE_RW (1 << 1)
 #define PAGE_TABLE_USER (1 << 2)
 #define PAGE_TABLE_WRITETHROUGH (1 << 3)
-#define PAGE_TABLE_FRAME(x) ((x) * PAGE_SIZE)
+#define PAGE_TABLE_FRAME(x) (((x) << 12) & 0xFFFFF000)
 
 #define PAGE_DIR_PRESENT (1 << 0)
 #define PAGE_DIR_RW (1 << 1)
@@ -44,7 +44,8 @@ void paging_init(multiboot_info_t *, uintptr_t, size_t);
 void paging_change_dir(struct page_directory *);
 uint32_t *paging_get(uintptr_t, bool, struct page_directory *);
 void paging_fault(struct regs *);
-void paging_alloc_frame(uint32_t *, bool, bool, uintptr_t);
+void paging_alloc_frame(uint32_t *, bool is_writeable, bool is_kernel);
+void paging_map_frame(uint32_t *, bool is_writeable, bool is_kernel, uintptr_t);
 void paging_free_frame(uintptr_t);
-void paging_identity_map(uintptr_t address, size_t length, bool is_writeable, bool is_kernel);
-void paging_generate_tables(uintptr_t address, size_t count, struct page_directory *dir);
+void paging_identity_map(uintptr_t, size_t length, bool is_writeable, bool is_kernel, bool gen_tables);
+void paging_generate_tables(uintptr_t, size_t length, struct page_directory *);
