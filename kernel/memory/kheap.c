@@ -49,7 +49,7 @@ static void kheap_expand(uint32_t new_size, struct kheap_heap *heap) {
 	uint32_t i = old_size;
 	while (i < new_size) {
 		paging_alloc_frame(
-			paging_get(heap->start_addr + i, 1, kernel_directory),
+			heap->start_addr + i,
 			(heap->supervisor) ? 1 : 0,
 			(heap->readonly) ? 0 : 1
 		);

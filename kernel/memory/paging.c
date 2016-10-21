@@ -51,7 +51,7 @@ void paging_init(multiboot_info_t *mboot_hdr, uintptr_t mmap_end, size_t availab
 	memset(kernel_directory, 0, sizeof(struct page_directory));
 	current_directory = kernel_directory;
 
-	paging_identity_map(0, placement_address + KHEAP_INITIAL_SIZE, 0, 0, 1);
+	paging_identity_map(0, placement_address + KHEAP_INITIAL_SIZE, 0, 0);
 	void *kheap_start = reserve_memory(KHEAP_START, KHEAP_INITIAL_SIZE);
 
 	kheap = kheap_create((uintptr_t)kheap_start, (uintptr_t)kheap_start + KHEAP_INITIAL_SIZE, (uintptr_t)kheap_start + KHEAP_MAX, 0, 0);
@@ -85,6 +85,7 @@ void paging_generate_tables(uintptr_t address, uintptr_t end_addr, struct page_d
 	}
 }
 
+#if 0
 void paging_alloc_frame(uint32_t *page, bool is_kernel, bool is_writeable) {
 	if (*page & PAGE_TABLE_PRESENT || *page & PAGE_TABLE_FRAME(0xFFFFF)) {
 		*page |= PAGE_TABLE_PRESENT;
@@ -108,6 +109,7 @@ void paging_map_frame(uint32_t *page, bool is_writeable, bool is_kernel, uintptr
 	*page |= PAGE_TABLE_FRAME(address / PAGE_SIZE);
 	paging_set_frame(address);
 }
+#endif
 
 void *reserve_memory(uintptr_t physical, size_t length) {
 	if ((physical + length) < physical) {
@@ -143,13 +145,31 @@ void *reserve_memory(uintptr_t physical, size_t length) {
 }
 
 // Declared in memory.h
-void paging_identity_map(uintptr_t address, size_t length, bool is_writeable, bool is_kernel, bool gen_tables) {
+void paging_identity_map(uintptr_t address, size_t length, bool is_writeable, bool is_kernel) {
 	uintptr_t iter = 0;
 	while (iter < length) {
-		uint32_t *page_entry = paging_get(iter + address, gen_tables, kernel_directory);
-		paging_map_frame(page_entry, is_writeable, is_kernel, iter + address);
+		paging_idmap_frame(iter + address, is_writeable, is_kernel);
 		iter += PAGE_SIZE;
 	}
+}
+
+void paging_idmap_frame(uintptr_t address, bool is_writeable, bool is_kernel) {
+	uint32_t *page_entry = paging_get(address, 1, kernel_directory);
+	paging_set_frame(address);
+	*page_entry |= PAGE_TABLE_PRESENT;
+	*page_entry |= (is_writeable) ? PAGE_TABLE_RW : 0;
+	*page_entry |= (is_kernel) ? 0 : PAGE_TABLE_USER;
+	*page_entry |= PAGE_TABLE_FRAME(address / PAGE_SIZE);
+}
+
+void paging_alloc_frame(uintptr_t address, bool is_writeable, bool is_kernel) {
+	uint32_t *page_entry = paging_get(address, 1, kernel_directory);
+	uint32_t next_frame = paging_first_frame();
+	paging_set_frame(next_frame * PAGE_SIZE);
+	*page_entry |= PAGE_TABLE_PRESENT;
+	*page_entry |= (is_writeable) ? PAGE_TABLE_RW : 0;
+	*page_entry |= (is_kernel) ? 0 : PAGE_TABLE_USER;
+	*page_entry |= PAGE_TABLE_FRAME(next_frame);
 }
 
 // Declared in <memory/memory.h>
