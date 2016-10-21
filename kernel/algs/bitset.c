@@ -75,3 +75,20 @@ bool bitset_find_first(struct bitset *b, size_t *out) {
 	}
 	return 0;
 }
+
+bool bitset_find_hole(struct bitset *b, size_t hole_size, size_t *out) {
+	if (hole_size > (b->size * 8))
+		return 0;
+
+	size_t i, temp = 0;
+	for (i = 0; i < b->size * 8; i++) {
+		if (temp == hole_size) {
+			*out = i - temp;
+			return 1;
+		} else if (bitset_test(b, i) == 0)
+			temp++;
+		else
+			temp = 0;
+	}
+	return 0;
+}

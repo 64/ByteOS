@@ -88,7 +88,6 @@ void *kheap_alloc(uint32_t size, bool page_align, struct kheap_heap *heap) {
 	if (iter == -1) {
 		uint32_t old_length = heap->end_addr - heap->start_addr;;
 		uint32_t old_end_address = heap->end_addr;
-
 		kheap_expand(old_length + new_size, heap);
 		uint32_t new_length = heap->end_addr - heap->start_addr;
 
@@ -194,7 +193,7 @@ struct kheap_heap *kheap_create(uintptr_t start, uintptr_t end, uintptr_t max, b
 	hole->size = end - start;
 	hole->magic = KHEAP_MAGIC;
 	hole->is_hole = 1;
-	oarray_insert((void *)hole, &heap->index);
+	oarray_insert((void*)hole, &heap->index);
 
 	return heap;
 }
@@ -260,10 +259,9 @@ uintptr_t kmalloc_internal(uint32_t size, bool align, uint32_t *phys) {
 	uintptr_t temp;
 	if (kheap != NULL) {
 		temp = (uintptr_t)kheap_alloc(size, align, kheap);
-		if (phys != NULL) {
-			uint32_t *page = paging_get(temp, 0, kernel_directory);
-			*phys = ((*page & 0xFFFFF000) >> 12) * PAGE_SIZE + (temp & 0xFFF);
-		}
+		extern uintptr_t virt_to_phys(void *);
+		if (phys != NULL)
+			*phys = virt_to_phys((void*)temp);
 	} else {
 		if (align == 1 && (placement_address & 0xFFFFF000)) {
 			placement_address &= 0xFFFFF000;

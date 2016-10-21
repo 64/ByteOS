@@ -50,7 +50,7 @@ static inline uint8_t keyboard_scancode_to_char(uint8_t scancode, struct key_mod
 	if (mod.control) {
 		*force_print = 1;
 
-		if (val == 'c')
+		if (tolower(val) == 'c')
 			acpi_shutdown();
 
 		if (isalpha(val))

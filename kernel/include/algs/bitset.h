@@ -15,3 +15,4 @@ void bitset_set(struct bitset *, size_t bit);
 void bitset_clear(struct bitset *, size_t bit);
 bool bitset_test(struct bitset *, size_t bit);
 bool bitset_find_first(struct bitset *, size_t *out);
+bool bitset_find_hole(struct bitset *, size_t hole_size, size_t *out);

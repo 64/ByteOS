@@ -14,3 +14,4 @@ struct mem_info {
 };
 
 uintptr_t virt_to_phys(void *);
+void *reserve_memory(uintptr_t physical, size_t length);

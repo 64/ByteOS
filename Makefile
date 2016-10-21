@@ -31,7 +31,7 @@ clean:
 rebuild: clean build
 
 debug-server: bin/byteos.iso
-	qemu-system-i386 -s -cdrom bin/byteos.iso -serial file:bin/serial.txt
+	qemu-system-i386 -s -cdrom bin/byteos.iso
 
 debug-gdb:
 	sudo ../vendor/gdb/gdb/gdb
