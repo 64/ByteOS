@@ -11,6 +11,7 @@
 
 extern void gdt_install();
 extern void idt_install();
+extern bool sse_enable();
 
 struct mem_info mem_info;
 

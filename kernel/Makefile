@@ -29,6 +29,9 @@ cpu/idt_load.o \
 cpu/isr.o \
 cpu/isrs.o \
 cpu/irq.o \
+cpu/asm.o \
+cpu/sse.o \
+cpu/cpu_extensions.o \
 memory/memory.o \
 memory/paging.o \
 memory/stack_smash.o \
@@ -56,9 +59,6 @@ $(KERNEL_OBJS) \
 $(LIBS) \
 crtend.o \
 util/crtn.o \
-
-KERNEL_INCLUDE_HASH=$(shell find ./include -type f -exec md5sum {} \; | sort -k 2 | md5sum)
-LIBC_INCLUDE_HASH=$(shell find ../libc/include -type f -exec md5sum {} \; | sort -k 2 | md5sum)
 
 .PHONY: all clean install install-headers install-kernel
 .SUFFIXES: .o .c .S

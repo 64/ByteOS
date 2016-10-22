@@ -4,6 +4,8 @@
 extern int printf(const char* __restrict, ...);
 extern void abort(void);
 
+#include <stdint.h>
+
 #define KLOG_LEVEL_NONE 0
 #define KLOG_LEVEL_FATAL 1
 #define KLOG_LEVEL_ERROR 2

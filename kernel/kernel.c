@@ -7,7 +7,7 @@
 #include <drivers/ps2/kbd.h>
 #include <drivers/pit.h>
 #include <drivers/acpi.h>
-#include <drivers/cmos.h>
+#include <asm.h>
 
 void kernel_early(uint32_t mboot_magic, const void *mboot_header) {
 	vga_textmode_initialize();
@@ -18,6 +18,9 @@ void kernel_early(uint32_t mboot_magic, const void *mboot_header) {
 
 	// Validates multiboot, enables paging, sets up the heap
 	mem_init(mboot_magic, mboot_header);
+
+	// Enable SSE + other CPU extensions
+	cpu_extensions_enable();
 }
 
 void kernel_main(void) {
