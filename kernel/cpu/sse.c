@@ -3,6 +3,7 @@
 #include <klog.h>
 #include <asm.h>
 
+// I'm not even sure if this works - someone please confirm
 bool sse_enable() {
 	uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
 	asm_cpuid(1, &eax, &ebx, &ecx, &edx);
