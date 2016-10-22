@@ -11,7 +11,6 @@ struct acpi_fadt *fadt = NULL;
 struct acpi_dsdt *dsdt = NULL;
 struct acpi_info acpi_info;
 uint32_t rsdt_entries = 0;
-bool acpi_ready = 0;
 
 bool acpi_find_rsdt(void) {
 	uintptr_t iter;
@@ -71,6 +70,10 @@ void acpi_init(void) {
 	irq_install_handler(fadt->sci_interrupt, acpi_sci_interrupt_handler);
 	dsdt = fadt->dsdt;
 	acpi_info.power_management_profile = fadt->power_management_profile;
+	acpi_info.smi_commandport = fadt->smi_commandport;
+	acpi_info.pm1a_control_block = fadt->pm1a_control_block;
+	acpi_info.pm1b_control_block = fadt->pm1b_control_block;
+	acpi_info.acpi_enable = fadt->acpi_enable;
 
 	if (!acpi_check_header(&dsdt->header, "DSDT")) {
 		klog_warn("ACPI: DSDT not found!\n");
@@ -83,7 +86,7 @@ void acpi_init(void) {
 	}
 
 	klog_notice("ACPI successfully initialized!\n");
-	acpi_ready = 1;
+	acpi_info.acpi_ready = 1;
 }
 
 bool acpi_parse_dsdt(struct acpi_info *info) {
@@ -122,28 +125,28 @@ bool acpi_parse_dsdt(struct acpi_info *info) {
 	return 1;
 }
 
-bool acpi_enable() {
-	if ((io_inportw(fadt->pm1a_control_block) & 1) != 0) {
+bool acpi_enable(struct acpi_info *info) {
+	if ((io_inportw(info->pm1a_control_block) & 1) != 0) {
 		klog_warn("ACPI: ACPI was already enabled!\n");
 		return 1;
 	}
 
-	if (fadt->smi_commandport == 0 || fadt->acpi_enable == 0) {
+	if (info->smi_commandport == 0 || info->acpi_enable == 0) {
 		klog_warn("ACPI: No known way to enable ACPI.\n");
 		return 0;
 	}
 
-	io_outportb(fadt->smi_commandport, fadt->acpi_enable);
+	io_outportb(info->smi_commandport, info->acpi_enable);
 	uint32_t i;
 	for (i = 0; i < 300; i++) {
-		if ((io_inportw(fadt->pm1a_control_block) & 1) == 1)
+		if ((io_inportw(info->pm1a_control_block) & 1) == 1)
 			break;
 		pit_wait_ms(10);
 	}
 
-	if (fadt->pm1b_control_block != 0) {
+	if (info->pm1b_control_block != 0) {
 		for (; i < 300; i++) {
-			if ((io_inportw(fadt->pm1b_control_block) & 1) == 1)
+			if ((io_inportw(info->pm1b_control_block) & 1) == 1)
 				break;
 			pit_wait_ms(10);
 		}
@@ -165,7 +168,7 @@ void acpi_sci_interrupt_handler(struct regs *r) {
 }
 
 void acpi_shutdown(void) {
-	if (!acpi_ready || !acpi_enable()) {
+	if (!acpi_info.acpi_ready || !acpi_enable(&acpi_info)) {
 		klog_fatal("ACPI not initialized successfully, cannot shutdown.\n");
 		return;
 	}
@@ -173,9 +176,9 @@ void acpi_shutdown(void) {
 	printf("Shutting down...\n");
 
 	// Send shutdown command
-	io_outportw((uint32_t)fadt->pm1a_control_block, acpi_info.slp_typa | acpi_info.slp_en);
-	if (fadt->pm1b_control_block != 0)
-		io_outportw((uint32_t)fadt->pm1b_control_block, acpi_info.slp_typb | acpi_info.slp_en);
+	io_outportw(acpi_info.pm1a_control_block, acpi_info.slp_typa | acpi_info.slp_en);
+	if (acpi_info.pm1b_control_block != 0)
+		io_outportw(acpi_info.pm1b_control_block, acpi_info.slp_typb | acpi_info.slp_en);
 
 	klog_fatal("Shutdown failed! Trying to resume normal execution...\n");
 }

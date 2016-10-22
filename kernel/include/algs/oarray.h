@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 
-typedef bool (*lthan_predicate)(void *, void*);
+typedef bool (*lthan_predicate)(const void *, const void*);
 
 struct oarray {
 	void **array;
@@ -13,7 +13,7 @@ struct oarray {
 	lthan_predicate less_than;
 };
 
-bool oarray_stdlthan_pred(void * a, void *b);
+bool oarray_stdlthan_pred(const void * a, const void *b);
 struct oarray oarray_create(uint32_t max_size, lthan_predicate less_than);
 struct oarray oarray_place(void *addr, uint32_t max_size, lthan_predicate less_than);
 void oarray_destroy(struct oarray *array);

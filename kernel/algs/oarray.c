@@ -4,7 +4,7 @@
 #include <string.h>
 #include <sys/cdefs.h>
 
-bool oarray_stdlthan_pred(void * a, void *b) {
+bool oarray_stdlthan_pred(const void * a, const void *b) {
 	return (a < b) ? 1 : 0;
 }
 
@@ -21,6 +21,7 @@ struct oarray oarray_create(uint32_t max_size, lthan_predicate less_than) {
 struct oarray oarray_place(void *addr, uint32_t max_size, lthan_predicate less_than) {
 	struct oarray returner;
 	returner.array = addr;
+	// TODO: This causes virtualbox to hang for ages, not sure why
 	memset(returner.array, 0, max_size * sizeof(void *));
 	returner.size = 0;
 	returner.max_size = max_size;
@@ -31,6 +32,7 @@ struct oarray oarray_place(void *addr, uint32_t max_size, lthan_predicate less_t
 void oarray_destroy(struct oarray *array) {
 	kfree(array->array);
 }
+
 void oarray_insert(void *item, struct oarray *array) {
 	klog_assert(array->less_than);
 	uint32_t iter = 0;

@@ -8,15 +8,13 @@
 #include <klog.h>
 
 struct bitset paging_bitset;
-
-struct page_directory *kernel_directory = 0;
-struct page_directory *current_directory = 0;
+struct page_directory *kernel_directory = NULL;
+struct page_directory *current_directory = NULL;
 
 static bool paging_test_frame(uintptr_t addr);
 static void paging_clear_frame(uintptr_t addr);
 static void paging_set_frame(uintptr_t addr);
 static uint32_t paging_first_frame();
-static uint32_t paging_first_n(size_t n);
 
 void paging_enable() {
 	uint32_t cr0;
@@ -44,7 +42,6 @@ void paging_change_dir(struct page_directory *dir) {
 
 void paging_init(multiboot_info_t *mboot_hdr, uintptr_t mmap_end, size_t available_max) {
 	(void)mboot_hdr; (void)mmap_end;
-	// TODO: This whole unit needs a big rewrite...
 	// Allocate 1 bit for each page in available memory
 	bitset_create(&paging_bitset, (((available_max - 1) / PAGE_SIZE) / 8) + 1);
 	kernel_directory = (struct page_directory*)kmalloc_a(sizeof(struct page_directory));
@@ -52,9 +49,12 @@ void paging_init(multiboot_info_t *mboot_hdr, uintptr_t mmap_end, size_t availab
 	current_directory = kernel_directory;
 
 	paging_identity_map(0, placement_address + KHEAP_INITIAL_SIZE, 0, 0);
-	void *kheap_start = reserve_memory(KHEAP_START, KHEAP_INITIAL_SIZE);
 
-	kheap = kheap_create((uintptr_t)kheap_start, (uintptr_t)kheap_start + KHEAP_INITIAL_SIZE, (uintptr_t)kheap_start + KHEAP_MAX, 0, 0);
+	uint32_t i = 0;
+	for (i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i += PAGE_SIZE)
+		paging_alloc_frame(i, 0, 0);
+
+	kheap = kheap_create(KHEAP_START, KHEAP_START + KHEAP_INITIAL_SIZE, KHEAP_START + KHEAP_MAX, 0, 0);
 	isr_install_handler(14, paging_fault);
 	paging_change_dir(kernel_directory);
 	paging_enable();
@@ -71,6 +71,7 @@ uint32_t *paging_get(uintptr_t address, bool make, struct page_directory *dir) {
 		return NULL;
 }
 
+// Allocates page tables between two addresses, if end_addr is 0 then it will allocate only one table
 void paging_generate_tables(uintptr_t address, uintptr_t end_addr, struct page_directory *dir) {
 	uint32_t iter = address / PAGE_SIZE / 1024;
 	while (iter < ((address / PAGE_SIZE / 1024) + ((end_addr / PAGE_SIZE / 1024) || 1))) {
@@ -85,66 +86,7 @@ void paging_generate_tables(uintptr_t address, uintptr_t end_addr, struct page_d
 	}
 }
 
-#if 0
-void paging_alloc_frame(uint32_t *page, bool is_kernel, bool is_writeable) {
-	if (*page & PAGE_TABLE_PRESENT || *page & PAGE_TABLE_FRAME(0xFFFFF)) {
-		*page |= PAGE_TABLE_PRESENT;
-		*page |= (is_writeable) ? PAGE_TABLE_RW : 0;
-		*page |= (is_kernel) ? 0 : PAGE_TABLE_USER;
-		return;
-	}
-
-	size_t frame_idx = paging_first_frame();
-	*page |= PAGE_TABLE_FRAME(frame_idx);
-	*page |= PAGE_TABLE_PRESENT;
-	*page |= (is_writeable) ? PAGE_TABLE_RW : 0;
-	*page |= (is_kernel) ? 0 : PAGE_TABLE_USER;
-	paging_set_frame(frame_idx * PAGE_SIZE);
-}
-
-void paging_map_frame(uint32_t *page, bool is_writeable, bool is_kernel, uintptr_t address) {
-	*page |= PAGE_TABLE_PRESENT;
-	*page |= (is_writeable) ? PAGE_TABLE_RW : 0;
-	*page |= (is_kernel) ? 0 : PAGE_TABLE_USER;
-	*page |= PAGE_TABLE_FRAME(address / PAGE_SIZE);
-	paging_set_frame(address);
-}
-#endif
-
-void *reserve_memory(uintptr_t physical, size_t length) {
-	if ((physical + length) < physical) {
-		klog_fatal("Memory block reserved was too large!\n");
-		abort();
-	}
-
-	size_t frame = 0;
-	if (bitset_find_hole(&paging_bitset, (length / PAGE_SIZE) || 1, &frame) == 0) {
-		klog_fatal("Memory block reserved was too large!\n");
-		abort();
-	}
-
-	uintptr_t offset = physical & 0xFFF;
-	uintptr_t virtual_addr = frame * PAGE_SIZE;
-	uintptr_t iter = 0;
-	while (iter < length) {
-		uint32_t *page_entry = paging_get(iter + virtual_addr, 1, kernel_directory);
-		if (*page_entry & PAGE_TABLE_PRESENT) {
-			iter += PAGE_SIZE;
-			continue;
-		}
-		paging_set_frame(iter + virtual_addr);
-		*page_entry |= PAGE_TABLE_FRAME((iter + physical - offset) / PAGE_SIZE);
-		*page_entry |= PAGE_TABLE_PRESENT;
-		*page_entry |= PAGE_TABLE_RW;
-		*page_entry |= PAGE_TABLE_USER;
-		iter += PAGE_SIZE;
-		//paging_map_frame(page_entry, 0, 0, iter + virt)
-	}
-
-	return (void*)(virtual_addr + offset);
-}
-
-// Declared in memory.h
+// Identity maps a block of memory, given a starting address and a length
 void paging_identity_map(uintptr_t address, size_t length, bool is_writeable, bool is_kernel) {
 	uintptr_t iter = 0;
 	while (iter < length) {
@@ -153,6 +95,7 @@ void paging_identity_map(uintptr_t address, size_t length, bool is_writeable, bo
 	}
 }
 
+// Identity maps a single page
 void paging_idmap_frame(uintptr_t address, bool is_writeable, bool is_kernel) {
 	uint32_t *page_entry = paging_get(address, 1, kernel_directory);
 	paging_set_frame(address);
@@ -162,6 +105,7 @@ void paging_idmap_frame(uintptr_t address, bool is_writeable, bool is_kernel) {
 	*page_entry |= PAGE_TABLE_FRAME(address / PAGE_SIZE);
 }
 
+// Allocates a frame at the next available physical page
 void paging_alloc_frame(uintptr_t address, bool is_writeable, bool is_kernel) {
 	uint32_t *page_entry = paging_get(address, 1, kernel_directory);
 	uint32_t next_frame = paging_first_frame();
@@ -173,7 +117,7 @@ void paging_alloc_frame(uintptr_t address, bool is_writeable, bool is_kernel) {
 }
 
 // Declared in <memory/memory.h>
-uintptr_t virt_to_phys(void *virtual_addr) {
+uintptr_t virt_to_phys(const void *virtual_addr) {
 	uintptr_t v = (uintptr_t)virtual_addr;
 	uintptr_t p = 0;
 	uint32_t page_entry = *paging_get(v, 0, kernel_directory);
@@ -190,7 +134,6 @@ void paging_free_frame(uintptr_t page) {
 	uint32_t frame;
 	if ((frame = (((*(uint32_t*)page) >> 12 & 0x000FFFFF))) == 0)
 		return;
-
 	paging_clear_frame(frame);
 	page |= PAGE_TABLE_FRAME(0);
 }
@@ -238,15 +181,6 @@ static uint32_t paging_first_frame() {
 	// This function sets the value of 'out'
 	size_t out = 0;
 	if (bitset_find_first(&paging_bitset, &out) == 0) {
-		klog_fatal("No free memory!\n");
-		abort();
-	}
-	return out;
-}
-
-static uint32_t paging_first_n(size_t n) {
-	size_t out = 0;
-	if (bitset_find_hole(&paging_bitset, n, &out) == 0) {
 		klog_fatal("No free memory!\n");
 		abort();
 	}

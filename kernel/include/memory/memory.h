@@ -13,5 +13,5 @@ struct mem_info {
 	int8_t *bootloader_name;
 };
 
-uintptr_t virt_to_phys(void *);
+uintptr_t virt_to_phys(const void *);
 void *reserve_memory(uintptr_t physical, size_t length);

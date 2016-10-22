@@ -5,9 +5,9 @@
 #include <stdbool.h>
 #include <algs/oarray.h>
 
-#define KHEAP_START        0x50000000
+#define KHEAP_START        0x60000000
 #define KHEAP_INITIAL_SIZE 0x100000
-#define KHEAP_MAX 	   0x1000000
+#define KHEAP_MAX 	   0x300000
 #define KHEAP_INDEX_SIZE   0x20000
 #define KHEAP_MAGIC        0x123890AB
 #define KHEAP_MIN_SIZE     0x70000
@@ -45,4 +45,4 @@ uintptr_t kmalloc_a(uint32_t size);  // Page aligned.
 uintptr_t kmalloc_p(uint32_t size, uint32_t *phys); // Returns a physical address.
 uintptr_t kmalloc_ap(uint32_t size, uint32_t *phys); // Page aligned and returns a physical address.
 uintptr_t kmalloc(uint32_t size); // Vanilla (normal).
-void kfree(void *p);
+void kfree(void *p); // Returns a pointer to the linked list of holes

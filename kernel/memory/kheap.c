@@ -30,7 +30,7 @@ static int32_t kheap_find_smallest(uint32_t size, bool page_align, struct kheap_
 		return iter;
 }
 
-static bool kheap_less_than(void *a, void *b) {
+static bool kheap_less_than(const void *a, const void *b) {
 	return (((struct kheap_header *)a)->size < ((struct kheap_header *)b)->size) ? 1 : 0;
 }
 
@@ -176,7 +176,6 @@ struct kheap_heap *kheap_create(uintptr_t start, uintptr_t end, uintptr_t max, b
 	klog_assert(end % PAGE_SIZE == 0);
 	heap->index = oarray_place((void*)start, KHEAP_INDEX_SIZE, &kheap_less_than);
 	start += sizeof(void*) * KHEAP_INDEX_SIZE;
-
 	if ((start & 0xFFFFF000) != 0) {
 		start &= 0xFFFFF000;
 		start += PAGE_SIZE;
@@ -258,7 +257,7 @@ uintptr_t kmalloc_internal(uint32_t size, bool align, uint32_t *phys) {
 	uintptr_t temp;
 	if (kheap != NULL) {
 		temp = (uintptr_t)kheap_alloc(size, align, kheap);
-		extern uintptr_t virt_to_phys(void *);
+		extern uintptr_t virt_to_phys(const void *);
 		if (phys != NULL)
 			*phys = virt_to_phys((void*)temp);
 	} else {

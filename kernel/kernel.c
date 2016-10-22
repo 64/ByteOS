@@ -11,6 +11,12 @@
 
 void kernel_early(uint32_t mboot_magic, const void *mboot_header) {
 	vga_textmode_initialize();
+
+	// ACPI must gather values before paging is enabled
+	pit_init();
+	acpi_init();
+
+	// Validates multiboot, enables paging, sets up the heap
 	mem_init(mboot_magic, mboot_header);
 }
 
@@ -18,8 +24,6 @@ void kernel_main(void) {
 	klog_info("Hello, Kernel World!\n");
 
 	// Initialise subsystems
-	pit_init();
-	acpi_init();
 	keyboard_init();
 
 	// Ensure kernel never exits

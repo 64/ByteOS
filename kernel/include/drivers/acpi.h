@@ -103,10 +103,15 @@ struct acpi_fadt {
 };
 
 struct acpi_info {
+	uint32_t pm1a_control_block;
+	uint32_t pm1b_control_block;
+	uint32_t smi_commandport;
 	uint16_t slp_typa;
 	uint16_t slp_typb;
 	uint16_t slp_en;
 	uint8_t power_management_profile;
+	uint8_t acpi_enable;
+	bool acpi_ready;
 };
 
 bool acpi_find_rsdt(void);
