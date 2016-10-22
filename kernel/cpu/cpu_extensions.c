@@ -9,8 +9,8 @@ extern bool cpuid_supported();
 void cpu_get_vendor(int8_t *buf) {
 	uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
 	asm_cpuid(0, &eax, &ebx, &ecx, &edx);
-	memcpy(buf, &eax, sizeof(uint32_t));
-	memcpy(buf + 4, &ebx, sizeof(uint32_t));
+	memcpy(buf, &ebx, sizeof(uint32_t));
+	memcpy(buf + 4, &edx, sizeof(uint32_t));
 	memcpy(buf + 8, &ecx, sizeof(uint32_t));
 	buf[12] = '\0';
 }

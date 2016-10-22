@@ -34,6 +34,7 @@ void bitset_set(struct bitset *b, size_t bit) {
 	size_t mask = 1 << offset;
 	b->data[index] |= mask;
 }
+
 void bitset_clear(struct bitset *b, size_t bit) {
 	if (b->size == 0) {
 		klog_warn("Bitset with size 0 was used\n");
@@ -48,6 +49,7 @@ void bitset_clear(struct bitset *b, size_t bit) {
 	size_t mask = 1 << offset;
 	b->data[index] &= ~mask;
 }
+
 bool bitset_test(struct bitset *b, size_t bit) {
 	if ((b->size) == 0) {
 		klog_fatal("Bitset with size 0 was used\n");
