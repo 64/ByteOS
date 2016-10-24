@@ -45,4 +45,4 @@ uintptr_t kmalloc_a(uint32_t size);  // Page aligned.
 uintptr_t kmalloc_p(uint32_t size, uint32_t *phys); // Returns a physical address.
 uintptr_t kmalloc_ap(uint32_t size, uint32_t *phys); // Page aligned and returns a physical address.
 uintptr_t kmalloc(uint32_t size); // Vanilla (normal).
-void kfree(void *p); // Returns a pointer to the linked list of holes
+void kfree(void *p);

@@ -26,6 +26,7 @@ extern bool cpuid_supported();
 
 extern void sse_set_enabled();
 
+// Calls GCC's builtin cpuid function, defined in <cpuid.h>
 static inline uint32_t asm_cpuid(uint32_t level, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx) {
 	return __get_cpuid(level, (unsigned*)eax, (unsigned*)ebx, (unsigned*)ecx, (unsigned*)edx);
 }

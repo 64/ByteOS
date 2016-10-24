@@ -2,10 +2,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-
+#include <sys/util.h>
 #include <tty.h>
 #include <io.h>
-
 #include <drivers/vga.h>
 
 #define _ANSI_MAX_SEQUENCE_LENGTH 6
@@ -146,8 +145,8 @@ void _vga_textmode_set_bold(bool value) {
 	current_style.color = vga_entry_color(foreground, _VGA_COLOR_GET_BACKGROUND(current_style.color));
 }
 
-void _vga_textmode_set_underline(bool value) {
-	(void)value; // TODO: Implement this
+void _vga_textmode_set_underline(bool UNUSED(value)) {
+	// TODO: Implement this
 }
 
 void _vga_textmode_set_inverse(bool value) {

@@ -1,10 +1,11 @@
 #include <drivers/acpi.h>
 #include <drivers/pit.h>
+#include <memory/memory.h>
 #include <interrupt.h>
 #include <io.h>
-#include <memory/memory.h>
 #include <string.h>
 #include <klog.h>
+#include <sys/util.h>
 
 struct acpi_rsdt_header *rsdt = NULL;
 struct acpi_fadt *fadt = NULL;
@@ -160,8 +161,7 @@ bool acpi_enable(struct acpi_info *info) {
 	return 1;
 }
 
-void acpi_sci_interrupt_handler(struct regs *r) {
-	(void)r;
+void acpi_sci_interrupt_handler(struct regs *UNUSED(r)) {
 	// TODO: Finish this
 	klog_notice("Power off button press detected.\n");
 	acpi_shutdown();

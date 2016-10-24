@@ -1,11 +1,12 @@
-#include <memory/paging.h>
-#include <memory/kheap.h>
-#include <memory/memory.h>
-#include <algs/bitset.h>
 #include <stdlib.h>
 #include <string.h>
 #include <interrupt.h>
 #include <klog.h>
+#include <sys/util.h>
+#include <algs/bitset.h>
+#include <memory/paging.h>
+#include <memory/kheap.h>
+#include <memory/memory.h>
 
 struct bitset paging_bitset;
 struct page_directory *kernel_directory = NULL;
@@ -40,8 +41,7 @@ void paging_change_dir(struct page_directory *dir) {
 	);
 }
 
-void paging_init(multiboot_info_t *mboot_hdr, uintptr_t mmap_end, size_t available_max) {
-	(void)mboot_hdr; (void)mmap_end;
+void paging_init(multiboot_info_t *UNUSED(mboot_hdr), uintptr_t UNUSED(mmap_end), size_t available_max) {
 	// Allocate 1 bit for each page in available memory
 	bitset_create(&paging_bitset, (((available_max - 1) / PAGE_SIZE) / 8) + 1);
 	kernel_directory = (struct page_directory*)kmalloc_a(sizeof(struct page_directory));
