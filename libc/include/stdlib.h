@@ -5,16 +5,16 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
-extern "C" {
+	extern "C" {
 #endif
 
-__attribute__((__noreturn__))
+COMPILER_ATTR_NORETURN
 void abort(void);
 
 char *itoa(uint32_t, char *, uint32_t);
 
 #ifdef __cplusplus
-}
+	}
 #endif
 
 #endif

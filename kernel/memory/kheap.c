@@ -7,7 +7,7 @@ uintptr_t placement_address = (uintptr_t)&end;
 
 struct kheap_heap *kheap = NULL;
 
-static int32_t kheap_find_smallest(uint32_t size, bool page_align, struct kheap_heap *heap) {
+static int32_t kheap_find_smallest(size_t size, bool page_align, struct kheap_heap *heap) {
 	uint32_t iter = 0;
 	while (iter < heap->index.size) {
 		struct kheap_header *header = (struct kheap_header*)oarray_lookup(iter, &heap->index);
@@ -34,7 +34,7 @@ static bool kheap_less_than(const void *a, const void *b) {
 	return (((struct kheap_header *)a)->size < ((struct kheap_header *)b)->size) ? 1 : 0;
 }
 
-static void kheap_expand(uint32_t new_size, struct kheap_heap *heap) {
+static void kheap_expand(size_t new_size, struct kheap_heap *heap) {
 	klog_assert(new_size > heap->end_addr - heap->start_addr);
 	// Get the nearest following page boundary.
 	if ((new_size & 0xFFFFF000) != 0) {
@@ -58,7 +58,7 @@ static void kheap_expand(uint32_t new_size, struct kheap_heap *heap) {
 	heap->end_addr = heap->start_addr + new_size;
 }
 
-static uint32_t kheap_contract(uint32_t new_size, struct kheap_heap *heap) {
+static uint32_t kheap_contract(size_t new_size, struct kheap_heap *heap) {
 	klog_assert(new_size < heap->end_addr - heap->start_addr);
 
 	if (new_size & 0x1000) {
@@ -80,7 +80,7 @@ static uint32_t kheap_contract(uint32_t new_size, struct kheap_heap *heap) {
 	return new_size;
 }
 
-void *kheap_alloc(uint32_t size, bool page_align, struct kheap_heap *heap) {
+void *kheap_alloc(size_t size, bool page_align, struct kheap_heap *heap) {
 	uint32_t new_size = size + sizeof(struct kheap_header) + sizeof(struct kheap_footer);
 	int32_t iter = kheap_find_smallest(new_size, page_align, heap);
 
@@ -197,7 +197,7 @@ struct kheap_heap *kheap_create(uintptr_t start, uintptr_t end, uintptr_t max, b
 }
 
 void kheap_free(void *p, struct kheap_heap *heap) {
-	if (p == NULL)
+	if (p == NULL || heap == NULL)
 		return;
 
 	struct kheap_header *header = (struct kheap_header*)((uintptr_t)p - sizeof(struct kheap_header));
@@ -253,7 +253,7 @@ void kheap_free(void *p, struct kheap_heap *heap) {
 		oarray_insert((void*)header, &heap->index);
 }
 
-uintptr_t kmalloc_internal(uint32_t size, bool align, uint32_t *phys) {
+uintptr_t kmalloc_internal(size_t size, bool align, uint32_t *phys) {
 	uintptr_t temp;
 	if (kheap != NULL) {
 		temp = (uintptr_t)kheap_alloc(size, align, kheap);
@@ -262,8 +262,13 @@ uintptr_t kmalloc_internal(uint32_t size, bool align, uint32_t *phys) {
 			*phys = virt_to_phys((void*)temp);
 	} else {
 		if (align == 1 && (placement_address & 0xFFFFF000)) {
+			// 4096 byte align the pointer
 			placement_address &= 0xFFFFF000;
 			placement_address += PAGE_SIZE;
+		} else if (align == 0 && (placement_address & 0x8)) {
+			// 8 byte align the pointer
+			placement_address &= 0x8;
+			placement_address += 8;
 		}
 
 		if (phys != NULL)
@@ -275,11 +280,11 @@ uintptr_t kmalloc_internal(uint32_t size, bool align, uint32_t *phys) {
 	return temp;
 }
 
-uintptr_t kmalloc_a(uint32_t size) {
+uintptr_t kmalloc_a(size_t size) {
 	return kmalloc_internal(size, 1, NULL);
 }
 
-uintptr_t kmalloc_p(uint32_t size, uint32_t *phys) {
+uintptr_t kmalloc_p(size_t size, uint32_t *phys) {
 	return kmalloc_internal(size, 0, phys);
 }
 

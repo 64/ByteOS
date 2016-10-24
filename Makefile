@@ -38,3 +38,6 @@ debug-gdb:
 
 run: bin/byteos.iso
 	qemu-system-i386 -cdrom bin/byteos.iso
+
+vbox: bin/byteos.iso
+	vboxmanage startvm "ByteOS"

@@ -10,6 +10,7 @@
 #include <asm.h>
 
 void kernel_early(uint32_t mboot_magic, const void *mboot_header) {
+	// Initialises the screen so we can see what's going on
 	vga_textmode_initialize();
 
 	// ACPI must gather values before paging is enabled

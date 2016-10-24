@@ -10,17 +10,17 @@
 		b = temp; \
 	} \
 
-__attribute__((__noreturn__))
+COMPILER_ATTR_NORETURN
 void abort(void) {
 #if defined(__is_libk)
 	// TODO: Add proper kernel panic.
-	printf("kernel: panic: abort()\n");
+	printf("kernel: abort() at %s line %d\n", __FILE__, __LINE__);
 #else
 	// TODO: Abnormally terminate the process as if by SIGABRT.
 	printf("abort()\n");
 #endif
 	while (1) { }
-	__builtin_unreachable();
+	COMPILER_BUILTIN_UNREACHABLE();
 }
 
 static inline void _reverse(char str[], size_t length) {

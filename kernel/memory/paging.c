@@ -140,7 +140,7 @@ void paging_free_frame(uintptr_t page) {
 
 void paging_fault(struct regs *regs) {
 	uint32_t faulting_addr;
-	asm volatile (
+	asm(
 		"mov %%cr2, %0"
 		: "=r" (faulting_addr)
 		:
