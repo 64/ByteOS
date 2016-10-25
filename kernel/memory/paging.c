@@ -42,22 +42,14 @@ void paging_init(multiboot_info_t *UNUSED(mboot_hdr), uintptr_t UNUSED(mmap_end)
 	pmm_init(available_max);
 
 	// Reserve a safe area of memory so that the heap mappings don't use those addresses
-	pmm_reserve_block(0, placement_address + 3 * PAGE_SIZE);
-	paging_generate_tables(0, placement_address + 3 * PAGE_SIZE, kernel_directory);
+	paging_generate_tables(0, placement_address + PAGE_SIZE, kernel_directory);
 
 	uint32_t i;
-	// Allocate enough pages for the heap
-	for (i = KHEAP_START; i < KHEAP_START + KHEAP_INITIAL_SIZE; i += PAGE_SIZE)
-		pmm_alloc_frame(i, PAGE_INTERNAL_GENTABLES);
-
-	// Free those previously reserved physical pages
-	pmm_unreserve_block(0, placement_address + 3 * PAGE_SIZE);
-
-	// Now actually allocate the pages
 	for (i = 0; i < placement_address +  3 * PAGE_SIZE; i += PAGE_SIZE)
 		pmm_map_frame(i, i, 0);
 
-	kheap = kheap_create(KHEAP_START, KHEAP_START + KHEAP_INITIAL_SIZE, KHEAP_START + KHEAP_MAX, 0, 0);
+	kheap_init();
+
 	isr_install_handler(14, paging_fault);
 	paging_change_dir(kernel_directory);
 	paging_enable();
