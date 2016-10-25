@@ -36,6 +36,9 @@ extern void abort(void);
 	#define klog_fatal_nohdr(fmt, ...) do { ((void)0); } while(0)
 #endif
 
+#define klog_panic(msg, ...) do { klog_fatal("kernel: panic: " msg " at %s line %d\n", ##__VA_ARGS__, __FILE__, __LINE__); \
+	abort(); } while(0)
+
 #if KLOG_LEVEL >= KLOG_LEVEL_ERROR
 	#define klog_error(fmt, ...) printf(KLOG_ERROR_HEADER " " fmt, ##__VA_ARGS__)
 	#define klog_error_nohdr(fmt, ...) printf(fmt, ##__VA_ARGS__)

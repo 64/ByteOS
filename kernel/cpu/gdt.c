@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/cdefs.h>
+#include <sys/util.h>
 #include <descriptors.h>
 
 static struct {

@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <system.h>
 #include <algs/oarray.h>
 
 #define KHEAP_START        0x60000000
@@ -12,7 +13,7 @@
 #define KHEAP_MAGIC        0x123890AB
 #define KHEAP_MIN_SIZE     0x70000
 
-extern uintptr_t placement_address;
+extern phys_addr placement_address;
 
 struct kheap_header {
 	uint32_t magic;
@@ -40,9 +41,9 @@ struct kheap_heap *kheap_create(uintptr_t start, uintptr_t end, uintptr_t max, b
 void *kheap_alloc(size_t size, bool page_align, struct kheap_heap *heap);
 void kheap_free(void *p, struct kheap_heap *heap);
 
-uintptr_t kmalloc_internal(size_t size, bool align, uint32_t *phys); // Internal use only.
-uintptr_t kmalloc_a(size_t size);  // Page aligned.
-uintptr_t kmalloc_p(size_t size, uint32_t *phys); // Returns a physical address.
-uintptr_t kmalloc_ap(size_t size, uint32_t *phys); // Page aligned and returns a physical address.
-uintptr_t kmalloc(size_t size); // Vanilla (normal).
+virt_addr kmalloc_internal(size_t size, bool align, phys_addr *phys); // Internal use only.
+virt_addr kmalloc_a(size_t size);  // Page aligned.
+virt_addr kmalloc_p(size_t size, phys_addr *phys); // Returns a physical address.
+virt_addr kmalloc_ap(size_t size, phys_addr *phys); // Page aligned and returns a physical address.
+virt_addr kmalloc(size_t size); // Vanilla (normal).
 void kfree(void *p);

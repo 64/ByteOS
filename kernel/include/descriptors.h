@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <sys/cdefs.h>
+#include <sys/util.h>
 #include <system.h>
 
 struct gdt_entry {

@@ -1,9 +1,10 @@
 #include <memory/kheap.h>
+#include <memory/pmm.h>
 #include <memory/paging.h>
 #include <klog.h>
 
 extern uint32_t end;
-uintptr_t placement_address = (uintptr_t)&end;
+phys_addr placement_address = (phys_addr)&end;
 
 struct kheap_heap *kheap = NULL;
 
@@ -48,11 +49,12 @@ static void kheap_expand(size_t new_size, struct kheap_heap *heap) {
 	uint32_t old_size = heap->end_addr - heap->start_addr;
 	uint32_t i = old_size;
 	while (i < new_size) {
-		paging_alloc_frame(
-			heap->start_addr + i,
-			(heap->supervisor) ? 1 : 0,
-			(heap->readonly) ? 0 : 1
-		);
+		uint32_t flags = PAGE_INTERNAL_GENTABLES;
+		if (heap->supervisor)
+			flags |= PAGE_TABLE_RW;
+		if (heap->readonly)
+			flags |= PAGE_TABLE_USER;
+		pmm_alloc_frame(heap->start_addr + i, flags);
 		i += PAGE_SIZE;
 	}
 	heap->end_addr = heap->start_addr + new_size;
@@ -72,7 +74,7 @@ static uint32_t kheap_contract(size_t new_size, struct kheap_heap *heap) {
 	uint32_t old_size = heap->end_addr - heap->start_addr;
 	uint32_t i = old_size - PAGE_SIZE;
 	while (new_size < i) {
-		paging_free_frame((uintptr_t)paging_get(heap->start_addr + i, 0, kernel_directory));
+		pmm_free_frame(heap->start_addr + i);
 		i -= PAGE_SIZE;
 	}
 
@@ -253,13 +255,12 @@ void kheap_free(void *p, struct kheap_heap *heap) {
 		oarray_insert((void*)header, &heap->index);
 }
 
-uintptr_t kmalloc_internal(size_t size, bool align, uint32_t *phys) {
+virt_addr kmalloc_internal(size_t size, bool align, phys_addr *phys) {
 	uintptr_t temp;
 	if (kheap != NULL) {
-		temp = (uintptr_t)kheap_alloc(size, align, kheap);
-		extern uintptr_t virt_to_phys(const void *);
+		temp = (virt_addr)kheap_alloc(size, align, kheap);
 		if (phys != NULL)
-			*phys = virt_to_phys((void*)temp);
+			*phys = virt_to_phys(temp);
 	} else {
 		if (align == 1 && (placement_address & 0xFFFFF000)) {
 			// 4096 byte align the pointer
@@ -280,19 +281,19 @@ uintptr_t kmalloc_internal(size_t size, bool align, uint32_t *phys) {
 	return temp;
 }
 
-uintptr_t kmalloc_a(size_t size) {
+virt_addr kmalloc_a(size_t size) {
 	return kmalloc_internal(size, 1, NULL);
 }
 
-uintptr_t kmalloc_p(size_t size, uint32_t *phys) {
+virt_addr kmalloc_p(size_t size, phys_addr *phys) {
 	return kmalloc_internal(size, 0, phys);
 }
 
-uintptr_t kmalloc_ap(uint32_t size, uint32_t *phys) {
+virt_addr kmalloc_ap(uint32_t size, phys_addr *phys) {
 	return kmalloc_internal(size, 1, phys);
 }
 
-uintptr_t kmalloc(uint32_t size) {
+virt_addr kmalloc(uint32_t size) {
 	return kmalloc_internal(size, 0, NULL);
 }
 

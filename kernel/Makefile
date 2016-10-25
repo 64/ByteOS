@@ -36,6 +36,7 @@ memory/memory.o \
 memory/paging.o \
 memory/stack_smash.o \
 memory/kheap.o \
+memory/pmm.o \
 drivers/vga/vga_textmode.o \
 drivers/pit/pit.o \
 drivers/ps2/kbd.o \

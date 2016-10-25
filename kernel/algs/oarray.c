@@ -2,7 +2,6 @@
 #include <memory/kheap.h>
 #include <klog.h>
 #include <string.h>
-#include <sys/cdefs.h>
 
 bool oarray_stdlthan_pred(const void * a, const void *b) {
 	return (a < b) ? 1 : 0;

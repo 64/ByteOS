@@ -14,7 +14,7 @@ COMPILER_ATTR_NORETURN
 void abort(void) {
 #if defined(__is_libk)
 	// TODO: Add proper kernel panic.
-	printf("kernel: abort() at %s line %d\n", __FILE__, __LINE__);
+	printf("kernel: abort()\n");
 #else
 	// TODO: Abnormally terminate the process as if by SIGABRT.
 	printf("abort()\n");

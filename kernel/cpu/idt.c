@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/cdefs.h>
+#include <sys/util.h>
 #include <descriptors.h>
 #include <interrupt.h>
 

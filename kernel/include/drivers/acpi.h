@@ -4,7 +4,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <system.h>
-#include <sys/cdefs.h>
 
 struct acpi_table_header {
 	int8_t signature[4];

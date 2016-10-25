@@ -2,8 +2,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <system.h>
 
-extern uintptr_t placement_address;
+extern phys_addr placement_address;
 
 void mem_init(uint32_t multiboot_magic, const void *multiboot_header);
 
@@ -12,5 +13,3 @@ struct mem_info {
 	uintptr_t upper;
 	int8_t *bootloader_name;
 };
-
-uintptr_t virt_to_phys(const void *);

@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include <klog.h>
 #include <stdlib.h>
-#include <sys/cdefs.h>
 #include <descriptors.h>
 
 #if KLOG_LEVEL >= KLOG_LEVEL_FATAL
