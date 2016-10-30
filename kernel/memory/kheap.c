@@ -9,6 +9,9 @@
 static kheap_hdr base;
 kheap_hdr *freep = NULL;
 static virt_addr heap_end = KHEAP_START;
+static struct bitset heap_aa;
+
+#define HEAP_AA_INDEX(x) ((((uintptr_t)(x)) - KHEAP_START) / PAGE_SIZE)
 
 static kheap_hdr *kheap_morecore(size_t num_units) {
 	kheap_hdr *up;
@@ -18,6 +21,7 @@ static kheap_hdr *kheap_morecore(size_t num_units) {
 
 	virt_addr iter;
 	for (iter = heap_end; iter < heap_end + (HDR_SIZE * num_units); iter += PAGE_SIZE) {
+		klog_detail("Iter: 0x%x\n", iter);
 		pmm_alloc_frame(iter, 0);
 	}
 	virt_addr temp = heap_end;
@@ -25,21 +29,39 @@ static kheap_hdr *kheap_morecore(size_t num_units) {
 	up = (kheap_hdr*)temp;
 	up->s.size = num_units;
 	kheap_free((void*)(up + 1));
+	klog_detail("Morecore new memory at: 0x%x\n", freep->s.size);
 	return freep;
 }
 
 void kheap_init() {
 	if (freep == NULL) {
+		bitset_create(&heap_aa, ((KHEAP_AA_MAX - KHEAP_AA_START) / PAGE_SIZE / 8) || 1);
 		base.s.ptr = (freep = &base);
 		base.s.size = 0;
 	}
 }
 
-static void *kheap_alloc_pa(size_t UNUSED(size)) {
+static void *kheap_alloc_pa(size_t size) {
+	if (KHEAP_AA_START + size > KHEAP_AA_MAX)
+		goto err;
+	size_t out = 0;
+	if (!bitset_find_first(&heap_aa, &out))
+		goto err;
+
+	virt_addr res = KHEAP_AA_START + (out * PAGE_SIZE);
+	pmm_alloc_frame(res, 0);
+	bitset_set(&heap_aa, out);
+	return (void*)res;
+err:
+	klog_panic("Kheap page aligned area full");
 	return NULL;
 }
 
-static bool kheap_free_pa(void * UNUSED(addr)) {
+static bool kheap_free_pa(void *addr) {
+	if ((uintptr_t)addr > KHEAP_AA_START && (uintptr_t)addr < KHEAP_AA_MAX) {
+		bitset_clear(&heap_aa, HEAP_AA_INDEX(addr));
+		return 1;
+	}
 	return 0;
 }
 
@@ -49,6 +71,9 @@ void *kheap_alloc(size_t size, bool page_align) {
 
 	if (page_align)
 		return kheap_alloc_pa(size);
+
+	if (heap_end + size > KHEAP_MAX)
+		klog_panic("Kheap full");
 
 	if ((prevp = freep) == NULL)
 		klog_panic("Kernel heap has not been initialized");
@@ -73,9 +98,28 @@ void *kheap_alloc(size_t size, bool page_align) {
 	return NULL;
 }
 
-void kheap_free(void *p) {
-	if (kheap_free_pa(p))
+void kheap_free(void *ap) {
+	if (kheap_free_pa(ap))
 		return;
+
+	kheap_hdr *bp, *p;
+	bp = (kheap_hdr *)ap - 1;
+	for (p = freep; !((p < bp) && (bp < p->s.ptr)); p = p->s.ptr)
+		if (p >= p->s.ptr && (p < bp || bp < p->s.ptr))
+			break;
+
+	if ((bp + bp->s.size) == p->s.ptr) {
+		bp->s.size += p->s.ptr->s.size;
+		bp->s.ptr = p->s.ptr->s.ptr;
+	} else
+		bp->s.ptr = p->s.ptr;
+
+	if (p + p->s.size == bp) {
+		p->s.size += bp->s.size;
+		p->s.ptr = bp->s.ptr;
+	} else
+		p->s.ptr = bp;
+	freep = p;
 
 }
 
@@ -108,22 +152,22 @@ virt_addr kmalloc_internal(size_t size, bool page_align, phys_addr *phys) {
 	return temp;
 }
 
-virt_addr kmalloc_a(size_t size) {
-	return kmalloc_internal(size, 1, NULL);
+void *kmalloc_a(size_t size) {
+	return (void*)kmalloc_internal(size, 1, NULL);
 }
 
-virt_addr kmalloc_p(size_t size, phys_addr *phys) {
-	return kmalloc_internal(size, 0, phys);
+void *kmalloc_p(size_t size, phys_addr *phys) {
+	return (void*)kmalloc_internal(size, 0, phys);
 }
 
-virt_addr kmalloc_ap(uint32_t size, phys_addr *phys) {
-	return kmalloc_internal(size, 1, phys);
+void *kmalloc_ap(uint32_t size, phys_addr *phys) {
+	return (void*)kmalloc_internal(size, 1, phys);
 }
 
-virt_addr kmalloc(uint32_t size) {
-	return kmalloc_internal(size, 0, NULL);
+void *kmalloc(uint32_t size) {
+	return (void*)kmalloc_internal(size, 0, NULL);
 }
 
 void kfree(void *p) {
-	return kheap_free(p);
+	return freep ? kheap_free(p) : NULL;
 }

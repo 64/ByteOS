@@ -42,7 +42,6 @@ drivers/pit/pit.o \
 drivers/ps2/kbd.o \
 drivers/acpi/acpi.o \
 drivers/cmos/cmos.o \
-algs/oarray.o \
 algs/bitset.o \
 
 OBJS=\

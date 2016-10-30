@@ -34,7 +34,6 @@ void pmm_alloc_frame(virt_addr addr, uint32_t page_flags) {
 	}
 
 	phys_addr allocated = out * PAGE_SIZE;
-	pmm_set_addr(allocated);
 	pmm_map_frame(addr, allocated, page_flags);
 }
 

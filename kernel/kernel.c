@@ -2,6 +2,7 @@
 
 #include <tty.h>
 #include <memory/memory.h>
+#include <memory/kheap.h>
 #include <string.h>
 #include <klog.h>
 #include <drivers/ps2/kbd.h>
@@ -29,6 +30,11 @@ void kernel_main(void) {
 
 	// Initialise subsystems
 	keyboard_init();
+
+	int *a = kmalloc_a(12);
+	int *b = kmalloc_a(12);
+	klog_detail("a: 0x%x\n", a);
+	klog_detail("b: 0x%x\n", b);
 
 	// Ensure kernel never exits
 	while(1);

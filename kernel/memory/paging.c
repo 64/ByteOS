@@ -34,22 +34,32 @@ void paging_change_dir(struct page_directory *dir) {
 	);
 }
 
-void paging_init(multiboot_info_t *UNUSED(mboot_hdr), uintptr_t UNUSED(mmap_end), size_t available_max) {
+static void paging_parse_mmap_entry(phys_addr addr, size_t len, uint32_t type) {
+	if (type != 1)
+		pmm_reserve_block(addr, len);
+}
+
+void paging_init(multiboot_info_t *mboot_hdr, uintptr_t mmap_end, size_t available_max) {
 	kernel_directory = (struct page_directory*)kmalloc_a(sizeof(struct page_directory));
 	memset(kernel_directory, 0, sizeof(struct page_directory));
 	current_directory = kernel_directory;
-
 	pmm_init(available_max);
 
-	// Reserve a safe area of memory so that the heap mappings don't use those addresses
+	multiboot_memory_map_t *mmap = (multiboot_memory_map_t*)mboot_hdr->mmap_addr;
+	while ((uintptr_t)mmap < mmap_end) {
+		paging_parse_mmap_entry(mmap->addr_low, mmap->len_low, mmap->type);
+		mmap = (multiboot_memory_map_t*)((uint32_t)mmap + mmap->size + sizeof(mmap->size));
+	}
+
 	paging_generate_tables(0, placement_address + PAGE_SIZE, kernel_directory);
+	paging_generate_tables(KHEAP_START, KHEAP_MAX, kernel_directory);
 
 	uint32_t i;
-	for (i = 0; i < placement_address +  3 * PAGE_SIZE; i += PAGE_SIZE)
+	for (i = 0; i <= placement_address; i += PAGE_SIZE)
 		pmm_map_frame(i, i, 0);
 
-	kheap_init();
 
+	kheap_init();
 	isr_install_handler(14, paging_fault);
 	paging_change_dir(kernel_directory);
 	paging_enable();
