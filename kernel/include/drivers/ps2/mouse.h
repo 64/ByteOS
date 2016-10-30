@@ -13,7 +13,10 @@
 #define MOUSE_WRITE 0xD4
 #define MOUSE_ENABLE_AUX 0xA8
 #define MOUSE_COMPAQ_STATUS 0x20
-#define MOUSE_IRQ 0xC
+#define MOUSE_IRQ 12
+#define MOUSE_ACK 0xFA
+#define MOUSE_RESEND 0xFE
+#define MOUSE_ERROR 0xFC
 
 struct mouse_state {
 	uint32_t x;
