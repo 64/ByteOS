@@ -38,6 +38,8 @@ void mouse_init() {
 	uint8_t status = mouse_read() | 2;
 	WAIT(1); io_outportb(MOUSE_STATUS, 0x60);
 	WAIT(1); io_outportb(MOUSE_PORT, status);
+	mouse_write(0xF6); mouse_read();
+	mouse_write(0xF4); mouse_read();
 	irq_install_handler(MOUSE_IRQ, mouse_interrupt);
 }
 
