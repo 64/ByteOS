@@ -131,7 +131,7 @@ void keyboard_capslock_toggle() {
 	}
 }
 
-void keyboard_handler(struct regs *r) {
+void keyboard_handler(struct interrupt_frame *r) {
 	keyboard_wait();
 	uint8_t scancode = io_inportb(KBD_DATA);
 	irq_ack(r->int_no - 32);
@@ -158,5 +158,4 @@ void keyboard_init(void) {
 		io_inportb(KBD_DATA);
 	irq_install_handler(1, keyboard_handler);
 	keyboard_set_led(0);
-	klog_notice("PS/2 keyboard driver successfully initialized!\n");
 }

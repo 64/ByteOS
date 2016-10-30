@@ -27,7 +27,7 @@ void pit_init(void) {
 	irq_install_handler(0, pit_handler);
 }
 
-void pit_handler(struct regs *r) {
+void pit_handler(struct interrupt_frame *r) {
 	if (r->int_no != 32) {
 		klog_fatal("The PIT handler must be triggered by IRQ 0\n");
 		abort();

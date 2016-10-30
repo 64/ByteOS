@@ -114,7 +114,7 @@ struct acpi_info {
 };
 
 bool acpi_find_rsdt(void);
-void acpi_sci_interrupt_handler(struct regs *r);
+void acpi_sci_interrupt_handler(struct interrupt_frame *r);
 bool acpi_find_table(char *signature, struct acpi_table_header **out);
 bool acpi_enable();
 bool acpi_parse_dsdt(struct acpi_info *info);

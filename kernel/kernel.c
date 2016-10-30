@@ -1,14 +1,15 @@
 #include <stdio.h>
 
-#include <tty.h>
+#include <drivers/ps2/mouse.h>
+#include <drivers/ps2/kbd.h>
+#include <drivers/pit.h>
+#include <drivers/acpi.h>
 #include <memory/memory.h>
 #include <memory/kheap.h>
 #include <string.h>
 #include <klog.h>
-#include <drivers/ps2/kbd.h>
-#include <drivers/pit.h>
-#include <drivers/acpi.h>
 #include <asm.h>
+#include <tty.h>
 
 void kernel_early(uint32_t mboot_magic, const void *mboot_header) {
 	// Initialises the screen so we can see what's going on
@@ -30,11 +31,8 @@ void kernel_main(void) {
 
 	// Initialise subsystems
 	keyboard_init();
-
-	int *a = kmalloc_a(12);
-	int *b = kmalloc_a(12);
-	klog_detail("a: 0x%x\n", a);
-	klog_detail("b: 0x%x\n", b);
+	mouse_init();
+	klog_notice("PS/2 keyboard and mouse successfully initialized!\n");
 
 	// Ensure kernel never exits
 	while(1);

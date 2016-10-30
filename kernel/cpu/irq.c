@@ -28,7 +28,7 @@ extern void idt_set_entry(uint8_t index, idt_gate base, uint16_t selector, uint8
 		idt_set_entry(index + 32, _irq##index, 0x08, 0x8E); \
 	}
 
-void (*irq_handlers[16])(struct regs *) = {
+void (*irq_handlers[16])(struct interrupt_frame *) = {
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0
 };
@@ -46,7 +46,7 @@ void irq_remap() {
 	io_outportb(0xA1, 0x00); PIC_WAIT();
 }
 
-void irq_install_handler(uint32_t index, void (*handler)(struct regs *)) {
+void irq_install_handler(uint32_t index, void (*handler)(struct interrupt_frame *)) {
 	irq_handlers[index] = handler;
 }
 
@@ -77,7 +77,7 @@ void irq_install() {
 	IRQ_INSTALL_HANDLER(15);
 }
 
-void irq_handler(struct regs *r) {
+void irq_handler(struct interrupt_frame *r) {
 	if (irq_handlers[r->int_no - 32] != NULL) {
 		irq_handlers[r->int_no - 32](r);
 	} else {

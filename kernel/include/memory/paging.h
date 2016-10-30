@@ -44,5 +44,5 @@ extern struct page_directory *current_directory;
 void paging_init(multiboot_info_t *, uintptr_t, size_t);
 void paging_change_dir(struct page_directory *dir);
 pt_entry *paging_get(virt_addr, bool, struct page_directory *);
-void paging_fault(struct regs *r);
+void paging_fault(struct interrupt_frame *r);
 void paging_generate_tables(phys_addr, size_t length, struct page_directory *);

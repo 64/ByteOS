@@ -108,7 +108,7 @@ uintptr_t virt_to_phys(const virt_addr v) {
 	return p;
 }
 
-void paging_fault(struct regs *regs) {
+void paging_fault(struct interrupt_frame *regs) {
 	uint32_t faulting_addr;
 	asm(
 		"mov %%cr2, %0"

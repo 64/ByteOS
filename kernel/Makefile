@@ -40,6 +40,7 @@ memory/pmm.o \
 drivers/vga/vga_textmode.o \
 drivers/pit/pit.o \
 drivers/ps2/kbd.o \
+drivers/ps2/mouse.o \
 drivers/acpi/acpi.o \
 drivers/cmos/cmos.o \
 algs/bitset.o \

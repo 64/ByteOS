@@ -5,7 +5,7 @@
 
 #define PAGE_SIZE 0x1000
 
-struct regs {
+struct interrupt_frame {
 	uint32_t gs, fs, es, ds;
 	uint32_t edi, esi, ebp, unused, ebx, edx, ecx, eax;
 	uint32_t int_no, err_code;

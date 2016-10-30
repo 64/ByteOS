@@ -40,18 +40,18 @@
 	};
 #endif
 
-static void (*isr_handlers[32])(struct regs *r) = {
+static void (*isr_handlers[32])(struct interrupt_frame *r) = {
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0
 };
 
-void isr_install_handler(uint32_t index, void (*handler)(struct regs *r)) {
+void isr_install_handler(uint32_t index, void (*handler)(struct interrupt_frame *r)) {
 	isr_handlers[index] = handler;
 }
 
-void isr_fault_handler(struct regs *r) {
+void isr_fault_handler(struct interrupt_frame *r) {
 	if (isr_handlers[r->int_no] != 0)
 		isr_handlers[r->int_no](r);
 	else {

@@ -161,7 +161,7 @@ bool acpi_enable(struct acpi_info *info) {
 	return 1;
 }
 
-void acpi_sci_interrupt_handler(struct regs *UNUSED(r)) {
+void acpi_sci_interrupt_handler(struct interrupt_frame *UNUSED(r)) {
 	// TODO: Finish this
 	klog_notice("Power off button press detected.\n");
 	acpi_shutdown();
