@@ -32,6 +32,7 @@ cpu/irq.o \
 cpu/asm.o \
 cpu/sse.o \
 cpu/cpu_extensions.o \
+cpu/syscalls.o \
 memory/memory.o \
 memory/paging.o \
 memory/stack_smash.o \

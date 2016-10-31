@@ -123,8 +123,8 @@ void kheap_free(void *ap) {
 
 }
 
-extern uint32_t end;
-phys_addr placement_address = (phys_addr)&end;
+extern phys_addr kernel_phys_end;
+phys_addr placement_address = (phys_addr)&kernel_phys_end;
 
 virt_addr kmalloc_internal(size_t size, bool page_align, phys_addr *phys) {
 	uintptr_t temp;

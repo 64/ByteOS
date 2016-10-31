@@ -39,12 +39,6 @@ void irq_handler_ignore(struct interrupt_frame *r) {
 	irq_ack(r->int_no - 32);
 }
 
-// Ignore misfiring IRQ 1 and 12
-void (*irq_handlers[16])(struct interrupt_frame *) = {
-	0, irq_handler_ignore, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, irq_handler_ignore, 0, 0, 0
-};
-
 void irq_remap() {
 	io_outportb(0x20, 0x11); PIC_WAIT();
 	io_outportb(0xA0, 0x11); PIC_WAIT();
@@ -58,8 +52,9 @@ void irq_remap() {
 	io_outportb(0xA1, 0x00); PIC_WAIT();
 }
 
+extern void (*isr_handlers[256])(struct interrupt_frame *r);
 void irq_install_handler(uint32_t index, void (*handler)(struct interrupt_frame *)) {
-	irq_handlers[index] = handler;
+	isr_handlers[index + 32] = handler;
 }
 
 void irq_install() {
@@ -84,8 +79,8 @@ void irq_install() {
 }
 
 void irq_handler(struct interrupt_frame *r) {
-	if (irq_handlers[r->int_no - 32] != NULL) {
-		irq_handlers[r->int_no - 32](r);
+	if (isr_handlers[r->int_no] != NULL) {
+		isr_handlers[r->int_no](r);
 	} else {
 		klog_detail("Recieved unhandled IRQ number %d\n", r->int_no - 32);
 		irq_ack(r->int_no - 32);

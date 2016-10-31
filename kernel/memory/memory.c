@@ -13,6 +13,7 @@
 extern void gdt_install();
 extern void idt_install();
 extern bool sse_enable();
+extern void syscalls_install();
 
 struct mem_info mem_info;
 
@@ -25,6 +26,7 @@ void mem_init(uint32_t multiboot_magic, const void *multiboot_header) {
 	// Initialise GDT/IDT
 	gdt_install();
 	idt_install();
+	syscalls_install();
 
 	multiboot_info_t *header = (multiboot_info_t*)multiboot_header;
 
