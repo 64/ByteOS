@@ -28,9 +28,21 @@ extern void idt_set_entry(uint8_t index, idt_gate base, uint16_t selector, uint8
 		idt_set_entry(index + 32, _irq##index, 0x08, 0x8E); \
 	}
 
+void irq_ack(uint8_t irq_num) {
+	if (irq_num >= 8)
+		io_outportb(PIC2_COMMAND, PIC_EOI);
+	io_outportb(PIC1_COMMAND, PIC_EOI);
+}
+
+void irq_handler_ignore(struct interrupt_frame *r) {
+	(void)r;
+	irq_ack(r->int_no - 32);
+}
+
+// Ignore misfiring IRQ 1 and 12
 void (*irq_handlers[16])(struct interrupt_frame *) = {
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0
+	0, irq_handler_ignore, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, irq_handler_ignore, 0, 0, 0
 };
 
 void irq_remap() {
@@ -48,12 +60,6 @@ void irq_remap() {
 
 void irq_install_handler(uint32_t index, void (*handler)(struct interrupt_frame *)) {
 	irq_handlers[index] = handler;
-}
-
-void irq_ack(uint8_t irq_num) {
-	if (irq_num >= 8)
-		io_outportb(PIC2_COMMAND, PIC_EOI);
-	io_outportb(PIC1_COMMAND, PIC_EOI);
 }
 
 void irq_install() {

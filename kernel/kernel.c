@@ -2,6 +2,7 @@
 
 #include <drivers/ps2/mouse.h>
 #include <drivers/ps2/kbd.h>
+#include <drivers/ps2/ps2main.h>
 #include <drivers/pit.h>
 #include <drivers/acpi.h>
 #include <memory/memory.h>
@@ -30,9 +31,10 @@ void kernel_main(void) {
 	klog_info("Hello, Kernel World!\n");
 
 	// Initialise subsystems
+	ps2_init();
 	keyboard_init();
-	mouse_init();
-	klog_notice("PS/2 keyboard and mouse successfully initialized!\n");
+	//mouse_init();
+	klog_notice("PS/2 devices successfully initialized!\n");
 
 	// Ensure kernel never exits
 	while(1);

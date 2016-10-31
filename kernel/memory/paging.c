@@ -81,7 +81,6 @@ pt_entry *paging_get(virt_addr address, bool make, struct page_directory *dir) {
 
 // Allocates page tables between two addresses, if end_addr is 0 then it will allocate only one table
 void paging_generate_tables(virt_addr address, virt_addr end_addr, struct page_directory *dir) {
-	klog_detail("Generating tables between 0x%x and 0x%x\n", address, address + PAGE_SIZE);
 	phys_addr iter = address / PAGE_SIZE / 1024;
 	while (iter < ((address / PAGE_SIZE / 1024) + ((end_addr / PAGE_SIZE / 1024) || 1))) {
 		// If the table already exists

@@ -108,10 +108,13 @@ struct acpi_info {
 	uint16_t slp_typa;
 	uint16_t slp_typb;
 	uint16_t slp_en;
+	uint16_t boot_arch_flags;
 	uint8_t power_management_profile;
 	uint8_t acpi_enable;
 	bool acpi_ready;
 };
+
+extern struct acpi_info acpi_info;
 
 bool acpi_find_rsdt(void);
 void acpi_sci_interrupt_handler(struct interrupt_frame *r);

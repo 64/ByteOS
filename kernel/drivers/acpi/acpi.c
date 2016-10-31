@@ -75,6 +75,7 @@ void acpi_init(void) {
 	acpi_info.pm1a_control_block = fadt->pm1a_control_block;
 	acpi_info.pm1b_control_block = fadt->pm1b_control_block;
 	acpi_info.acpi_enable = fadt->acpi_enable;
+	acpi_info.boot_arch_flags = fadt->boot_arch_flags;
 
 	if (!acpi_check_header(&dsdt->header, "DSDT")) {
 		klog_warn("ACPI: DSDT not found!\n");

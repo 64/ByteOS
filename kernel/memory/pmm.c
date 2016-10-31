@@ -25,7 +25,6 @@ void pmm_init(uintptr_t max_mem) {
 	bitset_create(&pmm_bitset, ((max_mem - 1) / PAGE_SIZE / 8) + 1);
 }
 
-// TODO: Use bitflags to pass page flags
 void pmm_alloc_frame(virt_addr addr, uint32_t page_flags) {
 	size_t out = 0;
 	if (bitset_find_first(&pmm_bitset, &out) == 0) {

@@ -56,7 +56,6 @@ size_t strlen(const char* str) {
 	return len;
 }
 
-// TODO: Finish these
 char *strcpy(char * restrict s1, const char * restrict s2) {
 	char *rv = s1;
 	while ((*s1++ = *s2++))
