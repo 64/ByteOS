@@ -12,9 +12,18 @@
 #include <asm.h>
 #include <tty.h>
 
+extern void gdt_install();
+extern void idt_install();
+extern void syscalls_install();
+
 void kernel_early(uint32_t mboot_magic, const void *mboot_header) {
 	// Initialises the screen so we can see what's going on
 	vga_textmode_initialize();
+
+	// Initialise interrupts, GDT and syscalls
+	gdt_install();
+	idt_install();
+	syscalls_install();
 
 	// ACPI must gather values before paging is enabled
 	pit_init();
@@ -33,7 +42,7 @@ void kernel_main(void) {
 	// Initialise subsystems
 	ps2_init();
 	keyboard_init();
-	//mouse_init();
+	mouse_init();
 	klog_notice("PS/2 devices successfully initialized!\n");
 
 	// Ensure kernel never exits

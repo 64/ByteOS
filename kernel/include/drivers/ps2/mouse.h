@@ -5,6 +5,9 @@
 #include <stddef.h>
 #include <system.h>
 
+#define MOUSE_CMD_ACK 0xFA
+#define MOUSE_CMD_RESEND 0xFE
+
 struct mouse_state {
 	int32_t x;
 	int32_t y;

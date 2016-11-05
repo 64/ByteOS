@@ -87,7 +87,6 @@ void acpi_init(void) {
 		return;
 	}
 
-	klog_notice("ACPI successfully initialized!\n");
 	acpi_info.acpi_ready = 1;
 }
 

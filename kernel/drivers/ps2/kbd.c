@@ -2,6 +2,7 @@
 #include <drivers/ps2/kbd.h>
 #include <drivers/pit.h>
 #include <drivers/acpi.h>
+#include <algs/c_queue.h>
 #include <interrupt.h>
 #include <string.h>
 #include <ctype.h>
@@ -24,6 +25,7 @@ extern const uint8_t keyboard_us_uppercase[];
 extern const uint8_t keyboard_us_lowercase[];
 
 struct kbd_state key_states;
+struct c_queue kbd_cmd_q;
 
 static inline uint8_t keyboard_scancode_to_offset(uint8_t scancode) {
 	return keyboard_us_offsets[((scancode & KBD_RELEASE_MASK) ? scancode - KBD_RELEASE_MASK : scancode)];
@@ -89,6 +91,13 @@ bool keyboard_test_persist(uint8_t mask) {
 	return (key_states.persist && mask);
 }
 
+static void keyboard_send_data(uint8_t val) {
+	bool send = c_queue_isempty(&kbd_cmd_q) ? 1 : 0;
+	c_queue_push(&kbd_cmd_q, val);
+	if (send)
+		ps2_port1_write(val);
+}
+
 struct key_modifiers keyboard_get_key_modifiers() {
 	struct key_modifiers mods = {
 		keyboard_test_key(KBD_K_LSHIFT) || keyboard_test_key(KBD_K_RSHIFT),
@@ -100,25 +109,9 @@ struct key_modifiers keyboard_get_key_modifiers() {
 }
 
 void keyboard_set_led(uint8_t flags) {
-	// TODO: Rewrite this
 	flags &= 0x07; // Only use last 3 bits
-	ps2_port1_write(KBD_CMD_LED);
-	uint8_t temp = 0;
-	while (temp != KBD_CMD_ACK) {
-		temp = ps2_port_read();
-		if (temp == KBD_CMD_RESEND)
-			ps2_port1_write(KBD_CMD_LED);
-	}
-
-	ps2_port1_write(flags);
-	temp = 0;
-	while (temp != KBD_CMD_ACK) {
-		temp = ps2_port_read();
-		if (temp == KBD_CMD_RESEND) {
-			ps2_port1_write(KBD_CMD_LED);
-			ps2_port1_write(flags);
-		}
-	}
+	keyboard_send_data(KBD_CMD_LED);
+	keyboard_send_data(flags);
 }
 
 void keyboard_capslock_toggle() {
@@ -134,9 +127,35 @@ void keyboard_capslock_toggle() {
 }
 
 void keyboard_handler(struct interrupt_frame *r) {
-	ps2_wait_input();
-	uint8_t scancode = io_inportb(PS2_DATA);
+	static uint8_t num_retries = 0;
+	uint8_t scancode = ps2_port_read();
+	// If it was a command, handle appropriately
 	irq_ack(r->int_no - 32);
+	if (!c_queue_isempty(&kbd_cmd_q))
+		switch (scancode) {
+			case 0x0:
+				return;
+			case KBD_CMD_ACK:
+				c_queue_pop(&kbd_cmd_q);
+				if (!c_queue_isempty(&kbd_cmd_q))
+					ps2_port1_write(c_queue_peek(&kbd_cmd_q));
+				num_retries = 0;
+				return;
+			case KBD_CMD_RESEND:
+				// Maximum of 3 resends before giving up
+				if (num_retries++ <= 3)
+					ps2_port1_write(c_queue_peek(&kbd_cmd_q));
+				else {
+					c_queue_pop(&kbd_cmd_q);
+					num_retries = 0;
+					return;
+				}
+				return;
+			default:
+				num_retries = 0;
+				break;
+		};
+
 	uint8_t offset = keyboard_scancode_to_offset(scancode);
 	if (scancode & KBD_RELEASE_MASK) {
 		keyboard_clear_key(offset);
@@ -154,7 +173,8 @@ void keyboard_handler(struct interrupt_frame *r) {
 }
 
 void keyboard_init(void) {
+	c_queue_init(&kbd_cmd_q);
 	memset(&key_states, 0, sizeof(key_states));
 	irq_install_handler(1, keyboard_handler);
-	//keyboard_set_led(0);
+	keyboard_set_led(0);
 }

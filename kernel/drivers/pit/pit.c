@@ -10,7 +10,7 @@
 #define PIT_CHANNEL2       (PIT_BASE + 2)
 #define PIT_COMMAND        (PIT_BASE + 3)
 #define PIT_SPEED          1193180
-#define PIT_CONSTANT 1000
+#define PIT_CONSTANT 	   1000
 #define PIT_SET            0x36
 
 volatile uint32_t pit_tick_count = 0;
@@ -28,10 +28,8 @@ void pit_init(void) {
 }
 
 void pit_handler(struct interrupt_frame *r) {
-	if (r->int_no != 32) {
-		klog_fatal("The PIT handler must be triggered by IRQ 0\n");
-		abort();
-	}
+	if (r->int_no != 32)
+		klog_panic("The PIT interrupt must be triggered by IRQ 0");
 	++pit_tick_count;
 	irq_ack(r->int_no - 32);
 }
@@ -43,13 +41,13 @@ uint32_t pit_ticks() {
 void pit_wait(uint32_t seconds) {
 	uint32_t desired_ticks = pit_tick_count + (seconds * PIT_CONSTANT);
 	while (desired_ticks > pit_tick_count) {
-		asm volatile ("sti//hlt//cli");
+		asm volatile("sti//hlt//cli");
 	}
 }
 
 void pit_wait_ms(uint32_t ms) {
 	uint32_t desired_ticks = pit_tick_count + (ms * (PIT_CONSTANT / 1000));
 	while (desired_ticks > pit_tick_count) {
-		asm volatile ("sti//hlt//cli");
+		asm volatile("sti//hlt//cli");
 	}
 }

@@ -46,6 +46,7 @@ drivers/ps2/ps2main.o \
 drivers/acpi/acpi.o \
 drivers/cmos/cmos.o \
 algs/bitset.o \
+algs/c_queue.o \
 
 OBJS=\
 util/crti.o \

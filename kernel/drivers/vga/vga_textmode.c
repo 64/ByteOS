@@ -97,7 +97,7 @@ static inline void vga_textmode_addrow(void) {
 		vga_textmode_shiftscreen();
 		vga_textmode_row--;
 	}
-	vga_textmode_setcursor(vga_textmode_column, vga_textmode_row);
+	//vga_textmode_setcursor(vga_textmode_column, vga_textmode_row);
 }
 
 static inline void vga_textmode_addcol(void) {
@@ -105,7 +105,7 @@ static inline void vga_textmode_addcol(void) {
 		vga_textmode_column = 0;
 		vga_textmode_addrow();
 	}
-	vga_textmode_setcursor(vga_textmode_column, vga_textmode_row);
+	//vga_textmode_setcursor(vga_textmode_column, vga_textmode_row);
 }
 
 static inline void _vga_textmode_display_char(char c) {
@@ -121,10 +121,10 @@ static inline void _vga_textmode_display_char(char c) {
 			break;
 		case '\b':
 			if (vga_textmode_column != 0) vga_textmode_column--;
-			vga_textmode_setcursor(vga_textmode_column, vga_textmode_row);
+			//vga_textmode_setcursor(vga_textmode_column, vga_textmode_row);
 			break;
 		case '\r':
-			vga_textmode_setcursor(vga_textmode_column = 0, vga_textmode_row);
+			//vga_textmode_setcursor(vga_textmode_column = 0, vga_textmode_row);
 			break;
 		// TODO: Not sure what to do with these
 		case '\f':
