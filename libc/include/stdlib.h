@@ -11,6 +11,8 @@
 COMPILER_ATTR_NORETURN
 void abort(void);
 
+long int strtol(const char * restrict nptr, char ** restrict endptr, int base);
+
 char *itoa(uint32_t, char *, uint32_t);
 
 #ifdef __cplusplus

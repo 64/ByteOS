@@ -9,7 +9,7 @@ EXEC_PREFIX?=$(PREFIX)
 INCLUDEDIR?=$(PREFIX)/include
 LIBDIR?=$(EXEC_PREFIX)/lib
 
-CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -Wpedantic -Werror -Wno-unused -fmax-errors=1
+CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra -Wpedantic -Werror -Wno-unused -Wno-type-limits -fmax-errors=1
 CPPFLAGS:=$(CPPFLAGS) -Iinclude
 LIBK_CFLAGS:=$(CFLAGS)
 LIBK_CPPFLAGS:=$(CPPFLAGS) -D__is_libk
@@ -25,6 +25,7 @@ stdio.o \
 string.o \
 ctype.o \
 errno.o \
+math.o \
 
 LIBK_OBJS:=$(OBJS:.o=.libk.o)
 
