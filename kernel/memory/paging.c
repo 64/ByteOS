@@ -58,7 +58,6 @@ void paging_init(multiboot_info_t *mboot_hdr, uintptr_t mmap_end, size_t availab
 	for (i = 0; i <= placement_address; i += PAGE_SIZE)
 		pmm_map_frame(i, i, 0);
 
-
 	kheap_init();
 	isr_install_handler(14, paging_fault);
 	paging_change_dir(kernel_directory);

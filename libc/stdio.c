@@ -85,7 +85,7 @@ static bool print(const char* data, size_t length) {
 	return 1;
 }
 
-int printf(const char* restrict format, ...) {
+int __safe_printf(const char* restrict format, ...) {
 	va_list parameters;
 	va_start(parameters, format);
 
@@ -236,6 +236,7 @@ int __dtoa(char *buf, double val, bool force_sign, bool zero_pad,
      bool space, bool alt_form, bool upper, int style,
      int precision, int field_width)
 {
+
 	if (val == NAN || val == INFINITY)
 		style = __DTOA_STYLE_F;
 
@@ -299,7 +300,6 @@ int __dtoa(char *buf, double val, bool force_sign, bool zero_pad,
 				fp_frac = modf(fp_frac, &fp_int);
 				buf[character_count++] = '0' + (int)fp_int;
 			}
-
 			buf[character_count] = '\0';
 			return (int)(&buf[character_count] - &buf[0]);
 		};
@@ -602,13 +602,27 @@ int _base_printf(_print_func print_fn, _flush_func flush_fn, const char *fmt, va
 				case 'F':
 				case 'f': {
 					int len;
-					double d = va_arg(*args, double);
 					char buf[128];
-					len = __dtoa(
-						buf, d, show_sign, zero_pad,
-						space, alt_form, (*s == 'f') ? 0 : 1,
-						__DTOA_STYLE_F, precision, field_width
-					);
+
+					switch (len_mod) {
+						case _PRINTF_LENMOD_CAPL: {
+							long double d = va_arg(*args, long double);
+							len = __dtoa(
+								buf, d, show_sign, zero_pad,
+								space, alt_form, (*s == 'f') ? 0 : 1,
+								__DTOA_STYLE_F, precision, field_width
+							);
+						} break;
+						default: {
+							double d = va_arg(*args, double);
+							len = __dtoa(
+								buf, d, show_sign, zero_pad,
+								space, alt_form, (*s == 'f') ? 0 : 1,
+								__DTOA_STYLE_F, precision, field_width
+							);
+						}; break;
+					};
+
 					len = _print_with_pad(buf, print_fn, len, justify_left, field_width, max_remain);
 					bytes_written += len;
 					state = _PRINTF_STATE_NORMAL;
@@ -617,13 +631,27 @@ int _base_printf(_print_func print_fn, _flush_func flush_fn, const char *fmt, va
 				case 'E':
 				case 'e': {
 					int len;
-					double d = va_arg(*args, double);
 					char buf[128];
-					len = __dtoa(
-						buf, d, show_sign, zero_pad,
-						space, alt_form, (*s == 'e') ? 0 : 1,
-						__DTOA_STYLE_E, precision, field_width
-					);
+
+					switch (len_mod) {
+						case _PRINTF_LENMOD_CAPL: {
+							long double d = va_arg(*args, long double);
+							len = __dtoa(
+								buf, d, show_sign, zero_pad,
+								space, alt_form, (*s == 'e') ? 0 : 1,
+								__DTOA_STYLE_E, precision, field_width
+							);
+						} break;
+						default: {
+							double d = va_arg(*args, double);
+							len = __dtoa(
+								buf, d, show_sign, zero_pad,
+								space, alt_form, (*s == 'e') ? 0 : 1,
+								__DTOA_STYLE_E, precision, field_width
+							);
+						}; break;
+					};
+
 					len = _print_with_pad(buf, print_fn, len, justify_left, field_width, max_remain);
 					bytes_written += len;
 					state = _PRINTF_STATE_NORMAL;
@@ -632,13 +660,27 @@ int _base_printf(_print_func print_fn, _flush_func flush_fn, const char *fmt, va
 				case 'G':
 				case 'g': {
 					int len;
-					double d = va_arg(*args, double);
 					char buf[128];
-					len = __dtoa(
-						buf, d, show_sign, zero_pad,
-						space, alt_form, (*s == 'g') ? 0 : 1,
-						__DTOA_STYLE_G, precision, field_width
-					);
+
+					switch (len_mod) {
+						case _PRINTF_LENMOD_CAPL: {
+							long double d = va_arg(*args, long double);
+							len = __dtoa(
+								buf, d, show_sign, zero_pad,
+								space, alt_form, (*s == 'g') ? 0 : 1,
+								__DTOA_STYLE_G, precision, field_width
+							);
+						} break;
+						default: {
+							double d = va_arg(*args, double);
+							len = __dtoa(
+								buf, d, show_sign, zero_pad,
+								space, alt_form, (*s == 'g') ? 0 : 1,
+								__DTOA_STYLE_G, precision, field_width
+							);
+						}; break;
+					};
+
 					len = _print_with_pad(buf, print_fn, len, justify_left, field_width, max_remain);
 					bytes_written += len;
 					state = _PRINTF_STATE_NORMAL;

@@ -43,7 +43,8 @@ void kernel_main(void) {
 	ps2_init();
 	keyboard_init();
 	mouse_init();
-	klog_notice("PS/2 devices successfully initialized!\n");
+
+	klog_notice("PS/2 devices successfully initialized! %f\n", 0.1234);
 
 	// Ensure kernel never exits
 	while(1);

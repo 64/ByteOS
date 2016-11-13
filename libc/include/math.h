@@ -28,7 +28,7 @@
 #define FP_ILOG0
 #define FP_ILOGBNAN
 #define MATH_ERRNO
-#define MATH_ERREXCEPT
+#define MATH_ERRCEPT
 #define math_errhandling
 
 double acos(double x);
