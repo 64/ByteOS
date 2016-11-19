@@ -7,6 +7,8 @@
 #define _VGA_COLOR_GET_BACKGROUND(c) ((c) & 0xF0)
 #define _VGA_IS_VALID_COLOR_CHAR(c) ((c) >= '0' && (c) <= '7')
 
+void vga_textmode_movecursor(int x, int y);
+
 enum vga_color {
 	VGA_COLOR_BLACK = 0,
 	VGA_COLOR_BLUE = 1,

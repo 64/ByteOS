@@ -1,5 +1,6 @@
 #include <drivers/ps2/mouse.h>
 #include <drivers/ps2/ps2main.h>
+#include <drivers/vga.h>
 #include <algs/c_queue.h>
 #include <interrupt.h>
 #include <klog.h>
@@ -112,4 +113,7 @@ void mouse_init() {
 	// Initialisation sequence
 	mouse_send_data(0xF6);
 	mouse_send_data(0xF4);
+
+	// Reset cursor on-screen
+	vga_textmode_movecursor(0, 0);
 }

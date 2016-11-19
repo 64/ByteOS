@@ -2,9 +2,11 @@
 #include <drivers/ps2/kbd.h>
 #include <drivers/pit.h>
 #include <drivers/acpi.h>
+#include <drivers/vga.h>
 #include <algs/c_queue.h>
 #include <interrupt.h>
 #include <string.h>
+#include <stdio.h>
 #include <ctype.h>
 #include <klog.h>
 #include <io.h>
@@ -26,6 +28,9 @@ extern const uint8_t keyboard_us_lowercase[];
 
 struct kbd_state key_states;
 struct c_queue kbd_cmd_q;
+
+static enum kbd_wait_state kbd_wait_state;
+static uint8_t kbd_multi_buf;
 
 static inline uint8_t keyboard_scancode_to_offset(uint8_t scancode) {
 	return keyboard_us_offsets[((scancode & KBD_RELEASE_MASK) ? scancode - KBD_RELEASE_MASK : scancode)];
@@ -156,6 +161,56 @@ void keyboard_handler(struct interrupt_frame *r) {
 				break;
 		};
 
+	switch (kbd_wait_state) {
+		case KBD_STATE_MULTI_RECVD:
+			// Parse the multi scan code
+			if (kbd_multi_buf == 0xE0) {
+				switch (scancode) {
+					case 0x48:
+						key_states.arrow_keys |= KBD_UP_ARROW;
+						vga_textmode_movecursor(0, -1);
+						break;
+					case 0x50:
+						key_states.arrow_keys |= KBD_DOWN_ARROW;
+						vga_textmode_movecursor(0, 1);
+						break;
+					case 0x4D:
+						key_states.arrow_keys |= KBD_RIGHT_ARROW;
+						vga_textmode_movecursor(1, 0);
+						break;
+					case 0x4B:
+						key_states.arrow_keys |= KBD_LEFT_ARROW;
+						vga_textmode_movecursor(-1, 0);
+						break;
+
+					case 0xC8:
+						key_states.arrow_keys &= ~(KBD_UP_ARROW);
+						break;
+					case 0xCD:
+						key_states.arrow_keys &= ~(KBD_RIGHT_ARROW);
+						break;
+					case 0xCB:
+						key_states.arrow_keys &= ~(KBD_LEFT_ARROW);
+						break;
+					case 0xD0:
+						key_states.arrow_keys &= ~(KBD_DOWN_ARROW);
+						break;
+					default:
+						break;
+				}
+			}
+			kbd_multi_buf = 0;
+			kbd_wait_state = KBD_STATE_NORMAL;
+			return;
+		default:
+			if (scancode != 0xE0)
+				break;
+			kbd_multi_buf = scancode;
+			kbd_wait_state = KBD_STATE_MULTI_RECVD;
+			break;
+	}
+
+
 	uint8_t offset = keyboard_scancode_to_offset(scancode);
 	if (scancode & KBD_RELEASE_MASK) {
 		keyboard_clear_key(offset);
@@ -168,7 +223,7 @@ void keyboard_handler(struct interrupt_frame *r) {
 		char c = keyboard_scancode_to_char(scancode, mods, &force_print);
 		if (!(c != 0 || isprint(c)) && !force_print)
 			return;
-		printf("%c", c);
+		putchar(c);
 	}
 }
 

@@ -34,6 +34,8 @@ static uint16_t* const VGA_MEMORY = (uint16_t*) 0xB8000;
 
 static size_t vga_textmode_row;
 static size_t vga_textmode_column;
+static size_t vga_cursor_x;
+static size_t vga_cursor_y;
 static uint16_t* vga_textmode_buffer;
 
 void vga_textmode_shiftscreen();
@@ -51,12 +53,33 @@ void vga_textmode_setcursor(size_t x, size_t y) {
 	io_outportb(0x3D4, 0x0F);
 	io_outportb(0x3D5, (uint8_t)(position & 0xFF));
 	io_outportb(0x3D4, 0x0E);
-	io_outportb(0x3D5, (uint8_t)((position>>8) & 0xFF));
+	io_outportb(0x3D5, (uint8_t)((position >> 8) & 0xFF));
+	vga_cursor_x = x;
+	vga_cursor_y = y;
+}
+
+void vga_textmode_movecursor(int x, int y) {
+	extern int printf(const char * restrict, ...);
+	int final_x = (int)vga_cursor_x + x;
+	int final_y = (int)vga_cursor_y + y;
+
+	// Keep cursor at the edge of the screen
+	if (final_x < 0)
+		final_x = 0;
+	else if (final_x >= 80)
+		final_x = VGA_WIDTH - 1;
+	if (final_y < 0)
+		final_y = 0;
+	else if (final_y >= 25)
+		final_y = VGA_HEIGHT - 1;
+
+	vga_textmode_setcursor(final_x, final_y);
 }
 
 void vga_textmode_initialize(void) {
 	vga_textmode_row = 0;
 	vga_textmode_column = 0;
+	vga_cursor_x = vga_cursor_y = 0;
 	_vga_textmode_reset_styles();
 	vga_textmode_setcursor(vga_textmode_column, vga_textmode_row);
 	vga_textmode_buffer = VGA_MEMORY;
