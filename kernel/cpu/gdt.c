@@ -5,8 +5,8 @@
 #include <descriptors.h>
 
 static struct {
-	struct gdt_entry entries[6];
-	struct gdt_pointer pointer;
+	struct gdt_entry entries[6]; //!< Contains the six entries to the GDT
+	struct gdt_pointer pointer; //!< Stores the pointer which the CPU uses to locate the GDT
 } gdt COMPILER_ATTR_USED;
 
 void gdt_set_entry(uint8_t index, uint64_t base, uint64_t limit, uint8_t access, uint8_t granularity) {
@@ -27,6 +27,8 @@ void gdt_install(void) {
 	gdt_set_entry(0, 0, 0, 0, 0);
 	gdt_set_entry(1, 0, 0xFFFFFFFF, 0x9A, 0xCF);
 	gdt_set_entry(2, 0, 0xFFFFFFFF, 0x92, 0xCF);
+	gdt_set_entry(3, 0, 0xFFFFFFFF, 0xFA, 0xCF);
+	gdt_set_entry(4, 0, 0xFFFFFFFF, 0xF2, 0xCF);
 
 	gdt_load((uintptr_t)gdt_p);
 }

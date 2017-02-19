@@ -16,6 +16,10 @@ extern void gdt_install();
 extern void idt_install();
 extern void syscalls_install();
 
+
+/// \brief Runs before `kernel_main` and initialises a few subsystems
+/// \param The multiboot magic value passed from the bootloader
+/// \param The pointer to the multiboot struct passed from the bootloader
 void kernel_early(uint32_t mboot_magic, const void *mboot_header) {
 	// Initialises the screen so we can see what's going on
 	vga_textmode_initialize();
@@ -36,7 +40,9 @@ void kernel_early(uint32_t mboot_magic, const void *mboot_header) {
 	cpu_extensions_enable();
 }
 
+/// \brief Initialises device drivers and runs until shutdown
 void kernel_main(void) {
+	// Friendly greeting
 	klog_info("Hello, Kernel World!\n");
 
 	// Initialise subsystems
@@ -44,7 +50,7 @@ void kernel_main(void) {
 	keyboard_init();
 	mouse_init();
 
-	klog_notice("PS/2 devices successfully initialized! %f\n", 0.1234);
+	klog_notice("PS/2 devices successfully initialized!");
 
 	// Ensure kernel never exits
 	while(1);

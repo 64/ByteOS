@@ -1,7 +1,7 @@
 HOST?=i686-elf
 PROJECTS?=kernel libc
 
-.PHONY: all build clean run rebuild debug-server debug-gdb
+.PHONY: all build clean run rebuild debug-server debug-gdb docs
 
 all: bin/byteos.iso
 
@@ -27,6 +27,7 @@ clean:
 	@rm -rf sysroot
 	@rm -rf isodir
 	@rm -rf bin
+	@rm -rf docs
 
 rebuild: clean build
 
@@ -35,6 +36,9 @@ debug-server: bin/byteos.iso
 
 debug-gdb:
 	sudo ../vendor/gdb/gdb/gdb
+
+docs:
+	doxygen
 
 run: bin/byteos.iso
 	qemu-system-i386 -cdrom bin/byteos.iso -serial stdio
