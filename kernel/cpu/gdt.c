@@ -9,7 +9,14 @@ static struct {
 	struct gdt_pointer pointer; //!< Stores the pointer which the CPU uses to locate the GDT
 } gdt COMPILER_ATTR_USED;
 
-void gdt_set_entry(uint8_t index, uint64_t base, uint64_t limit, uint8_t access, uint8_t granularity) {
+/// See http://wiki.osdev.org/Global_Descriptor_Table for more details.
+/// \brief Fills an entry in the Global Descriptor Table
+/// \param index The index of the GDT entry to be filled
+/// \param base The linear address where the segment begins
+/// \param limit The maximum addressable unit
+/// \param access The access byte (contains priviliges for the GDT entry)
+/// \param granularity The granularity bit
+void gdt_set_entry(uint8_t index, uint32_t base, uint32_t limit, uint8_t access, uint8_t granularity) {
 	gdt.entries[index].base_low = (base & 0xFFFF);
 	gdt.entries[index].base_middle = (base >> 16) & 0xFF;
 	gdt.entries[index].base_high = (base >> 24) & 0xFF;
@@ -19,6 +26,7 @@ void gdt_set_entry(uint8_t index, uint64_t base, uint64_t limit, uint8_t access,
 	gdt.entries[index].access = access;
 }
 
+/// \brief Installs the GDT and loads it using the `lgdt` instruction
 void gdt_install(void) {
 	struct gdt_pointer *gdt_p = &gdt.pointer;
 	gdt_p->size = sizeof(gdt.entries) - 1;

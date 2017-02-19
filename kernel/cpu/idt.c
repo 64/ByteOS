@@ -7,10 +7,16 @@
 #include <interrupt.h>
 
 static struct {
-	struct idt_entry entries[256];
-	struct idt_pointer pointer;
+	struct idt_entry entries[256]; //!< Contains the 256 entries to the IDT
+	struct idt_pointer pointer; //!< Stores the pointer which the CPU uses to locate the IDT
 } idt COMPILER_ATTR_USED;
 
+/// See http://wiki.osdev.org/IDT for more details.
+/// \brief Fills an entry in the Interrupt Descriptor Table
+/// \param index The index of the IDT entry to be filled
+/// \param base The address of the interrupt handler
+/// \param selector The selector of the interrupt handler
+/// \param flags Extra flags containing DPL, gate type etc.
 void idt_set_entry(uint8_t index, idt_gate base, uint16_t selector, uint8_t flags) {
 	idt.entries[index].base_low = ((uintptr_t)base & 0xFFFF);
 	idt.entries[index].base_high = ((uintptr_t)base >> 16) & 0xFFFF;
@@ -19,11 +25,12 @@ void idt_set_entry(uint8_t index, idt_gate base, uint16_t selector, uint8_t flag
 	idt.entries[index].flags = flags | 0x60;
 }
 
-#define INSTALL_ISR(index) { \
-		extern void  _isr##index(); \
-		idt_set_entry((index), (_isr##index), 0x08, 0x8E); \
-	}
+/// \brief Macro for declaring the interrupt handler and setting correct the IDT entry
+/// \param index The index of the ISR to install
+#define INSTALL_ISR(index) extern void  _isr##index(); \
+			   idt_set_entry((index), (_isr##index), 0x08, 0x8E); \
 
+/// \brief Installs all the ISRs and IRQs and loads the IDT using the `lidt` instruction
 void idt_install(void) {
 	struct idt_pointer *idt_p = &idt.pointer;
 	idt_p->size = (uint16_t)(sizeof(idt.entries) - 1);

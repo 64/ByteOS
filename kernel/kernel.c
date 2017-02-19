@@ -18,8 +18,8 @@ extern void syscalls_install();
 
 
 /// \brief Runs before `kernel_main` and initialises a few subsystems
-/// \param The multiboot magic value passed from the bootloader
-/// \param The pointer to the multiboot struct passed from the bootloader
+/// \param mboot_header The multiboot magic value passed from the bootloader
+/// \param mboot_magic The pointer to the multiboot struct passed from the bootloader
 void kernel_early(uint32_t mboot_magic, const void *mboot_header) {
 	// Initialises the screen so we can see what's going on
 	vga_textmode_initialize();
