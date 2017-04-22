@@ -30,7 +30,6 @@ cpu/isr.o \
 cpu/isrs.o \
 cpu/irq.o \
 cpu/asm.o \
-cpu/sse.o \
 cpu/cpu_extensions.o \
 cpu/syscalls.o \
 memory/memory.o \
@@ -38,6 +37,8 @@ memory/paging.o \
 memory/stack_smash.o \
 memory/kheap.o \
 memory/pmm.o \
+system/task.o \
+system/task_switch.o \
 drivers/vga/vga_textmode.o \
 drivers/pit/pit.o \
 drivers/ps2/kbd.o \

@@ -12,6 +12,10 @@ struct interrupt_frame {
 	uint32_t eip, cs, eflags, esp, ss;
 };
 
+struct registers {
+	uint32_t eax, ebx, ecx, edx, esi, edi, esp, ebp, eip, eflags, cr3;
+};
+
 typedef uintptr_t phys_addr;
 typedef uintptr_t virt_addr;
 

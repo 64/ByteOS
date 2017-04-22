@@ -17,10 +17,10 @@ cpuid_supported:
 	andl $0x00200000, %eax   # eax = zero if ID bit can't be changed, else non-zero
 	ret                      # Return
 
-.global sse_set_enabled
-.type sse_set_enabled, @function
+.global sse_fpu_set_enabled
+.type sse_fpu_set_enabled, @function
 
-sse_set_enabled:
+sse_fpu_set_enabled:
 	mov %cr0, %eax
 	and $0xFFFB, %ax
 	or $0x2, %ax

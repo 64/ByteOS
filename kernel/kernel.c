@@ -7,6 +7,7 @@
 #include <drivers/acpi.h>
 #include <memory/memory.h>
 #include <memory/kheap.h>
+#include <system/task.h>
 #include <string.h>
 #include <klog.h>
 #include <asm.h>
@@ -50,7 +51,12 @@ void kernel_main(void) {
 	keyboard_init();
 	mouse_init();
 
-	klog_notice("PS/2 devices successfully initialized!");
+	klog_notice("PS/2 devices successfully initialized!\n");
+
+	klog_notice("Launching scheduler...\n");
+	tasking_init();
+	void task_test(void);
+	task_test();
 
 	// Ensure kernel never exits
 	while(1);

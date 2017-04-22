@@ -120,7 +120,7 @@ void paging_fault(struct interrupt_frame *regs) {
 	bool reserved = regs->err_code & PAGE_FAULT_RESERVED;
 	uint8_t id = regs->err_code & PAGE_FAULT_ID;
 
-	klog_fatal("Page fault: 0x%x\n\t", faulting_addr);
+	klog_fatal("Page fault: %p\n\t", faulting_addr);
 	if (present) klog_fatal_nohdr("- Page not present\n\t");
 	if (rw) klog_fatal_nohdr("- Page not writeable\n\t");
 	if (us) klog_fatal_nohdr("- Page not writeable from user-mode\n\t");
