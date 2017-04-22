@@ -1,5 +1,6 @@
 .section .text
 .align 4
+
 .global task_switch
 .type task_switch,@function
 task_switch:
@@ -49,3 +50,20 @@ task_switch:
 	xchg (%esp), %eax
 	mov (%eax), %eax
 	ret
+
+.global enter_userspace
+.type enter_userspace,@function
+enter_userspace:
+ 	mov $0x23, %ax
+	mov %ax, %ds
+	mov %ax, %es
+	mov %ax, %fs
+	mov %ax, %gs
+
+	mov %esp, %eax
+	push $0x23
+	push %eax
+	pushf
+	push $0x1B
+	push $_test_user_function
+	iret

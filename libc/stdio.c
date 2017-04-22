@@ -42,6 +42,8 @@
 	} \
 	return len;
 
+#define __IS_UNSIGNED_SPEC(c) ((c) == 'u' || (c) == 'p' || (c) == 'x' || (c) == 'X')
+
 #define DTOA_BUFSIZE 128
 #define __DTOA_STYLE_F 1
 #define __DTOA_STYLE_E 2
@@ -530,7 +532,7 @@ int _base_printf(_print_func print_fn, _flush_func flush_fn, const char *fmt, va
 					}
 					switch (len_mod) {
 						case _PRINTF_LENMOD_HH: {
-							if (*s != 'u') {
+							if (!__IS_UNSIGNED_SPEC(*s)) {
 								signed char val = va_arg(*args, int);
 								len += __ctoa(_ITOA_PARAMS);
 							} else {
@@ -539,7 +541,7 @@ int _base_printf(_print_func print_fn, _flush_func flush_fn, const char *fmt, va
 							}
 						}; break;
 						case _PRINTF_LENMOD_H: {
-							if (*s != 'u') {
+							if (!__IS_UNSIGNED_SPEC(*s)) {
 								short val = va_arg(*args, int);
 								len += __stoa(_ITOA_PARAMS);
 							} else {
@@ -552,7 +554,7 @@ int _base_printf(_print_func print_fn, _flush_func flush_fn, const char *fmt, va
 						case _PRINTF_LENMOD_J:
 						case _PRINTF_LENMOD_Z:
 						case _PRINTF_LENMOD_T: {
-							if (*s != 'u') {
+							if (!__IS_UNSIGNED_SPEC(*s)) {
 								int val = va_arg(*args, int);
 								len += __itoa(_ITOA_PARAMS);
 							} else {
@@ -561,7 +563,7 @@ int _base_printf(_print_func print_fn, _flush_func flush_fn, const char *fmt, va
 							}
 						}; break;
 						case _PRINTF_LENMOD_L: {
-							if (*s != 'u') {
+							if (!__IS_UNSIGNED_SPEC(*s)) {
 								long val = va_arg(*args, long);
 								len += __ltoa(_ITOA_PARAMS);
 							} else {
@@ -570,7 +572,7 @@ int _base_printf(_print_func print_fn, _flush_func flush_fn, const char *fmt, va
 							}
 						}; break;
 						case _PRINTF_LENMOD_LL: {
-							if (*s != 'u') {
+							if (!__IS_UNSIGNED_SPEC(*s)) {
 								long val = va_arg(*args, long long);
 								len += __lltoa(_ITOA_PARAMS);
 							} else {

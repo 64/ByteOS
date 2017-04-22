@@ -27,6 +27,8 @@ cpu/gdt.o \
 cpu/idt.o \
 cpu/idt_load.o \
 cpu/isr.o \
+cpu/tss.o \
+cpu/tss_load.o \
 cpu/isrs.o \
 cpu/irq.o \
 cpu/asm.o \

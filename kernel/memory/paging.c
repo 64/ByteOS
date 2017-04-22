@@ -56,7 +56,7 @@ void paging_init(multiboot_info_t *mboot_hdr, uintptr_t mmap_end, size_t availab
 
 	uint32_t i;
 	for (i = 0; i <= placement_address; i += PAGE_SIZE)
-		pmm_map_frame(i, i, 0);
+		pmm_map_frame(i, i, PAGE_TABLE_RW | PAGE_TABLE_USER);
 
 	kheap_init();
 	isr_install_handler(14, paging_fault);
@@ -122,8 +122,8 @@ void paging_fault(struct interrupt_frame *regs) {
 
 	klog_fatal("Page fault: %p\n\t", faulting_addr);
 	if (present) klog_fatal_nohdr("- Page not present\n\t");
+	if (us) klog_fatal_nohdr("- Page not accessible from user-mode\n\t");
 	if (rw) klog_fatal_nohdr("- Page not writeable\n\t");
-	if (us) klog_fatal_nohdr("- Page not writeable from user-mode\n\t");
 	if (reserved) klog_fatal_nohdr("- Page reserved bits overwritten\n\t");
 	if (id) klog_fatal_nohdr("- ID: %d\n\t", id);
 	klog_fatal_nohdr("\n");

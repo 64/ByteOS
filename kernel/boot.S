@@ -15,6 +15,7 @@
 # Reserve a stack for the initial thread.
 .section .bss
 .align 16
+.global stack_bottom
 stack_bottom:
 .skip 16384 # 16 KiB
 stack_top:

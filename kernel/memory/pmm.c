@@ -45,7 +45,7 @@ void pmm_map_frame(virt_addr va, phys_addr pa, uint32_t page_flags) {
 
 	*page |= PAGE_TABLE_PRESENT;
 	*page |= (page_flags & PAGE_TABLE_RW) ? PAGE_TABLE_RW : 0;
-	*page |= (page_flags & PAGE_TABLE_RW) ? 0 : PAGE_TABLE_USER;
+	*page |= (page_flags & PAGE_TABLE_USER) ? PAGE_TABLE_USER : 0;
 	*page |= PAGE_TABLE_ADDR(pa);
 	pmm_set_addr(pa);
 }

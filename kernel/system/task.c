@@ -51,6 +51,11 @@ void task_test() {
 	klog_info("Returned to main task.\n");
 }
 
+void _test_user_function() {
+	klog_info("This is userspace!\n");
+	asm volatile("cli");
+}
+
 void task_preempt() {
 	struct task *last = current_task;
 	current_task = current_task->next;
