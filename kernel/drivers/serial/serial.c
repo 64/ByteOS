@@ -40,7 +40,7 @@ void serial_write_com(int com, unsigned char data) {
 			break;
 		// TODO: COM3 and COM4
 		default:
-			break;
+			return;
 	}
 
 	while (serial_transmit_empty(port) == 0)

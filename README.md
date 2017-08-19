@@ -6,7 +6,7 @@ A simple hobby operating system for the x86_64 architecture, written in C.
 
 You will need:
 * GNU `binutils` for `x86_64-elf`
-* `gcc` for `x86_64-elf` with `-mno-red-zone` capabilities ([instructions](http://wiki.osdev.org/Libgcc_without_red_zone))
+* `gcc` for `x86_64-elf` with `-mno-red-zone` and C11 capabilities ([instructions](http://wiki.osdev.org/Libgcc_without_red_zone))
 * Make
 * NASM
 * GRUB 2.02

@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#define KERNEL_VIRTUAL_BASE 0xFFFFFFFF80000000
+
 struct interrupt_frame {
 	uint64_t r11, r10, r9, r8;
 	uint64_t rdi, rsi, rdx, rcx, rax;

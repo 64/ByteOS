@@ -20,6 +20,11 @@ long_mode_start:
 	extern load_idt
 	call load_idt
 
+	; Pass multiboot information to kmain
+	pop rdi
+	extern kmain
+	call kmain
+
 	sti
 .end:
 	hlt

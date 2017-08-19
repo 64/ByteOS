@@ -101,6 +101,11 @@ _start:
 	; Validate multiboot
 	cmp eax, 0x36D76289
 	jne .no_multiboot
+	; Check 8-byte alignment of pointer
+	mov ecx, ebx
+	and ecx, (8 - 1)
+	test ecx, ecx
+	jnz .no_multiboot
 
 	; Set the cursor to blink
 	mov dx, 0x3D4
@@ -151,6 +156,9 @@ _start:
 	xor eax, ecx
 	jz .no_cpuid
 
+	; Preserve multiboot information
+	push ebx
+
 	; Check if long mode is supported
 	mov eax, 0x80000000
 	cpuid
@@ -161,6 +169,9 @@ _start:
 	cpuid
 	test edx, 1 << 29
 	jz .no_long_mode
+
+	; Pop multiboot information
+	pop ebx
 
 	; Enable SSE
 	mov eax, cr0

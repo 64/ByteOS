@@ -1,6 +1,6 @@
-CFLAGS += -ffreestanding -mno-red-zone -Wall -Wextra -Wpedantic -std=gnu99
+CFLAGS += -ffreestanding -mno-red-zone -Wall -Wextra -std=gnu11
 CFLAGS += -Iinclude -Iinclude/kernel -g -Werror -mcmodel=kernel
-# CFLAGS += -msse -msse2 -O2
+CFLAGS += -msse -msse2 -O2
 NASM_FLAGS := -f elf64 -F dwarf -g -w+all -Werror
 
 KERNEL_LINK_FLAGS = $(LDFLAGS) -n -nostdlib -Lbuild -lk -lgcc
@@ -12,7 +12,8 @@ interrupts.o \
 isr_handler.o \
 vga_tmode.o \
 cansid.o \
-serial.o
+serial.o \
+kmain.o
 KERNEL_OBJS = $(addprefix build/,$(KERNEL_OBJ_LIST))
 
 LIBK_COMPILE_FLAGS = $(CFLAGS)
@@ -28,14 +29,14 @@ LIBK_OBJS = $(addprefix build/,$(LIBK_OBJ_LIST))
 all: build/byteos.iso
 
 run: build/byteos.iso
-	qemu-system-x86_64 -cdrom build/byteos.iso
+	qemu-system-x86_64 -serial stdio -cdrom build/byteos.iso
 
 clean:
 	rm -rf build
 	rm -f iso/boot/byteos.elf
 
 debug: build/byteos.iso
-	qemu-system-x86_64 -d int -no-reboot -s -S -cdrom build/byteos.iso &
+	qemu-system-x86_64 -d cpu_reset -no-reboot -s -S -cdrom build/byteos.iso &
 	../../../deps/bin/gdb
 	pkill qemu
 
