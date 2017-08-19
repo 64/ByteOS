@@ -1,11 +1,7 @@
+build/*
+*.elf
+*.sym
 *.iso
 *.d
 *.o
 *.a
-.DS_Store
-bin
-!bin/byteos.iso
-isodir
-sysroot
-docs
-.gdbinit

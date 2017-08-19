@@ -1,47 +1,79 @@
-HOST?=i686-elf
-PROJECTS?=kernel libc
+CFLAGS += -ffreestanding -mno-red-zone -Wall -Wextra -Wpedantic -std=gnu99
+CFLAGS += -Iinclude -Iinclude/kernel -g -Werror -mcmodel=kernel
+# CFLAGS += -msse -msse2 -O2
+NASM_FLAGS := -f elf64 -F dwarf -g -w+all -Werror
 
-.PHONY: all build clean run rebuild debug-server debug-gdb docs
+KERNEL_LINK_FLAGS = $(LDFLAGS) -n -nostdlib -Lbuild -lk -lgcc
+KERNEL_COMPILE_FLAGS = $(CFLAGS)
+KERNEL_OBJ_LIST = \
+boot.o \
+long_mode.o \
+interrupts.o \
+isr_handler.o \
+vga_tmode.o \
+cansid.o \
+serial.o
+KERNEL_OBJS = $(addprefix build/,$(KERNEL_OBJ_LIST))
 
-all: bin/byteos.iso
+LIBK_COMPILE_FLAGS = $(CFLAGS)
+LIBK_OBJ_LIST = \
+string.o \
+kprintf.o \
+abort.o
+LIBK_OBJS = $(addprefix build/,$(LIBK_OBJ_LIST))
 
-build:
-	@mkdir -p bin
-	@./scripts/build.sh
+.PHONY: all clean run debug disassemble
+.SUFFIXES: .o .c .asm
 
-bin/byteos.iso: isodir/boot/byteos.bin isodir/boot/grub/grub.cfg
-	@grub-mkrescue -o $@ isodir 2> /dev/null
+all: build/byteos.iso
 
-isodir/boot/byteos.bin: build
-	@mkdir -p isodir/boot
-	@rsync -quraE sysroot/boot/byteos.bin isodir/boot/byteos.bin
-
-isodir/boot/grub/grub.cfg: build
-	@mkdir -p isodir/boot/grub
-	@printf "menuentry \"byteos\" {\n\tmultiboot /boot/byteos.bin \n}\n" > isodir/boot/grub/grub.cfg
+run: build/byteos.iso
+	qemu-system-x86_64 -cdrom build/byteos.iso
 
 clean:
-	@for PROJECT in $(PROJECTS); do \
-	  cd $$PROJECT && make clean && cd ../; \
-	done
-	@rm -rf sysroot
-	@rm -rf isodir
-	@rm -rf bin
-	@rm -rf docs
+	rm -rf build
+	rm -f iso/boot/byteos.elf
 
-rebuild: clean build
+debug: build/byteos.iso
+	qemu-system-x86_64 -d int -no-reboot -s -S -cdrom build/byteos.iso &
+	../../../deps/bin/gdb
+	pkill qemu
 
-debug-server: bin/byteos.iso
-	qemu-system-i386 -s -cdrom bin/byteos.iso
+disassemble: build/byteos.elf
+	x86_64-elf-objdump --no-show-raw-insn -d -Mintel build/byteos.elf | source-highlight -s asm -f esc256 | less -eRiMX
 
-debug-gdb:
-	sudo ../vendor/gdb/gdb/gdb
+iso/boot/byteos.elf: build/byteos.elf
+	cp $< $@
 
-docs:
-	doxygen
+build/:
+	mkdir build
 
-run: bin/byteos.iso
-	qemu-system-i386 -cdrom bin/byteos.iso -serial stdio
+build/libk.a: $(LIBK_OBJS)
+	x86_64-elf-ar rcs $@ $(LIBK_OBJS)
 
-vbox: bin/byteos.iso
-	vboxmanage startvm "ByteOS"
+build/byteos.iso: build/ iso/boot/byteos.elf
+	grub-mkrescue -o $@ iso 2> /dev/null
+
+build/byteos.elf: $(KERNEL_OBJS) build/libk.a
+	x86_64-elf-gcc -T linker.ld -o $@ $(KERNEL_OBJS) $(KERNEL_LINK_FLAGS)
+	x86_64-elf-objcopy --only-keep-debug build/byteos.elf build/byteos.sym
+	x86_64-elf-objcopy --strip-debug build/byteos.elf
+	grub-file --is-x86-multiboot2 $@
+
+define kernel_folder
+build/%.o: $1/%.asm
+	nasm $(NASM_FLAGS) -MD $$(patsubst %.o,%.d,$$@) $$< -o $$@
+
+build/%.o: $1/%.c
+	x86_64-elf-gcc -c $$< -o $$@ -MD $(KERNEL_COMPILE_FLAGS)
+endef
+
+$(eval $(call kernel_folder,kernel))
+$(eval $(call kernel_folder,kernel/cpu))
+$(eval $(call kernel_folder,kernel/drivers/serial))
+$(eval $(call kernel_folder,kernel/drivers/vga_tmode))
+
+build/%.o: libk/%.c
+	x86_64-elf-gcc -c $< -o $@ -MD $(LIBK_COMPILE_FLAGS)
+
+-include build/*.d
