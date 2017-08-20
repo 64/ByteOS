@@ -23,6 +23,11 @@ void serial_init(void) {
 	outb(COM2_PORT + 3, 0x02);    // 7 bits, no parity, one stop bit
 	outb(COM2_PORT + 2, 0xC7);    // Enable FIFO, clear them, with 14-byte threshold
 	outb(COM2_PORT + 4, 0x0B);    // IRQs enabled, RTS/DSR set
+
+	// Print a small separator so we can see output clearly
+	const char *msg = "-----------------------------------\n";
+	while (*msg)
+		serial_write_com(1, *msg++);
 }
 
 static inline int serial_transmit_empty(uint16_t port) {
