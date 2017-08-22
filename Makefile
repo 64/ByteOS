@@ -13,6 +13,7 @@ isr_handler.o \
 vga_tmode.o \
 cansid.o \
 serial.o \
+pmm.o \
 kmain.o
 KERNEL_OBJS = $(addprefix build/,$(KERNEL_OBJ_LIST))
 
@@ -71,6 +72,7 @@ endef
 
 $(eval $(call kernel_folder,kernel))
 $(eval $(call kernel_folder,kernel/cpu))
+$(eval $(call kernel_folder,kernel/mm))
 $(eval $(call kernel_folder,kernel/drivers/serial))
 $(eval $(call kernel_folder,kernel/drivers/vga_tmode))
 
