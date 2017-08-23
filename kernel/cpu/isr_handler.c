@@ -4,15 +4,37 @@
 
 static const char * const exception_messages[32];
 
-void exception_handler(struct interrupt_frame *frame) {
+static void page_fault(struct interrupt_frame *frame) {
+	uintptr_t faulting_address;
+	asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
 	panic(
 		"%s:\n"
+		"\tfaulting address: %p\n"
 		"\trip: %p, rsp: %p\n"
-		"\tint_no: %lu, err_code: %lu\n",
+		"\tint_no: %lu, err_code: %lu, flags: %u\n",
 		exception_messages[frame->int_no],
+		(void *)faulting_address,
 		(void *)frame->rip, (void *)frame->rsp,
-		frame->int_no, frame->err_code
+		frame->int_no, frame->err_code,
+		(unsigned int)frame->err_code & 0xF
 	);
+}
+
+void exception_handler(struct interrupt_frame *frame) {
+	switch (frame->int_no) {
+		case 14: // TODO: Replace with constant
+			page_fault(frame);
+			break;
+		default:
+			panic(
+				"%s:\n"
+				"\trip: %p, rsp: %p\n"
+				"\tint_no: %lu, err_code: %lu\n",
+				exception_messages[frame->int_no],
+				(void *)frame->rip, (void *)frame->rsp,
+				frame->int_no, frame->err_code
+			);
+	}
 }
 
 void irq_handler(struct interrupt_frame *frame) {

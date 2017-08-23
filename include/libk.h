@@ -14,8 +14,8 @@ __attribute__((noreturn)) void abort(void);
 #define panic(msg, ...) do { \
 		kprintf( \
 			"\n\x1B[0m--------------------------------------------------------------------------------\x1B[0m" \
-			"\x1B[1;41;37mpanic at %s:%s:\x1B[0m\n" \
-			msg, __FILE__, __func__, ##__VA_ARGS__ \
+			"\x1B[1;41;37mpanic at %s:%s:%u\x1B[0m\n" \
+			msg, __FILE__, __func__, __LINE__, ##__VA_ARGS__ \
 		); \
 		abort(); \
 	} while(0)

@@ -2,6 +2,8 @@
 
 A simple hobby operating system for the x86_64 architecture, written in C.
 
+![Screenshot](https://i.gyazo.com/cbd3707fdcc2e3e01776f62399c53a1b.png)
+
 ## Building
 
 You will need:
