@@ -5,3 +5,6 @@
 #include "system.h"
 
 void pmm_mmap_parse(struct multiboot_info *);
+
+void *boot_heap_malloc(size_t n);
+void boot_heap_free(void *p);

@@ -5,5 +5,8 @@
 
 void kmain(void *mboot_info_physical) {
 	char *mboot_info_virtual = (char *)mboot_info_physical + KERNEL_VIRTUAL_BASE;
-pmm_mmap_parse((struct multiboot_info *)mboot_info_virtual);
+	pmm_mmap_parse((struct multiboot_info *)mboot_info_virtual);
+
+	int *i = boot_heap_malloc(sizeof *i);
+	kprintf("Allocated at %p\n", (void*)i);
 }

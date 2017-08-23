@@ -29,3 +29,11 @@ long_mode_start:
 .end:
 	hlt
 	jmp .end
+
+section .bss
+align 16
+global boot_heap_start
+boot_heap_start:
+	resb 1024 * 128
+global boot_heap_end
+boot_heap_end:

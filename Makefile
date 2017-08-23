@@ -14,6 +14,7 @@ vga_tmode.o \
 cansid.o \
 serial.o \
 pmm.o \
+boot_heap.o \
 kmain.o
 KERNEL_OBJS = $(addprefix build/,$(KERNEL_OBJ_LIST))
 
