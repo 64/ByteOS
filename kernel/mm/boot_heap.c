@@ -28,28 +28,31 @@ static struct heap_hdr *init_heap(void) {
 	return rv;
 }
 
-static inline size_t dist_to_next(struct heap_hdr *ptr) {
+static size_t dist_to_next(struct heap_hdr *ptr) {
 	if (ptr->magic == HEAP_MAGIC)
 		return ptr->size + SIZE;
 	return ptr->next == 0 ? 0 : ptr->size + SIZE + ptr->next;
 }
 
 static inline void do_alloc(size_t n, struct heap_hdr *head, struct heap_hdr *prev) {
+	kprintf("Head size %zu\n", head->size);
 	if (n + SIZE + MIN_ALLOC <= head->size) {
 		// Room for new node
-		kprintf("Head size %zu\n", head->size);
 		struct heap_hdr *new_node = (struct heap_hdr *)(SIZE + n + (uintptr_t)head);
 		new_node->size = head->size - SIZE - n;
 		if (head->magic == HEAP_MAGIC)
 			new_node->magic = HEAP_MAGIC;
+		else if (head->next == 0)
+			new_node->next = 0;
 		else
-			new_node->next = head->next - SIZE - n;
+			new_node->next = head->next - n;
 		head->size = n;
 		head->magic = HEAP_MAGIC;
-		kprintf("New node at %p, size %zu\n", (void *)new_node, new_node->size);
+		kprintf("New node at %p, size %zu, next: %lu\n", (void *)new_node, new_node->size, new_node->next);
 	} else {
 		// No room for new node
-		head->next = dist_to_next(head);
+		if (head->magic != HEAP_MAGIC)
+			head->next = dist_to_next(head);
 	}
 
 	// Update previous
@@ -63,6 +66,26 @@ static inline void do_alloc(size_t n, struct heap_hdr *head, struct heap_hdr *pr
 		heap = HEAP_INVALID;
 	else
 		heap = (struct heap_hdr *)((uintptr_t)head + dist_to_next(head));
+}
+
+void print_heap(void) {
+	struct heap_hdr *head = heap;
+
+	kprintf("Dumping heap...\n");
+	if (head == HEAP_INVALID) {
+		kprintf("No free space!\n");
+		return;
+	}
+
+	do {
+		kprintf("Node: %p, length %zu\n", (void *)head, head->size);
+		struct heap_hdr *next_head = (struct heap_hdr *)((uintptr_t)head + dist_to_next(head));
+		if (next_head == head)
+			break;
+		head = next_head;
+	} while (head->next != 0);
+
+	kprintf("Finished heap dump.\n");
 }
 
 void *boot_heap_malloc(size_t n) {
@@ -89,16 +112,16 @@ void *boot_heap_malloc(size_t n) {
 		} else if (head->next != 0) {
 			// End of a block
 			prev = head;
-			uintptr_t next_addr = (uintptr_t)head + head->next + SIZE;
+			uintptr_t next_addr = (uintptr_t)head + head->size + head->next + SIZE;
 			head = (struct heap_hdr *)next_addr;
 		} else {
 			// No more blocks
-			panic("boot heap out of memory");
+			print_heap();
+			panic("boot heap can't satisfy allocation of size %zu", n);
 		}
 	}
 
 	__builtin_unreachable();
-	return NULL;
 }
 
 void boot_heap_free(void __attribute__((unused)) *p) {
