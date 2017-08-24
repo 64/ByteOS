@@ -38,6 +38,6 @@ section .bss
 align 16
 global boot_heap_start
 boot_heap_start:
-	resb 1024 * 1
+	resb 1024 * 64
 global boot_heap_end
 boot_heap_end:

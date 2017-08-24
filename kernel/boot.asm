@@ -1,4 +1,4 @@
-%define KERNEL_VIRTUAL_BASE 0xFFFFFFFF80000000
+%define KERNEL_TEXT_BASE 0xFFFFFFFF80000000
 section .multiboot_header
 align 8 ; Must be 8 byte aligned as per the specification
 header_start:
@@ -17,15 +17,15 @@ header_end:
 section .bss
 PAGE_SIZE equ 0x1000
 align PAGE_SIZE
-p4_table equ $ - KERNEL_VIRTUAL_BASE
+p4_table equ $ - KERNEL_TEXT_BASE
 	resb PAGE_SIZE
-p3_table equ $ - KERNEL_VIRTUAL_BASE
+p3_table equ $ - KERNEL_TEXT_BASE
 	resb PAGE_SIZE
-p2_table equ $ - KERNEL_VIRTUAL_BASE
+p2_table equ $ - KERNEL_TEXT_BASE
 	resb PAGE_SIZE
-p1_table equ $ - KERNEL_VIRTUAL_BASE
+p1_table equ $ - KERNEL_TEXT_BASE
 	resb PAGE_SIZE
-p3_table_temp equ $ - KERNEL_VIRTUAL_BASE ; Use the top of the stack temporarily
+p3_table_temp equ $ - KERNEL_TEXT_BASE ; Use the top of the stack temporarily
 stack_top:
 	resb PAGE_SIZE * 4 ; 16kB
 stack_bottom:
@@ -86,7 +86,7 @@ _start:
 	cld
 
 	; Set stack pointer
-	mov esp, stack_bottom - KERNEL_VIRTUAL_BASE
+	mov esp, stack_bottom - KERNEL_TEXT_BASE
 
 	; Clear screen
 	mov ecx, 2000 ; 80 * 25 characters in the buffer
@@ -256,7 +256,7 @@ _start:
 
 	sub esp, 10
 	mov word [esp], gdt_size
-	mov dword [esp + 2], gdt64 - KERNEL_VIRTUAL_BASE
+	mov dword [esp + 2], gdt64 - KERNEL_TEXT_BASE
 	mov dword [esp + 6], 0x00000000
 
 	lgdt [esp]
@@ -288,8 +288,8 @@ _start:
 	hlt
 
 bits 64
-long_mode equ $ - KERNEL_VIRTUAL_BASE
-	add rsp, KERNEL_VIRTUAL_BASE
+long_mode equ $ - KERNEL_TEXT_BASE
+	add rsp, KERNEL_TEXT_BASE
 	mov qword [rsp + 2], gdt64
 	lgdt [rsp]
 	mov rax, higher_half
@@ -297,10 +297,10 @@ long_mode equ $ - KERNEL_VIRTUAL_BASE
 higher_half:
 	; Unmap the lower half page tables
 	mov rax, p4_table
-	add rax, KERNEL_VIRTUAL_BASE
+	add rax, KERNEL_TEXT_BASE
 	mov qword [rax], 0
 	mov rax, p3_table_temp
-	add rax, KERNEL_VIRTUAL_BASE
+	add rax, KERNEL_TEXT_BASE
 	mov qword [rax], 0
 
 	; Flush whole TLB

@@ -18,7 +18,7 @@ static struct heap_hdr *heap;
 
 void boot_heap_init(void) {
 	heap = (struct heap_hdr *)&boot_heap_start;
-	heap->size = (uintptr_t)&boot_heap_end - (uintptr_t)&boot_heap_start;
+	heap->size = (uintptr_t)&boot_heap_end - (uintptr_t)&boot_heap_start - SIZE;
 	heap->next = NULL;
 }
 
@@ -48,7 +48,7 @@ static inline void do_alloc(size_t n, struct heap_hdr *head, struct heap_hdr *pr
 void boot_heap_print(void) {
 	struct heap_hdr *head = heap;
 	while (head != NULL) {
-		kprintf("Node: %p, length: %zu\n", (void*)(uintptr_t)head, head->size);
+		kprintf("Node: %p, length: %zu, next: %p\n", (void*)(uintptr_t)head, head->size + SIZE, (void *)head->next);
 		head = head->next;
 	}
 }
@@ -80,7 +80,6 @@ fail:
 
 void boot_heap_free(void  *p) {
 	struct heap_hdr *prev_one = NULL;
-	struct heap_hdr *prev_two = NULL;
 	struct heap_hdr *head = heap;
 	struct heap_hdr *target = (struct heap_hdr *)((uintptr_t)p - SIZE);
 
@@ -104,29 +103,27 @@ void boot_heap_free(void  *p) {
 		if (head > target) {
 			uintptr_t left_end = (uintptr_t)prev_one + SIZE + prev_one->size;
 			uintptr_t target_end = (uintptr_t)target + SIZE + target->size;
-			struct heap_hdr *ptr_to_update = prev_one;
+
+			// Merge to the right
+			if (target_end == (uintptr_t)head) {
+				kprintf("merge right\n");
+				target->size += head->size + SIZE;
+				target->next = head->next;
+			} else
+				target->next = head;
 
 			// Merge to the left
 			if (prev_one != NULL && left_end == (uintptr_t)target) {
 				prev_one->size += target->size + SIZE;
-				prev_one->next = target->next;
-				target = prev_one;
-				ptr_to_update = prev_two;
+				target = target->next;
 			}
 
-			// Merge to the right
-			if (target_end == (uintptr_t)head) {
-				target->size += head->size + SIZE;
-				target->next = head->next;
-			}
-
-			if (ptr_to_update != NULL)
-				ptr_to_update->next = target;
+			if (prev_one != NULL)
+				prev_one->next = target;
 			return;
 		} else if (head == target) {
 			panic("boot heap double free at address %p", p);
 		}
-		prev_two = prev_one;
 		prev_one = head;
 	}
 }
