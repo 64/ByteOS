@@ -20,6 +20,10 @@ long_mode_start:
 	extern load_idt
 	call load_idt
 
+	; Init boot heap
+	extern boot_heap_init
+	call boot_heap_init
+
 	; Pass multiboot information to kmain
 	pop rdi
 	extern kmain

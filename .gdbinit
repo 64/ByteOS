@@ -6,5 +6,6 @@ symbol-file build/byteos.sym
 break long_mode_start
 continue
 define hook-stop
-disassemble
+list *$pc
 end
+tui enable
