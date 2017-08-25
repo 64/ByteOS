@@ -1,6 +1,6 @@
 CFLAGS += -ffreestanding -mno-red-zone -Wall -Wextra -std=gnu11
 CFLAGS += -Iinclude -Iinclude/kernel -g -Werror -mcmodel=kernel
-CFLAGS += -msse -msse2 -O1
+CFLAGS += -O1 # -msse -msse2
 NASM_FLAGS := -f elf64 -F dwarf -g -w+all -Werror
 
 KERNEL_LINK_FLAGS = $(LDFLAGS) -n -nostdlib -Lbuild -lk -lgcc

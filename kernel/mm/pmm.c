@@ -5,7 +5,7 @@
 struct mmap_entry {
 	uintptr_t base;
 	size_t size;
-	uint64_t flags;
+	uint64_t type;
 	struct mmap_entry *next;
 };
 
@@ -26,7 +26,7 @@ static void mboot_mmap_parse(struct multiboot_tag_mmap *mmap) {
 	for (size_t i = 0; i < (mmap->size / mmap->entry_size); i++) {
 		mmap_head->base = mmap->entries[i].addr;
 		mmap_head->size = mmap->entries[i].len;
-		mmap_head->flags = mmap->entries[i].type;
+		mmap_head->type = mmap->entries[i].type;
 		mmap_head->next = boot_heap_malloc(sizeof(struct mmap_entry));
 		mmap_head = mmap_head->next;
 	}
@@ -51,7 +51,7 @@ void pmm_mmap_parse(struct multiboot_info *mboot) {
 
 	struct mmap_entry *temp;
 	for (mmap_head = mmap_list; mmap_head != NULL; mmap_head = temp) {
-		if (mmap_head->flags == MULTIBOOT_MEMORY_AVAILABLE) {
+		if (mmap_head->type == MULTIBOOT_MEMORY_AVAILABLE) {
 			kprintf("Memory map entry:\n");
 			kprintf("\tBase address: %p\n", (void*)mmap_head->base);
 			kprintf("\tEnd address: %p\n", (void*)(mmap_head->base + mmap_head->size));

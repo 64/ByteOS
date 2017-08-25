@@ -14,6 +14,7 @@ SECTIONS
                 _rodata_begin_phys = . - offset;
                 *(.multiboot_header)
                 *(.rodata)
+                *(.rodata*)
                 . = ALIGN(0x1000);
                 _rodata_end_phys = . - offset;
         }

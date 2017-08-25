@@ -17,6 +17,7 @@ header_end:
 section .bss
 PAGE_SIZE equ 0x1000
 align PAGE_SIZE
+global p1_table
 p4_table equ $ - KERNEL_TEXT_BASE
 	resb PAGE_SIZE
 p3_table equ $ - KERNEL_TEXT_BASE
@@ -41,14 +42,14 @@ stack_bottom:
 %macro within_labels 2
 	extern %1
 	extern %2
-	cmp edx, %1
-	setnb al
 	cmp edx, %2
+	setnb al
+	cmp edx, %1
 	setb dl
 	and eax, edx
 %endmacro
 
-section .rodata:
+section .data
 global gdt64
 gdt64:                           ; Global Descriptor Table (64-bit).
     .null equ $ - gdt64          ; The null descriptor.
@@ -211,22 +212,22 @@ _start:
 	mul ecx
 	mov edi, eax
 	mov esi, 0
-	mov edx, eax
+	mov edx, edi
 	within_labels _text_begin_phys, _text_end_phys
-	test eax, eax
+	test al, al
 	jnz .is_executable
 	mov edx, edi
 	within_labels _rodata_begin_phys, _rodata_end_phys
-	test eax, eax
+	test al, al
 	jnz .is_rdonly
+.is_none:
+	or edi, 1 << 1
+	or esi, 1 << 31
+	jmp .end
 .is_executable:
 	and esi, ~(1 << 31) & 0xFFFFFFFF
 .is_rdonly:
 	and edi, ~(1 << 1)
-	jmp .end
-.is_none:
-	or edi, 1 << 1
-	or esi, 1 << 31
 .end:
 	or edi, 0b1
 	mov edx, p1_table ; Not entirely sure why/if this is needed
@@ -252,7 +253,7 @@ _start:
         wrmsr
         ; Enable paging, enable write protect mode
         mov eax, cr0
-        or eax, (1 << 31) ; | (1 << 16)
+        or eax, (1 << 31) | (1 << 16)
 	mov cr0, eax
 
 	sub esp, 10
