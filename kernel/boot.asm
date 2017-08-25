@@ -47,6 +47,7 @@ stack_bottom:
 	setb dl
 	and eax, edx
 %endmacro
+
 section .rodata:
 global gdt64
 gdt64:                           ; Global Descriptor Table (64-bit).
@@ -229,9 +230,9 @@ _start:
 .end:
 	or edi, 0b1
 	mov edx, p1_table ; Not entirely sure why/if this is needed
-	mov [edx + ecx * 8], edi
+	mov [edx + ecx * 8], edi ; Low 4 bytes
 	add edx, 4
-	mov [edx + ecx * 8], esi
+	mov [edx + ecx * 8], esi ; High 4 bytes
 	inc ecx
 	cmp ecx, 512
 	jne .map_p1_table
@@ -244,15 +245,15 @@ _start:
         mov eax, cr4
         or eax, 1 << 5
         mov cr4, eax
-        ; Set long mode and NXE bit
+        ; Set long mode, NXE bit
         mov ecx, 0xC0000080
         rdmsr
         or eax, (1 << 8) | (1 << 11)
         wrmsr
-        ; Enable paging in CR0
+        ; Enable paging, enable write protect mode
         mov eax, cr0
-        or eax, 1 << 31
-        mov cr0, eax
+        or eax, (1 << 31) ; | (1 << 16)
+	mov cr0, eax
 
 	sub esp, 10
 	mov word [esp], gdt_size

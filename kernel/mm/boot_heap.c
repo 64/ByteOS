@@ -106,7 +106,6 @@ void boot_heap_free(void  *p) {
 
 			// Merge to the right
 			if (target_end == (uintptr_t)head) {
-				kprintf("merge right\n");
 				target->size += head->size + SIZE;
 				target->next = head->next;
 			} else
