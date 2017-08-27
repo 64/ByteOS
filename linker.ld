@@ -49,4 +49,7 @@ SECTIONS
                 *(.comment)
                 *(.eh_frame)
         }
+
+        _kernel_end_phys = . - offset;
+
 }

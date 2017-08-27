@@ -42,9 +42,9 @@ stack_bottom:
 %macro within_labels 2
 	extern %1
 	extern %2
-	cmp edx, %2
-	setnb al
 	cmp edx, %1
+	setnb al
+	cmp edx, %2
 	setb dl
 	and eax, edx
 %endmacro

@@ -15,6 +15,7 @@ cansid.o \
 serial.o \
 pmm.o \
 boot_heap.o \
+bitmap.o \
 kmain.o
 KERNEL_OBJS = $(addprefix build/,$(KERNEL_OBJ_LIST))
 
@@ -74,6 +75,7 @@ endef
 $(eval $(call kernel_folder,kernel))
 $(eval $(call kernel_folder,kernel/cpu))
 $(eval $(call kernel_folder,kernel/mm))
+$(eval $(call kernel_folder,kernel/ds))
 $(eval $(call kernel_folder,kernel/drivers/serial))
 $(eval $(call kernel_folder,kernel/drivers/vga_tmode))
 

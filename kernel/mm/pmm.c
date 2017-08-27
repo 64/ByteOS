@@ -58,6 +58,6 @@ void pmm_mmap_parse(struct multiboot_info *mboot) {
 			kprintf("\tLength: %zu\n", mmap_head->size);
 		}
 		temp = mmap_head->next;
-		boot_heap_free(mmap_head);
+		boot_heap_free(mmap_head, sizeof(struct mmap_entry));
 	}
 }
