@@ -32,8 +32,8 @@ void *boot_heap_malloc(size_t n) {
 void boot_heap_free(void  *p, size_t n) {
 	// Align n to 16 bytes
 	n = ((n + 15) & -16);
-	size_t n_bits = n / 16 * 8;
-	size_t bit_idx = ((uintptr_t)p - (uintptr_t)&boot_heap_start) / 16 * 8;
+	size_t n_bits = n / 16;
+	size_t bit_idx = ((uintptr_t)p - (uintptr_t)&boot_heap_start) / 16;
 	// Mark as unused
 	while (n_bits-- != 0)
 		bitmap_clear(bitmap, bit_idx), bit_idx++;
