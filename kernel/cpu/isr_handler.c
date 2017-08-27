@@ -16,7 +16,7 @@ static void page_fault(struct interrupt_frame *frame) {
 		(void *)faulting_address,
 		(void *)frame->rip, (void *)frame->rsp,
 		frame->int_no, frame->err_code,
-		(unsigned int)frame->err_code & 0xF
+		(unsigned int)frame->err_code & 0x1F
 	);
 }
 

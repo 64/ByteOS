@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include "util.h"
 #include "libk.h"
 #include "mm.h"
 
@@ -17,7 +18,7 @@ static struct multiboot_tag *get_next_tag(struct multiboot_tag *tag) {
 	if (tag->type == MULTIBOOT_TAG_TYPE_END && size == 8)
 		return NULL;
 
-	uintptr_t aligned = (((uintptr_t)tag + size + 7) & -8);
+	uintptr_t aligned = ALIGNUP((uintptr_t)tag + size, 8);
 	return (struct multiboot_tag *)aligned;
 }
 
@@ -28,13 +29,13 @@ static void mboot_mmap_parse(struct multiboot_tag_mmap *mmap) {
 		mmap_head->size = mmap->entries[i].len;
 		mmap_head->type = mmap->entries[i].type;
 		mmap_head->next = boot_heap_malloc(sizeof(struct mmap_entry));
+		if (mmap_head->type == MULTIBOOT_MEMORY_AVAILABLE)
+			boot_heap_register_node(mmap_head->base, mmap_head->size);
 		mmap_head = mmap_head->next;
 	}
 }
 
 void pmm_mmap_parse(struct multiboot_info *mboot) {
-	kprintf("Multiboot info address: %p\n", mboot);
-
 	mmap_list = boot_heap_malloc(sizeof(struct mmap_entry));
 	mmap_head = mmap_list;
 
@@ -51,12 +52,6 @@ void pmm_mmap_parse(struct multiboot_info *mboot) {
 
 	struct mmap_entry *temp;
 	for (mmap_head = mmap_list; mmap_head != NULL; mmap_head = temp) {
-		if (mmap_head->type == MULTIBOOT_MEMORY_AVAILABLE) {
-			kprintf("Memory map entry:\n");
-			kprintf("\tBase address: %p\n", (void*)mmap_head->base);
-			kprintf("\tEnd address: %p\n", (void*)(mmap_head->base + mmap_head->size));
-			kprintf("\tLength: %zu\n", mmap_head->size);
-		}
 		temp = mmap_head->next;
 		boot_heap_free(mmap_head, sizeof(struct mmap_entry));
 	}
