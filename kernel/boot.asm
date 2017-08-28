@@ -18,6 +18,7 @@ section .bss
 PAGE_SIZE equ 0x1000
 align PAGE_SIZE
 global p1_table
+global p4_table
 p4_table equ $ - KERNEL_TEXT_BASE
 	resb PAGE_SIZE
 p3_table equ $ - KERNEL_TEXT_BASE

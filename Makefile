@@ -16,6 +16,7 @@ serial.o \
 pmm.o \
 boot_heap.o \
 bitmap.o \
+paging.o \
 kmain.o
 KERNEL_OBJS = $(addprefix build/,$(KERNEL_OBJ_LIST))
 

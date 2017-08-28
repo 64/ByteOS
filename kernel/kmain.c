@@ -3,7 +3,9 @@
 #include "mm.h"
 #include "system.h"
 
-void kmain(void *mboot_info_physical) {
-	char *mboot_info_virtual = (char *)mboot_info_physical + KERNEL_TEXT_BASE;
+void kmain(physaddr_t mboot_info_physical) {
+	char *mboot_info_virtual = (char *)phys_to_kern(mboot_info_physical);
 	pmm_mmap_parse((struct multiboot_info *)mboot_info_virtual);
+
+	paging_init();
 }
