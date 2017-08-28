@@ -26,7 +26,7 @@ kprintf.o \
 abort.o
 LIBK_OBJS = $(addprefix build/,$(LIBK_OBJ_LIST))
 
-.PHONY: all clean run debug disassemble
+.PHONY: all clean run debug disassemble copy-all copy-ds copy-cansid
 .SUFFIXES: .o .c .asm
 
 all: build/byteos.iso
@@ -45,6 +45,17 @@ debug: build/byteos.iso
 
 disassemble: build/byteos.elf
 	x86_64-elf-objdump --no-show-raw-insn -d -Mintel build/byteos.elf | source-highlight -s asm -f esc256 | less -eRiMX
+
+copy-all: copy-ds copy-cansid
+
+copy-ds:
+	cp ../ds/include/ds/*.h ./include/kernel/ds
+	cp ../ds/src/*.c ./kernel/ds
+
+copy-cansid:
+	cp ../cansid/cansid.c ./kernel/drivers/vga_tmode
+	cp ../cansid/cansid.h ./include/kernel/drivers/
+	sed -i '/^#include "cansid.h"/c\#include "drivers/cansid.h"' ./kernel/drivers/vga_tmode/cansid.c
 
 iso/boot/byteos.elf: build/byteos.elf
 	cp $< $@

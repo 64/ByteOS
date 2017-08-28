@@ -19,7 +19,6 @@ static inline unsigned char cansid_convert_color(unsigned char color) {
 	return lookup_table[(int)color];
 }
 
-// TODO: Use switch statements instead of chaining 'if's
 struct color_char cansid_process(struct cansid_state *state, char x) {
 	struct color_char rv = {
 		.style = state->style,
