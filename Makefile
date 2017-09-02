@@ -3,45 +3,35 @@ CFLAGS += -Iinclude -Iinclude/kernel -g -Werror -mcmodel=kernel
 CFLAGS += -O1 # -msse -msse2
 NASM_FLAGS := -f elf64 -F dwarf -g -w+all -Werror
 
-KERNEL_LINK_FLAGS = $(LDFLAGS) -n -nostdlib -Lbuild -lk -lgcc
-KERNEL_COMPILE_FLAGS = $(CFLAGS)
-KERNEL_OBJ_LIST = \
-boot.o \
-long_mode.o \
-interrupts.o \
-isr_handler.o \
-vga_tmode.o \
-cansid.o \
-serial.o \
-pmm.o \
-boot_heap.o \
-bitmap.o \
-kmain.o
-KERNEL_OBJS = $(addprefix build/,$(KERNEL_OBJ_LIST))
+KERNEL_LINK_FLAGS := $(LDFLAGS) -n -nostdlib -Lbuild -lk -lgcc
+KERNEL_COMPILE_FLAGS := $(CFLAGS)
+KERNEL_OBJS := $(addsuffix .o,$(shell find kernel -name '*.[cs]'))
+DEPFILES := $(patsubst %.o,%.d,$(KERNEL_OBJS))
 
-LIBK_COMPILE_FLAGS = $(CFLAGS)
-LIBK_OBJ_LIST = \
-string.o \
-kprintf.o \
-abort.o
-LIBK_OBJS = $(addprefix build/,$(LIBK_OBJ_LIST))
+LIBK_COMPILE_FLAGS := $(CFLAGS)
+LIBK_OBJS := $(addsuffix .o,$(shell find libk -name '*.[cs]'))
+DEPFILES += $(patsubst %.o,%.d,$(LIBK_OBJS))
 
-.PHONY: all clean run debug disassemble copy-all copy-ds copy-cansid
-.SUFFIXES: .o .c .asm
+.PHONY: all clean clean-deep run debug disassemble copy-all copy-ds copy-cansid
+.SUFFIXES: .o .c .s
 
 all: build/byteos.iso
 
 run: build/byteos.iso
-	qemu-system-x86_64 -serial stdio -cdrom build/byteos.iso
+	qemu-system-x86_64 -M accel=kvm:tcg -net none -serial stdio -cdrom build/byteos.iso
 
 clean:
-	rm -rf build
-	rm -f iso/boot/byteos.elf
+	@rm -rf build
+	@rm -f iso/boot/byteos.elf
+	@rm -f $(KERNEL_OBJS) $(LIBK_OBJS)
+
+distclean: clean
+	@rm -f $(DEPFILES)
 
 debug: build/byteos.iso
-	qemu-system-x86_64 -d cpu_reset -no-reboot -s -S -cdrom build/byteos.iso &
-	../../../deps/bin/gdb
-	pkill qemu
+	@qemu-system-x86_64 -d cpu_reset -no-reboot -s -S -cdrom build/byteos.iso &
+	@../../../deps/bin/gdb
+	@pkill qemu
 
 disassemble: build/byteos.elf
 	x86_64-elf-objdump --no-show-raw-insn -d -Mintel build/byteos.elf | source-highlight -s asm -f esc256 | less -eRiMX
@@ -75,22 +65,13 @@ build/byteos.elf: $(KERNEL_OBJS) build/libk.a
 	x86_64-elf-objcopy --strip-debug build/byteos.elf
 	grub-file --is-x86-multiboot2 $@
 
-define kernel_folder
-build/%.o: $1/%.asm
-	nasm $(NASM_FLAGS) -MD $$(patsubst %.o,%.d,$$@) $$< -o $$@
+kernel/%.s.o: kernel/%.s
+	nasm $(NASM_FLAGS) -MD $(addsuffix .d,$<) $< -o $@
 
-build/%.o: $1/%.c
-	x86_64-elf-gcc -c $$< -o $$@ -MD $(KERNEL_COMPILE_FLAGS)
-endef
+kernel/%.c.o: kernel/%.c
+	x86_64-elf-gcc -c $< -o $@ -MD $(KERNEL_COMPILE_FLAGS)
 
-$(eval $(call kernel_folder,kernel))
-$(eval $(call kernel_folder,kernel/cpu))
-$(eval $(call kernel_folder,kernel/mm))
-$(eval $(call kernel_folder,kernel/ds))
-$(eval $(call kernel_folder,kernel/drivers/serial))
-$(eval $(call kernel_folder,kernel/drivers/vga_tmode))
-
-build/%.o: libk/%.c
+libk/%.c.o: libk/%.c
 	x86_64-elf-gcc -c $< -o $@ -MD $(LIBK_COMPILE_FLAGS)
 
--include build/*.d
+-include $(DEPFILES)
