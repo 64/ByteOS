@@ -4,6 +4,8 @@
 
 static const char * const exception_messages[32];
 
+void isr_handler(struct interrupt_frame *frame);
+
 static void page_fault(struct interrupt_frame *frame) {
 	uintptr_t faulting_address;
 	asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
@@ -20,7 +22,7 @@ static void page_fault(struct interrupt_frame *frame) {
 	);
 }
 
-void exception_handler(struct interrupt_frame *frame) {
+static void exception_handler(struct interrupt_frame *frame) {
 	switch (frame->int_no) {
 		case 14: // TODO: Replace with constant
 			page_fault(frame);
@@ -37,7 +39,7 @@ void exception_handler(struct interrupt_frame *frame) {
 	}
 }
 
-void irq_handler(struct interrupt_frame *frame) {
+static void irq_handler(struct interrupt_frame *frame) {
 	if (frame->int_no != 32)
 		kprintf("Hit interrupt %zu: %p\n", frame->int_no, (void*)frame->rip);
 	irq_ack(frame->int_no);

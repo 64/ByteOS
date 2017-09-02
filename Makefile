@@ -1,3 +1,6 @@
+ISO			:= build/byteos.iso
+KERNEL		:= build/byteos.elf
+
 AS			:= nasm
 EMU			:= qemu-system-x86_64
 AR			:= x86_64-elf-ar
@@ -7,9 +10,12 @@ OBJCOPY		:= x86_64-elf-objcopy
 
 CFLAGS		?= -O1 -g
 CFLAGS		+= -ffreestanding -mno-red-zone -mcmodel=kernel -Iinclude -Iinclude/kernel -std=gnu11
-CFLAGS		+= -Werror -Wall -Wextra
+CFLAGS		+= -Wall -Wbad-function-cast -Werror -Wextra -Wparentheses -Wmissing-braces -Wmissing-declarations
+CFLAGS		+= -Wmissing-field-initializers -Wmissing-prototypes -Wnested-externs -Wpedantic -Wpointer-arith
+CFLAGS		+= -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wswitch-enum -Wuninitialized -Wunreachable-code
+CFLAGS		+= -Wunused
 ASFLAGS		:= -f elf64 -F dwarf -g -w+all -Werror
-EMUFLAGS	:= -M accel=kvm:tcg -net none -serial stdio -cdrom build/byteos.iso
+EMUFLAGS	:= -M accel=kvm:tcg -net none -serial stdio -cdrom $(ISO)
 
 KERNEL_OBJ	:= $(addsuffix .o,$(shell find kernel -name '*.[cs]'))
 DEPFILES	:= $(patsubst %.o,%.d,$(KERNEL_OBJ))
@@ -20,9 +26,9 @@ DEPFILES	+= $(patsubst %.o,%.d,$(LIBK_OBJ))
 .PHONY: all clean distclean run debug disassemble
 .SUFFIXES: .o .c .s
 
-all: build/byteos.iso
+all: $(ISO)
 
-run: build/byteos.iso
+run: $(ISO)
 	@$(EMU) $(EMUFLAGS)
 
 clean:
@@ -33,15 +39,15 @@ clean:
 distclean: clean
 	@$(RM) $(DEPFILES)
 
-debug: build/byteos.iso
+debug: $(ISO)
 	@$(EMU) $(EMUFLAGS) -d cpu_reset -no-reboot -s -S &
 	@../../../deps/bin/gdb
 	@pkill qemu
 
-disassemble: build/byteos.elf
-	@$(OBJDUMP) --no-show-raw-insn -d -Mintel build/byteos.elf | source-highlight -s asm -f esc256 | less -eRiMX
+disassemble: $(KERNEL)
+	@$(OBJDUMP) --no-show-raw-insn -d -Mintel $(KERNEL) | source-highlight -s asm -f esc256 | less -eRiMX
 
-iso/boot/byteos.elf: build/byteos.elf
+iso/boot/byteos.elf: $(KERNEL)
 	@cp $< $@
 
 build/:
@@ -50,13 +56,13 @@ build/:
 build/libk.a: $(LIBK_OBJ)
 	@$(AR) rcs $@ $(LIBK_OBJ)
 
-build/byteos.iso: build/ iso/boot/byteos.elf
+$(ISO): build/ iso/boot/byteos.elf
 	@grub-mkrescue -o $@ iso 2> /dev/null
 
-build/byteos.elf: $(KERNEL_OBJ) build/libk.a
+$(KERNEL): $(KERNEL_OBJ) build/libk.a
 	@$(CC) -T linker.ld -o $@ $(KERNEL_OBJ) $(LDFLAGS) -n -nostdlib -Lbuild -lk -lgcc
-	@$(OBJCOPY) --only-keep-debug build/byteos.elf build/byteos.sym
-	@$(OBJCOPY) --strip-debug build/byteos.elf
+	@$(OBJCOPY) --only-keep-debug $(KERNEL) build/byteos.sym
+	@$(OBJCOPY) --strip-debug $(KERNEL)
 	@grub-file --is-x86-multiboot2 $@
 
 kernel/%.s.o: kernel/%.s

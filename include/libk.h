@@ -22,5 +22,5 @@ __attribute__((noreturn)) void abort(void);
 
 #define kassert(condition) do { \
 		if (!(condition)) \
-			panic("kassert condition failed: " # condition); \
+			panic("kassert condition failed: %s", #condition); \
 	} while(0)
