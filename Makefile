@@ -1,77 +1,71 @@
-CFLAGS += -ffreestanding -mno-red-zone -Wall -Wextra -std=gnu11
-CFLAGS += -Iinclude -Iinclude/kernel -g -Werror -mcmodel=kernel
-CFLAGS += -O1 # -msse -msse2
-NASM_FLAGS := -f elf64 -F dwarf -g -w+all -Werror
+AS			:= nasm
+EMU			:= qemu-system-x86_64
+AR			:= x86_64-elf-ar
+CC			:= x86_64-elf-gcc
+OBJDUMP		:= x86_64-elf-objdump
+OBJCOPY		:= x86_64-elf-objcopy
 
-KERNEL_LINK_FLAGS := $(LDFLAGS) -n -nostdlib -Lbuild -lk -lgcc
-KERNEL_COMPILE_FLAGS := $(CFLAGS)
-KERNEL_OBJS := $(addsuffix .o,$(shell find kernel -name '*.[cs]'))
-DEPFILES := $(patsubst %.o,%.d,$(KERNEL_OBJS))
+CFLAGS		?= -O1 -g
+CFLAGS		+= -ffreestanding -mno-red-zone -mcmodel=kernel -Iinclude -Iinclude/kernel -std=gnu11
+CFLAGS		+= -Werror -Wall -Wextra
+ASFLAGS		:= -f elf64 -F dwarf -g -w+all -Werror
+EMUFLAGS	:= -M accel=kvm:tcg -net none -serial stdio -cdrom build/byteos.iso
 
-LIBK_COMPILE_FLAGS := $(CFLAGS)
-LIBK_OBJS := $(addsuffix .o,$(shell find libk -name '*.[cs]'))
-DEPFILES += $(patsubst %.o,%.d,$(LIBK_OBJS))
+KERNEL_OBJ	:= $(addsuffix .o,$(shell find kernel -name '*.[cs]'))
+DEPFILES	:= $(patsubst %.o,%.d,$(KERNEL_OBJ))
 
-.PHONY: all clean clean-deep run debug disassemble copy-all copy-ds copy-cansid
+LIBK_OBJ	:= $(addsuffix .o,$(shell find libk -name '*.[cs]'))
+DEPFILES	+= $(patsubst %.o,%.d,$(LIBK_OBJ))
+
+.PHONY: all clean distclean run debug disassemble
 .SUFFIXES: .o .c .s
 
 all: build/byteos.iso
 
 run: build/byteos.iso
-	qemu-system-x86_64 -M accel=kvm:tcg -net none -serial stdio -cdrom build/byteos.iso
+	@$(EMU) $(EMUFLAGS)
 
 clean:
-	@rm -rf build
-	@rm -f iso/boot/byteos.elf
-	@rm -f $(KERNEL_OBJS) $(LIBK_OBJS)
+	@$(RM) -r build
+	@$(RM) iso/boot/byteos.elf
+	@$(RM) $(KERNEL_OBJ) $(LIBK_OBJ)
 
 distclean: clean
-	@rm -f $(DEPFILES)
+	@$(RM) $(DEPFILES)
 
 debug: build/byteos.iso
-	@qemu-system-x86_64 -d cpu_reset -no-reboot -s -S -cdrom build/byteos.iso &
+	@$(EMU) $(EMUFLAGS) -d cpu_reset -no-reboot -s -S &
 	@../../../deps/bin/gdb
 	@pkill qemu
 
 disassemble: build/byteos.elf
-	x86_64-elf-objdump --no-show-raw-insn -d -Mintel build/byteos.elf | source-highlight -s asm -f esc256 | less -eRiMX
-
-copy-all: copy-ds copy-cansid
-
-copy-ds:
-	cp ../ds/include/ds/*.h ./include/kernel/ds
-	cp ../ds/src/*.c ./kernel/ds
-
-copy-cansid:
-	cp ../cansid/cansid.c ./kernel/drivers/vga_tmode
-	cp ../cansid/cansid.h ./include/kernel/drivers/
-	sed -i '/^#include "cansid.h"/c\#include "drivers/cansid.h"' ./kernel/drivers/vga_tmode/cansid.c
+	@$(OBJDUMP) --no-show-raw-insn -d -Mintel build/byteos.elf | source-highlight -s asm -f esc256 | less -eRiMX
 
 iso/boot/byteos.elf: build/byteos.elf
-	cp $< $@
+	@cp $< $@
 
 build/:
-	mkdir build
+	@mkdir build
 
-build/libk.a: $(LIBK_OBJS)
-	x86_64-elf-ar rcs $@ $(LIBK_OBJS)
+build/libk.a: $(LIBK_OBJ)
+	@$(AR) rcs $@ $(LIBK_OBJ)
 
 build/byteos.iso: build/ iso/boot/byteos.elf
-	grub-mkrescue -o $@ iso 2> /dev/null
+	@grub-mkrescue -o $@ iso 2> /dev/null
 
-build/byteos.elf: $(KERNEL_OBJS) build/libk.a
-	x86_64-elf-gcc -T linker.ld -o $@ $(KERNEL_OBJS) $(KERNEL_LINK_FLAGS)
-	x86_64-elf-objcopy --only-keep-debug build/byteos.elf build/byteos.sym
-	x86_64-elf-objcopy --strip-debug build/byteos.elf
-	grub-file --is-x86-multiboot2 $@
+build/byteos.elf: $(KERNEL_OBJ) build/libk.a
+	@$(CC) -T linker.ld -o $@ $(KERNEL_OBJ) $(LDFLAGS) -n -nostdlib -Lbuild -lk -lgcc
+	@$(OBJCOPY) --only-keep-debug build/byteos.elf build/byteos.sym
+	@$(OBJCOPY) --strip-debug build/byteos.elf
+	@grub-file --is-x86-multiboot2 $@
 
 kernel/%.s.o: kernel/%.s
-	nasm $(NASM_FLAGS) -MD $(addsuffix .d,$<) $< -o $@
+	@$(AS) $(ASFLAGS) -MD $(addsuffix .d,$<) $< -o $@
 
 kernel/%.c.o: kernel/%.c
-	x86_64-elf-gcc -c $< -o $@ -MD $(KERNEL_COMPILE_FLAGS)
+	@$(CC) -c $< -o $@ -MD $(CFLAGS)
 
 libk/%.c.o: libk/%.c
-	x86_64-elf-gcc -c $< -o $@ -MD $(LIBK_COMPILE_FLAGS)
+	@$(CC) -c $< -o $@ -MD $(CFLAGS)
 
 -include $(DEPFILES)
