@@ -1,3 +1,5 @@
+#pragma GCC diagnostic ignored "-Wswitch-default"
+
 #include <stddef.h>
 #include <stdint.h>
 

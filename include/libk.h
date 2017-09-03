@@ -11,6 +11,7 @@ size_t strlen(const char *);
 __attribute__((format (printf, 1, 2))) int kprintf(const char *, ...);
 
 __attribute__((noreturn)) void abort(void);
+
 #define panic(msg, ...) do { \
 		kprintf( \
 			"\n\x1B[0m--------------------------------------------------------------------------------\x1B[0m" \
@@ -22,5 +23,5 @@ __attribute__((noreturn)) void abort(void);
 
 #define kassert(condition) do { \
 		if (!(condition)) \
-			panic("kassert condition failed: " # condition "\n"); \
+			panic("kassert condition failed: %s\n", #condition); \
 	} while(0)
