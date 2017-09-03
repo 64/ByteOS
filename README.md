@@ -11,9 +11,9 @@ You will need:
 * `gcc` for `x86_64-elf` with `-mno-red-zone` and C11 capabilities ([instructions](http://wiki.osdev.org/Libgcc_without_red_zone))
 * Make
 * NASM
-* GRUB 2.02
+* GRUB 2.02 (Multiboot2 compatible - may need to build from source)
 
-Then, to build `byteos.iso`:
+Then, to build `byteos.iso`, simply run:
 ```sh
 make
 ```
@@ -38,3 +38,5 @@ See [`Makefile`](https://github.com/64/ByteOS/blob/master/Makefile) for more det
 ## Contributing
 
 Feel free to open an issue if you have any questions/concerns or a pull-request if you would like to contribute some code.
+
+Special thanks to [no92](https://github.com/no92) for massively cleaning up the build system.

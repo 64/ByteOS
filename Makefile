@@ -1,3 +1,4 @@
+# Thank you https://github.com/no92 for cleaning this up a lot!
 ISO		:= build/byteos.iso
 KERNEL		:= build/byteos.elf
 OS		:= $(shell uname -s)
