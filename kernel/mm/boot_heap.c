@@ -45,7 +45,6 @@ physaddr_t boot_heap_alloc_page(void) {
 		panic("boot heap can't satisfy page allocation");
 
 	physaddr_t free_addr = stack_start->free_pages[stack_start->current_idx];
-	kprintf("allocating page, head %p - %zu\n", (void *)free_addr, stack_start->current_idx);
 	if (free_addr == 0 && stack_start->current_idx == 0) {
 		// Allocate the node itself (use slow address lookup)
 		free_addr = paging_get_phys_addr((void *)stack_start);
@@ -70,13 +69,7 @@ void boot_heap_free_pages_virt(virtaddr_t k, size_t n) {
 void boot_heap_free_pages_phys(physaddr_t p, size_t n) {
 	kassert(n != 0);
 	const physaddr_t kern_end = ALIGNUP((physaddr_t)&_kernel_end_phys, PAGE_SIZE);
-	if (p < kern_end) {
-		if (p + (n * PAGE_SIZE) > kern_end) {
-			n -= (kern_end - p) / PAGE_SIZE;
-			p = kern_end;
-		} else
-			return;
-	}
+	kassert(p >= kern_end);
 
 	// Note: integer overflow should never happen here since addresses are
 	// 48-bit (or 52-bit with PSE). TODO: Confirm this
@@ -85,6 +78,7 @@ void boot_heap_free_pages_phys(physaddr_t p, size_t n) {
 
 	// TODO: Please test this!
 	if (stack_start == NULL && (free_addr + PAGE_SIZE) >= free_end) {
+		kprintf("stack_start is null, reallocating...\n");
 		// TODO: Slightly dodgy usage of phys_to_virt, please fix
 		if (!paging_has_flags(phys_to_virt(free_addr), PAGE_PRESENT | PAGE_WRITABLE))
 			panic("boot heap cannot create space to store free pages");
@@ -96,8 +90,6 @@ void boot_heap_free_pages_phys(physaddr_t p, size_t n) {
 
 	kprintf("Freeing physical pages from %p to %p\n", (void *)free_addr, (void *)free_end);
 	for (; free_addr + PAGE_SIZE <= free_end; free_addr += PAGE_SIZE) {
-		kassert(free_addr <= KERNEL_PHYS_MAP_END);
-		kprintf("Mapping page at %p to %p\n", (void *)free_addr, phys_to_virt(free_addr));
 		paging_map_page(free_addr, phys_to_virt(free_addr), PAGE_WRITABLE | PAGE_NO_EXEC);
 		if (stack_start->current_idx + 1 >= STACK_MAX) {
 			// Need new stack node (TODO: Another dodgy phys_to_virt)

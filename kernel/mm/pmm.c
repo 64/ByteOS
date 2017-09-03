@@ -15,8 +15,17 @@ static struct multiboot_tag *get_next_tag(struct multiboot_tag *tag) {
 static void mboot_mmap_parse(struct multiboot_tag_mmap *mmap) {
 	kassert(mmap->entry_version == 0);
 	for (size_t i = 0; i < (mmap->size / mmap->entry_size); i++) {
-		if (mmap->entries[i].type == MULTIBOOT_MEMORY_AVAILABLE)
-			boot_heap_free_pages_phys(mmap->entries[i].addr, (mmap->entries[i].len) / 4096);
+		if (mmap->entries[i].type == MULTIBOOT_MEMORY_AVAILABLE) {
+			physaddr_t start_addr = mmap->entries[i].addr;
+			size_t len = mmap->entries[i].len;
+			if (!(start_addr + len > KERNEL_PHYS_MAP_END))
+				continue;
+			else if (start_addr < KERNEL_PHYS_MAP_END) {
+				len -= KERNEL_PHYS_MAP_END - start_addr;
+				start_addr = KERNEL_PHYS_MAP_END;
+			}
+			boot_heap_free_pages_phys(start_addr, len / PAGE_SIZE);
+		}
 	}
 }
 

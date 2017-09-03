@@ -1,10 +1,14 @@
 #include "libk.h"
 #include "mm.h"
 
-#define P1_ADDR_MASK 0xFFF
-#define P4_ADDR_MASK (0x1FFUL << 39)
-#define P3_ADDR_MASK (0x1FFUL << 30)
-#define P2_ADDR_MASK (0x1FFUL << 21)
+#define P4_ADDR_SHIFT 39
+#define P3_ADDR_SHIFT 30
+#define P2_ADDR_SHIFT 21
+#define P1_ADDR_SHIFT 0
+#define P1_ADDR_MASK (0xFFF << P1_ADDR_SHIFT)
+#define P4_ADDR_MASK (0x1FFUL << P4_ADDR_SHIFT)
+#define P3_ADDR_MASK (0x1FFUL << P3_ADDR_SHIFT)
+#define P2_ADDR_MASK (0x1FFUL << P2_ADDR_SHIFT)
 #define PAGE_OFFSET_MASK 0xFFFF
 #define PTE_ADDR_MASK (~(0xFFF00000000001FF))
 
@@ -20,12 +24,10 @@ struct page_table *current_p4;
 
 void paging_init(void) {
 	current_p4 = phys_to_kern((physaddr_t)&p4_table);
-	kprintf("p4 %p\n", current_p4);
 }
 
 static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgtab, uint16_t index) {
 	pte_t entry = pgtab->pages[index];
-	kprintf("%p at table %p - index %zu\n", (void *)entry, (void *)pgtab, (size_t)index);
 	if ((entry & PAGE_PRESENT) == 0)
 		return NULL;
 	return phys_to_virt((entry & PTE_ADDR_MASK));
@@ -41,10 +43,10 @@ static inline pte_t alloc_pgtab(void) {
 
 static inline pte_t get_pte_from_addr(void *addr) {
 	const uintptr_t va = (uintptr_t)addr;
-	const uint16_t p4_index = va & P4_ADDR_MASK;
-	const uint16_t p3_index = va & P3_ADDR_MASK;
-	const uint16_t p2_index = va & P2_ADDR_MASK;
-	const uint16_t p1_index = va & P1_ADDR_MASK;
+	const uint16_t p4_index = (va & P4_ADDR_MASK) >> P4_ADDR_SHIFT;
+	const uint16_t p3_index = (va & P3_ADDR_MASK) >> P3_ADDR_SHIFT;
+	const uint16_t p2_index = (va & P2_ADDR_MASK) >> P2_ADDR_SHIFT;
+	const uint16_t p1_index = (va & P1_ADDR_MASK) >> P1_ADDR_SHIFT;
 
 	struct page_table *p3_table = pgtab_extract_virt_addr(current_p4, p4_index);
 	if (p3_table == NULL)
@@ -68,14 +70,12 @@ bool paging_has_flags(void *addr, uint64_t flags) {
 
 void paging_map_page(physaddr_t phys, void *virt, uint64_t flags) {
 	const uintptr_t va = (uintptr_t)virt;
-	const uint64_t p4_index = va & P4_ADDR_MASK;
-	const uint64_t p3_index = va & P3_ADDR_MASK;
-	const uint64_t p2_index = va & P2_ADDR_MASK;
-	const uint64_t p1_index = va & P1_ADDR_MASK;
-	kprintf("%p &\n%p =\n%p\n", (void *)va, (void *)P4_ADDR_MASK, (void *)p4_index);
+	const uint16_t p4_index = (va & P4_ADDR_MASK) >> P4_ADDR_SHIFT;
+	const uint16_t p3_index = (va & P3_ADDR_MASK) >> P3_ADDR_SHIFT;
+	const uint16_t p2_index = (va & P2_ADDR_MASK) >> P2_ADDR_SHIFT;
+	const uint16_t p1_index = (va & P1_ADDR_MASK) >> P1_ADDR_SHIFT;
 
 	struct page_table *p3_table = pgtab_extract_virt_addr(current_p4, p4_index);
-	kprintf("p3 addr: %p, %lu\n", p3_table, p4_index);
 	if (p3_table == NULL) {
 		current_p4->pages[p4_index] = alloc_pgtab();
 		p3_table = pgtab_extract_virt_addr(current_p4, p4_index);

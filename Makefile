@@ -56,7 +56,8 @@ copy-ds:
 copy-cansid:
 	cp ../cansid/cansid.c ./kernel/drivers/vga_tmode
 	cp ../cansid/cansid.h ./include/kernel/drivers/
-	sed -i '/^#include "cansid.h"/c\#include "drivers/cansid.h"' ./kernel/drivers/vga_tmode/cansid.c
+	cat ./kernel/drivers/vga_tmode/cansid.c | sed 's/cansid.h/drivers\/cansid.h/g' > temp.c
+	mv temp.c ./kernel/drivers/vga_tmode/cansid.c
 
 iso/boot/byteos.elf: build/byteos.elf
 	cp $< $@
