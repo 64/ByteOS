@@ -27,6 +27,14 @@ typedef uintptr_t physaddr_t;
 typedef void *virtaddr_t;
 typedef void *kernaddr_t;
 
+typedef uint64_t pte_t;
+
+struct page_table {
+	pte_t pages[512];
+} __attribute__((packed, aligned(PAGE_SIZE)));
+
+extern struct page_table *kernel_p4;
+
 void pmm_mmap_parse(struct multiboot_info *);
 
 void boot_heap_init(void);
@@ -36,9 +44,9 @@ void boot_heap_free_pages_virt(virtaddr_t, size_t);
 void boot_heap_free_pages_kern(kernaddr_t, size_t);
 
 void paging_init(void);
-physaddr_t paging_get_phys_addr(void *);
-bool paging_has_flags(void *, uint64_t flags);
-void paging_map_page(physaddr_t, void *, uint64_t);
+physaddr_t paging_get_phys_addr(struct page_table *, void *);
+bool paging_has_flags(struct page_table *, void *, uint64_t flags);
+void paging_map_page(struct page_table *, physaddr_t, void *, uint64_t);
 
 static inline physaddr_t virt_to_phys(virtaddr_t v) {
 	if (v == NULL)
