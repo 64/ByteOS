@@ -9,38 +9,34 @@ SECTIONS
 {
         . = virt;
 
-        .rodata : AT(ADDR(.rodata) - offset)
+        .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - offset)
         {
                 _rodata_begin_phys = . - offset;
                 *(.multiboot_header)
                 *(.rodata)
                 *(.rodata*)
-                . = ALIGN(0x1000);
                 _rodata_end_phys = . - offset;
         }
 
-        .text : AT(ADDR(.text) - offset)
+        .text ALIGN(0x1000) : AT(ADDR(.text) - offset)
         {
                 _text_begin_phys = . - offset;
                 *(.text)
-                . = ALIGN(0x1000);
                 _text_end_phys = . - offset;
         }
 
-        .data : AT(ADDR(.data) - offset)
+        .data ALIGN(0x1000) : AT(ADDR(.data) - offset)
         {
                 _data_begin_phys = . - offset;
                 *(.data)
-                . = ALIGN(0x1000);
                 _data_end_phys = . - offset;
         }
 
-        .bss : AT(ADDR(.bss) - offset)
+        .bss ALIGN(0x1000) : AT(ADDR(.bss) - offset)
         {
                 _bss_begin_phys = . - offset;
                 *(.bss)
                 *(COMMON)
-                . = ALIGN(0x1000);
                 _bss_end_phys = . - offset;
         }
 

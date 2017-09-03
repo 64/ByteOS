@@ -1,4 +1,5 @@
 %define KERNEL_TEXT_BASE 0xFFFFFFFF80000000
+%define PAGE_SIZE 0x1000
 section .multiboot_header
 align 8 ; Must be 8 byte aligned as per the specification
 header_start:
@@ -15,9 +16,8 @@ header_start:
 header_end:
 
 section .bss
-PAGE_SIZE equ 0x1000
-align PAGE_SIZE
 global p4_table
+align PAGE_SIZE
 p4_table equ $ - KERNEL_TEXT_BASE
 	resb PAGE_SIZE
 p3_table equ $ - KERNEL_TEXT_BASE
