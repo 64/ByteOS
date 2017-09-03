@@ -16,14 +16,15 @@ static void mboot_mmap_parse(struct multiboot_tag_mmap *mmap) {
 	kassert(mmap->entry_version == 0);
 	for (size_t i = 0; i < (mmap->size / mmap->entry_size); i++) {
 		if (mmap->entries[i].type == MULTIBOOT_MEMORY_AVAILABLE)
-			boot_heap_register_node(mmap->entries[i].addr, mmap->entries[i].len);
+			boot_heap_free_pages_phys(mmap->entries[i].addr, (mmap->entries[i].len) / 4096);
 	}
 }
 
 void pmm_mmap_parse(struct multiboot_info *mboot) {
+	boot_heap_init();
+
 	struct multiboot_tag *current_tag = mboot->tags;
 	kassert(current_tag->type != 0);
-	boot_heap_init();
 
 	do {
 		switch (current_tag->type) {

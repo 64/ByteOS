@@ -17,11 +17,12 @@ header_end:
 section .bss
 PAGE_SIZE equ 0x1000
 align PAGE_SIZE
-global p1_table
 global p4_table
 p4_table equ $ - KERNEL_TEXT_BASE
 	resb PAGE_SIZE
 p3_table equ $ - KERNEL_TEXT_BASE
+	resb PAGE_SIZE
+lower_p3_table equ $ - KERNEL_TEXT_BASE
 	resb PAGE_SIZE
 p2_table equ $ - KERNEL_TEXT_BASE
 	resb PAGE_SIZE
@@ -185,19 +186,18 @@ _start:
 	or ax, 3 << 9
 	mov cr4, eax
 
+
+
 	; Setup paging
-	;map_page p4_table 0 p3_table
-	;map_page p3_table 3 p2_table
-	;map_page p2_table 0 p1_table
-
-	; Map in some more memory around where we are so we have time to jump
-	;map_page p3_table 0 p2_table_temp
-	;map_page p2_table_temp 0 p1_table
-
 	map_page p4_table, 511, p3_table
 	map_page p3_table, 510, p2_table
 	map_page p2_table, 0, p1_table
 
+	; Map addresses from 0xFFFF800000000000
+	map_page p4_table, 256, lower_p3_table
+	map_page lower_p3_table, 0, p2_table
+
+	; Map in some more memory around where we are so we have time to jump
 	map_page p4_table, 0, p3_table_temp
 	map_page p3_table_temp, 0, p2_table
 
