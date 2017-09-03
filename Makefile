@@ -29,7 +29,7 @@ ifeq ($(OS),Linux)
 	EMUFLAGS += -M accel=kvm:tcg
 endif
 
-.PHONY: all clean distclean run debug disassemble
+.PHONY: all clean run debug disassemble copy-all copy-ds copy-cansid
 .SUFFIXES: .o .c .asm
 
 all: $(ISO)
@@ -41,8 +41,6 @@ clean:
 	@$(RM) -r build
 	@$(RM) iso/boot/byteos.elf
 	@$(RM) $(KERNEL_OBJ) $(LIBK_OBJ)
-
-distclean: clean
 	@$(RM) $(DEPFILES)
 
 debug: $(ISO)
@@ -52,6 +50,18 @@ debug: $(ISO)
 
 disassemble: $(KERNEL)
 	@$(OBJDUMP) --no-show-raw-insn -d -Mintel $(KERNEL) | source-highlight -s asm -f esc256 | less -eRiMX
+
+copy-all: copy-ds copy-cansid
+
+copy-ds:
+	@cp ../ds/include/ds/*.h ./include/kernel/ds
+	@cp ../ds/src/*.c ./kernel/ds
+
+copy-cansid:
+	@cp ../cansid/cansid.c ./kernel/drivers/vga_tmode
+	@cp ../cansid/cansid.h ./include/kernel/drivers/
+	@cat ./kernel/drivers/vga_tmode/cansid.c | sed 's/cansid.h/drivers\/cansid.h/g' > temp.c
+	@mv temp.c ./kernel/drivers/vga_tmode/cansid.c
 
 iso/boot/byteos.elf: $(KERNEL)
 	@cp $< $@
@@ -63,18 +73,23 @@ build/libk.a: $(LIBK_OBJ)
 	@$(AR) rcs $@ $(LIBK_OBJ)
 
 $(ISO): build/ iso/boot/byteos.elf
+	@printf "\t\e[32;1mCreating\e[0m $(ISO)\n"
 	@grub-mkrescue -o $@ iso 2> /dev/null
+	@printf "\t\e[32;1;4mDone\e[0m\n"
 
 $(KERNEL): $(KERNEL_OBJ) build/libk.a
+	@printf "\t\e[32;1mLinking\e[0m $(KERNEL)\n"
 	@$(CC) -T linker.ld -o $@ $(KERNEL_OBJ) $(LDFLAGS) -n -nostdlib -Lbuild -lk -lgcc
 	@$(OBJCOPY) --only-keep-debug $(KERNEL) build/byteos.sym
 	@$(OBJCOPY) --strip-debug $(KERNEL)
 	@grub-file --is-x86-multiboot2 $@
 
 kernel/%.asm.o: kernel/%.asm
+	@printf "\t\e[32;1mAssembling\e[0m $<\n"
 	@$(AS) $(ASFLAGS) -MD $(addsuffix .d,$<) $< -o $@
 
 kernel/%.c.o: kernel/%.c
+	@printf "\t\e[32;1mCompiling\e[0m $<\n"
 	@$(CC) -c $< -o $@ -MD $(CFLAGS)
 
 libk/%.c.o: libk/%.c

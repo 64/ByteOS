@@ -1,5 +1,3 @@
-#pragma GCC diagnostic ignored "-Wswitch-default"
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -105,6 +103,8 @@ struct color_char cansid_process(struct cansid_state *state, char x) {
 				state->next_style = state->style;
 				rv.ascii = x;
 			}
+			break;
+		default:
 			break;
 	}
 	return rv;
