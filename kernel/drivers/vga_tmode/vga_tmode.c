@@ -13,6 +13,8 @@ static uint16_t * const VGABUF = (uint16_t *)0xFFFFFFFF800B8000;
 static size_t x_pos, y_pos;
 static struct cansid_state cansid_state;
 
+void vga_tmode_init(void);
+
 void vga_tmode_init(void) {
 	cansid_state = cansid_init();
 	serial_init();
@@ -21,7 +23,7 @@ void vga_tmode_init(void) {
 	kprintf("VGA textmode initialized\n");
 }
 
-void vga_tmode_newline(void) {
+static void vga_tmode_newline(void) {
 	if (y_pos == VGAHEIGHT - 1) {
 		// Shift every line of input upwards
 		for (size_t i = 2; i < VGAHEIGHT; i++) {

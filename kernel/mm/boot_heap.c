@@ -20,7 +20,6 @@ struct stack_node *stack_start;
 
 void boot_heap_init(void) {
 	// Map the unused space that we already have allocated since boot
-	extern physaddr_t _kernel_end_phys;
 	const physaddr_t kern_end = ALIGNUP((physaddr_t)&_kernel_end_phys, PAGE_SIZE);
 
 	// Make sure all the numbers are correct

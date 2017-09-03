@@ -5,3 +5,8 @@ build/*
 *.d
 *.o
 *.a
+*.gch
+
+.*
+!.git*
+!.gdbinit

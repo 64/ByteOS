@@ -40,6 +40,8 @@ void pmm_mmap_parse(struct multiboot_info *mboot) {
 			case MULTIBOOT_TAG_TYPE_MMAP:
 				mboot_mmap_parse((struct multiboot_tag_mmap *)current_tag);
 				break;
+			default:
+				break;
 		}
 	} while ((current_tag = get_next_tag(current_tag)) != NULL);
 }
