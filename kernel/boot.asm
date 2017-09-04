@@ -1,4 +1,5 @@
 %define KERNEL_TEXT_BASE 0xFFFFFFFF80000000
+%define KERNEL_PHYS_MAP_END 0x200000
 %define PAGE_SIZE 0x1000
 section .multiboot_header
 align 8 ; Must be 8 byte aligned as per the specification
@@ -239,6 +240,12 @@ _start:
 	cmp ecx, 512
 	jne .map_p1_table
 
+	; Make sure we allocated enough memory in the page tables for the kernel
+	extern _kernel_end_phys
+	mov eax, _kernel_end_phys
+	cmp eax, KERNEL_PHYS_MAP_END
+	jg .kernel_too_big
+
 	; Enable paging
 	; Set P4 address in CR3
 	mov eax, p4_table
@@ -278,6 +285,11 @@ _start:
 ; Processor doesn't support long mode
 .no_long_mode:
 	mov al, "2"
+	jmp .error
+
+; Kernel executable file is greater than the memory we allocated for page tables
+.kernel_too_big:
+	mov al, "3"
 	jmp .error
 
 ; .error: Writes "ERROR: $al" in red text and halts the CPU
