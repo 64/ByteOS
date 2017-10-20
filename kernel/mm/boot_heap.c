@@ -36,6 +36,15 @@ void boot_heap_init(void) {
 	boot_heap_free_pages_phys(kern_end + (2 * PAGE_SIZE), (KERNEL_PHYS_MAP_END - kern_end - 2 * PAGE_SIZE) / PAGE_SIZE);
 }
 
+void boot_heap_dump_info(void) {
+	size_t n_free_pages = 0;
+	slist_foreach(current_node, list, stack_start) {
+		n_free_pages += current_node->current_idx + 1;
+	}
+	kprintf("Total nodes: %zu\n", n_free_pages / STACK_MAX);
+	kprintf("Total free pages: %zu\n", n_free_pages);
+}
+
 /* Only allow 4096-length allocations ATM. Larger allocs will be tricky in the
    future since we will have to do slow O(n^2) searches of the stack. Another
    thing to consider is that this allocator causes pretty large initial

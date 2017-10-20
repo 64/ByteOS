@@ -35,13 +35,14 @@ struct page_table {
 
 extern struct page_table *kernel_p4;
 
-void pmm_mmap_parse(struct multiboot_info *);
+physaddr_t pmm_mmap_parse(struct multiboot_info *);
 
 void boot_heap_init(void);
 physaddr_t boot_heap_alloc_page(void);
 void boot_heap_free_pages_phys(physaddr_t, size_t);
 void boot_heap_free_pages_virt(virtaddr_t, size_t);
 void boot_heap_free_pages_kern(kernaddr_t, size_t);
+void boot_heap_dump_info(void);
 
 void paging_init(void);
 physaddr_t paging_get_phys_addr(struct page_table *, void *);
