@@ -19,8 +19,15 @@ CFLAGS		+= -Wunused
 ASFLAGS		:= -f elf64 -F dwarf -g -w+all -Werror
 EMUFLAGS	:= -net none -serial stdio -cdrom $(ISO)
 
-KERNEL_OBJ	:= $(addsuffix .o,$(shell find kernel -name '*.c' -o -name '*.asm'))
-DEPFILES	:= $(patsubst %.o,%.d,$(KERNEL_OBJ))
+CRTI_OBJ	:= kernel/bin/crti.asm.o
+CRTBEGIN_OBJ    := kernel/bin/crtbegin.o
+CRTEND_OBJ	:= kernel/bin/crtend.o
+CRTN_OBJ	:= kernel/bin/crtn.asm.o
+KERNEL_OBJ_RAW	:= $(addsuffix .o,$(shell find kernel -path kernel/bin -prune -type f -o -name '*.c' -o -name '*.asm'))
+KERNEL_OBJ_ALL	:= $(CRTI_OBJ) $(CRTN_OBJ) $(KERNEL_OBJ_RAW)
+KERNEL_OBJ	:= $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(KERNEL_OBJ_RAW) $(CRTEND_OBJ) $(CRTN_OBJ)
+
+DEPFILES	:= $(patsubst %.o,%.d,$(KERNEL_OBJ_ALL))
 
 LIBK_OBJ	:= $(addsuffix .o,$(shell find libk -name '*.c' -o -name '*.asm'))
 DEPFILES	+= $(patsubst %.o,%.d,$(LIBK_OBJ))
@@ -40,7 +47,7 @@ run: $(ISO)
 clean:
 	@$(RM) -r build
 	@$(RM) iso/boot/byteos.elf
-	@$(RM) $(KERNEL_OBJ) $(LIBK_OBJ)
+	@$(RM) $(KERNEL_OBJ_ALL) $(LIBK_OBJ)
 	@$(RM) $(DEPFILES)
 
 debug: $(ISO)
@@ -77,7 +84,7 @@ $(ISO): build/ iso/boot/byteos.elf
 	@grub-mkrescue -o $@ iso 2> /dev/null
 	@printf "\t\e[32;1;4mDone\e[0m\n"
 
-$(KERNEL): $(KERNEL_OBJ) build/libk.a
+$(KERNEL): $(KERNEL_OBJ_ALL) build/libk.a
 	@printf "\t\e[32;1mLinking\e[0m $(KERNEL)\n"
 	@$(CC) -T linker.ld -o $@ $(KERNEL_OBJ) $(LDFLAGS) -n -nostdlib -Lbuild -lk -lgcc
 	@$(OBJCOPY) --only-keep-debug $(KERNEL) build/byteos.sym

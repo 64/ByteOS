@@ -12,6 +12,10 @@ long_mode_start:
 
 	; TODO: Enable AVX
 
+	; Call global constructors
+	extern _init
+	call _init
+
 	; Initialise VGA textmode driver
 	extern vga_tmode_init
 	call vga_tmode_init
@@ -24,6 +28,10 @@ long_mode_start:
 	pop rdi
 	extern kmain
 	call kmain
+
+	; Call global destructors
+	extern _fini
+	call _fini
 
 	sti
 .end:

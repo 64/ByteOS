@@ -15,6 +15,7 @@ SECTIONS
                 *(.multiboot_header)
                 *(.rodata)
                 *(.rodata*)
+                *(.eh_frame)
                 _rodata_end_phys = . - offset;
         }
 
@@ -43,7 +44,6 @@ SECTIONS
         /DISCARD/ :
         {
                 *(.comment)
-                *(.eh_frame)
         }
 
         _kernel_end_phys = . - offset;
