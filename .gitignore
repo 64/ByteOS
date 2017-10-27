@@ -10,5 +10,5 @@ build/*
 .*
 !.git*
 !.gdbinit
-!kernel/bin/crtbegin.o
-!kernel/bin/crtend.o
+!kernel/crt/crtbegin.o
+!kernel/crt/crtend.o
