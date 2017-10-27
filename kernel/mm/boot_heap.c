@@ -11,8 +11,7 @@ extern physaddr_t _kernel_end_phys;
 
 struct stack_node {
 	struct slist_entry list;
-	size_t current_idx;
-	// First entry in this array holds the physical address of the node itself
+	int64_t current_idx; // -1 indicates no free pages in free_pages
 	uintptr_t free_pages[STACK_MAX];
 } __attribute__((packed)); // Shouldn't be necessary, but just to be safe
 
@@ -24,16 +23,14 @@ void boot_heap_init(void) {
 
 	// Make sure all the numbers are correct
 	kassert(sizeof(struct stack_node) == PAGE_SIZE);
-	kassert(STACK_MAX * sizeof(uintptr_t) + offsetof(struct stack_node, free_pages) == PAGE_SIZE);
 	kassert(kern_end + PAGE_SIZE < KERNEL_PHYS_MAP_END);
 
 	stack_start = phys_to_virt(kern_end);
 	slist_set_next(stack_start, list, (struct stack_node *)NULL); // Mark as end of list
-	stack_start->current_idx = 0;
+	stack_start->current_idx = -1;
 
-	// free_pages[current_idx] must always be valid
-	stack_start->free_pages[0] = kern_end + PAGE_SIZE;
-	boot_heap_free_pages_phys(kern_end + (2 * PAGE_SIZE), (KERNEL_PHYS_MAP_END - kern_end - 2 * PAGE_SIZE) / PAGE_SIZE);
+	// Free the pages between kern_end + PAGE_SIZE and KERNEL_PHYS_MAP_END
+	boot_heap_free_pages_phys(kern_end + PAGE_SIZE, (KERNEL_PHYS_MAP_END - kern_end -  PAGE_SIZE) / PAGE_SIZE);
 }
 
 void boot_heap_dump_info(void) {
@@ -56,14 +53,11 @@ physaddr_t boot_heap_alloc_page(void) {
 		panic("boot heap can't satisfy page allocation");
 
 	physaddr_t free_addr = stack_start->free_pages[stack_start->current_idx];
-	if (free_addr == 0 && stack_start->current_idx == 0) {
+	if (stack_start->current_idx < 0) {
 		// Allocate the node itself
 		free_addr = virt_to_phys((void *)stack_start);
-		struct stack_node *next_node = slist_get_next(stack_start, list);
-		stack_start = next_node;
-	} else if (stack_start->current_idx == 0)
-		stack_start->free_pages[0] = 0;
-	else
+		stack_start = slist_get_next(stack_start, list);
+	} else
 		stack_start->current_idx--;
 	return free_addr;
 }
@@ -76,43 +70,45 @@ void boot_heap_free_pages_virt(virtaddr_t k, size_t n) {
 	return boot_heap_free_pages_phys(virt_to_phys(k), n);
 }
 
-// TODO: Clarity on whether p needs to be page aligned
+// Must be a page aligned address
 void boot_heap_free_pages_phys(physaddr_t p, size_t n) {
-	kassert(n != 0);
 	const physaddr_t kern_end = ALIGNUP((physaddr_t)&_kernel_end_phys, PAGE_SIZE);
-	kassert(p >= kern_end);
-
-	// Note: integer overflow should never happen here since addresses are
-	// 48-bit (or 52-bit with PSE). TODO: Confirm this
-	physaddr_t free_addr = ALIGNUP(p, PAGE_SIZE);
+	physaddr_t free_start = p;
 	physaddr_t free_end = p + (n * PAGE_SIZE);
 
+	kassert(n != 0);
+	kassert(p >= kern_end && (p & 0xFFF) == 0);
+
 	// TODO: Please test this!
-	if (stack_start == NULL && (free_addr + PAGE_SIZE) >= free_end) {
+	if (stack_start == NULL) {
 		kprintf("stack_start is null, reallocating...\n");
-		// TODO: Slightly dodgy usage of phys_to_virt, please fix
-		if (!paging_has_flags(kernel_p4, phys_to_virt(free_addr), PAGE_PRESENT | PAGE_WRITABLE))
+		pte_t pte = paging_get_pte(kernel_p4, phys_to_virt(free_start));
+		// Using this address requires allocation to map, but we have no space
+		if (pte == 0)
 			panic("boot heap cannot create space to store free pages");
-		stack_start = phys_to_virt(free_addr);
-		stack_start->current_idx = 0;
-		stack_start->free_pages[0] = free_addr;
-		free_addr += PAGE_SIZE;
+		// It's not mapped, but we can map it in since it requires no allocation
+		else if ((pte & PAGE_PRESENT) == 0)
+			paging_map_page(kernel_p4, free_start, phys_to_virt(free_start), PAGE_WRITABLE | PAGE_NO_EXEC);
+		// Otherwise it's now mapped so we can use it
+		stack_start = phys_to_virt(free_start);
+		stack_start->current_idx = -1;
+		free_start += PAGE_SIZE;
 	}
 
-	kprintf("Freeing physical pages from %p to %p\n", (void *)free_addr, (void *)free_end);
-	for (; free_addr + PAGE_SIZE <= free_end; free_addr += PAGE_SIZE) {
-		paging_map_page(kernel_p4, free_addr, phys_to_virt(free_addr), PAGE_WRITABLE | PAGE_NO_EXEC);
+	kprintf("Freeing physical pages from %p to %p\n", (void *)free_start, (void *)free_end);
+	for (; free_start < free_end; free_start += PAGE_SIZE) {
+		paging_map_page(kernel_p4, free_start, phys_to_virt(free_start), PAGE_WRITABLE | PAGE_NO_EXEC);
 		if (stack_start->current_idx + 1 >= STACK_MAX) {
-			// Need new stack node (TODO: Another dodgy phys_to_virt)
+			// Need new stack node
 			struct stack_node *next_node = phys_to_virt(boot_heap_alloc_page());
 			next_node->current_idx = 0;
-			next_node->free_pages[0] = free_addr;
+			next_node->free_pages[0] = free_start;
 			slist_set_next(next_node, list, stack_start);
 			stack_start = next_node;
 		} else {
 			// Use existing stack node
 			stack_start->current_idx++;
-			stack_start->free_pages[stack_start->current_idx] = free_addr;
+			stack_start->free_pages[stack_start->current_idx] = free_start;
 		}
 	}
 }

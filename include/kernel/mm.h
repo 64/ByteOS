@@ -47,6 +47,7 @@ void boot_heap_dump_info(void);
 void paging_init(void);
 physaddr_t paging_get_phys_addr(struct page_table *, void *);
 bool paging_has_flags(struct page_table *, void *, uint64_t flags);
+pte_t paging_get_pte(struct page_table *, void *);
 void paging_map_page(struct page_table *, physaddr_t, void *, uint64_t);
 
 static inline physaddr_t virt_to_phys(virtaddr_t v) {

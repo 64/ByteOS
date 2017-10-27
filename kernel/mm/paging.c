@@ -35,7 +35,7 @@ static inline pte_t alloc_pgtab(void) {
 	return (pgtab_phys & PTE_ADDR_MASK) | flags;
 }
 
-static inline pte_t get_pte_from_addr(struct page_table *p4, void *addr) {
+pte_t paging_get_pte(struct page_table *p4, void *addr) {
 	const uintptr_t va = (uintptr_t)addr;
 	const uint16_t p4_index = (va & P4_ADDR_MASK) >> P4_ADDR_SHIFT;
 	const uint16_t p3_index = (va & P3_ADDR_MASK) >> P3_ADDR_SHIFT;
@@ -59,7 +59,7 @@ static inline pte_t get_pte_from_addr(struct page_table *p4, void *addr) {
 
 bool paging_has_flags(struct page_table *p4, void *addr, uint64_t flags) {
 	kassert(addr != NULL);
-	return (get_pte_from_addr(p4, addr) & flags) != 0;
+	return (paging_get_pte(p4, addr) & flags) != 0;
 }
 
 void paging_map_page(struct page_table *p4, physaddr_t phys, void *virt, uint64_t flags) {
@@ -94,9 +94,9 @@ void paging_map_page(struct page_table *p4, physaddr_t phys, void *virt, uint64_
 	p1_table->pages[p1_index] = (phys & PTE_ADDR_MASK) | PAGE_PRESENT | flags;
 }
 
-// Warning: this doesn't work for addresses below 0x1000
 physaddr_t paging_get_phys_addr(struct page_table *p4, void *virt) {
-	const uint16_t page_offset = (uintptr_t)virt & PAGE_OFFSET_MASK;
-	const physaddr_t addr = (physaddr_t)(get_pte_from_addr(p4, virt) & PTE_ADDR_MASK);
+	kassert(virt >= (void *)0x1000); // Doesn't work below this address
+	uint16_t page_offset = (uintptr_t)virt & PAGE_OFFSET_MASK;
+	physaddr_t addr = (physaddr_t)(paging_get_pte(p4, virt) & PTE_ADDR_MASK);
 	return (addr == 0) ? 0 : addr + page_offset;
 }

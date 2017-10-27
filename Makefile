@@ -19,11 +19,11 @@ CFLAGS		+= -Wunused
 ASFLAGS		:= -f elf64 -F dwarf -g -w+all -Werror
 EMUFLAGS	:= -net none -serial stdio -cdrom $(ISO)
 
-CRTI_OBJ	:= kernel/bin/crti.asm.o
-CRTBEGIN_OBJ    := kernel/bin/crtbegin.o
-CRTEND_OBJ	:= kernel/bin/crtend.o
-CRTN_OBJ	:= kernel/bin/crtn.asm.o
-KERNEL_OBJ_RAW	:= $(addsuffix .o,$(shell find kernel -path kernel/bin -prune -type f -o -name '*.c' -o -name '*.asm'))
+CRTI_OBJ	:= kernel/crt/crti.asm.o
+CRTBEGIN_OBJ    := kernel/crt/crtbegin.o
+CRTEND_OBJ	:= kernel/crt/crtend.o
+CRTN_OBJ	:= kernel/crt/crtn.asm.o
+KERNEL_OBJ_RAW	:= $(addsuffix .o,$(shell find kernel -path kernel/crt -prune -type f -o -name '*.c' -o -name '*.asm'))
 KERNEL_OBJ_ALL	:= $(CRTI_OBJ) $(CRTN_OBJ) $(KERNEL_OBJ_RAW)
 KERNEL_OBJ	:= $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(KERNEL_OBJ_RAW) $(CRTEND_OBJ) $(CRTN_OBJ)
 
