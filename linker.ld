@@ -46,6 +46,6 @@ SECTIONS
                 *(.comment)
         }
 
-        _kernel_end_phys = . - offset;
+        _kernel_end_phys = . + 0x1000 - offset;
 
 }

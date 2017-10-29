@@ -23,7 +23,7 @@ struct page_table *kernel_p4;
 
 void paging_init(void) {
 	kernel_p4 = phys_to_kern((physaddr_t)&p4_table);
-	dump_page_tables();
+//	dump_page_tables();
 }
 
 static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgtab, uint16_t index) {
@@ -41,6 +41,8 @@ static inline pte_t alloc_pgtab(void) {
 	return (pgtab_phys & PTE_ADDR_MASK) | flags;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
 
 static void dump_page_tables(void) {
 	for (size_t i = 0; i < 512; i++) {
@@ -72,6 +74,8 @@ static void dump_page_tables_p1(struct page_table *p2, uintptr_t addr_bits) {
 		kprintf("\t\tP1: %p -> %p\n", first_virt, (void *)first_phys);
 	}
 }
+
+#pragma GCC diagnostic pop
 
 pte_t paging_get_pte(struct page_table *p4, void *addr) {
 	const uintptr_t va = (uintptr_t)addr;

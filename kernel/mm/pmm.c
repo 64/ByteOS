@@ -3,6 +3,8 @@
 #include "libk.h"
 #include "mm.h"
 
+extern physaddr_t _kernel_end_phys;
+
 static struct multiboot_tag *get_next_tag(struct multiboot_tag *tag) {
 	size_t size = tag->size;
 	if (tag->type == MULTIBOOT_TAG_TYPE_END && size == 8)
@@ -38,13 +40,13 @@ static size_t get_mboot_data_length(struct multiboot_info *mboot) {
 }
 
 physaddr_t pmm_mmap_parse(struct multiboot_info *mboot) {
-	boot_heap_init();
-
-	// Copy to new (safe) location
+	// Copy to new (safe) location: we reserved 0x1000 bytes directly after the end of the kernel
 	size_t data_len = get_mboot_data_length(mboot);
 	kassert(data_len <= PAGE_SIZE); // TODO: Make it work with larger sizes
-	physaddr_t new_addr = boot_heap_alloc_page();
-	memcpy(phys_to_kern(new_addr), mboot, data_len);
+	physaddr_t new_addr = (physaddr_t)&_kernel_end_phys - PAGE_SIZE; 
+	memmove(phys_to_kern(new_addr), mboot, data_len); // Might overlap
+
+	boot_heap_init();
 
 	struct multiboot_tag *current_tag = ((struct multiboot_info *)phys_to_kern(new_addr))->tags;
 	kassert(current_tag->type != 0);

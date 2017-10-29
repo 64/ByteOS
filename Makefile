@@ -9,6 +9,7 @@ AR		:= x86_64-elf-ar
 CC		:= x86_64-elf-gcc
 OBJDUMP		:= x86_64-elf-objdump
 OBJCOPY		:= x86_64-elf-objcopy
+GDB		:= gdb
 
 CFLAGS		?= -O1 -g
 CFLAGS		+= -ffreestanding -mno-red-zone -mcmodel=kernel -Iinclude -Iinclude/kernel -std=gnu11
@@ -51,8 +52,9 @@ clean:
 	@$(RM) $(DEPFILES)
 
 debug: $(ISO)
-	@$(EMU) $(EMUFLAGS) -d cpu_reset -no-reboot -s -S &
-	@../../../deps/bin/gdb
+	@$(EMU) $(EMUFLAGS) -no-reboot -s -S &
+	@sleep 0.5
+	@$(GDB)
 	@pkill qemu
 
 disassemble: $(KERNEL)

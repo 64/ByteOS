@@ -6,6 +6,7 @@
 #include "libk.h"
 
 #define STACK_MAX (512 - 2)
+#define KERN_END ALIGNUP((physaddr_t)&_kernel_end_phys, PAGE_SIZE)
 
 extern physaddr_t _kernel_end_phys;
 
@@ -18,19 +19,16 @@ struct stack_node {
 struct stack_node *stack_start;
 
 void boot_heap_init(void) {
-	// Map the unused space that we already have allocated since boot
-	const physaddr_t kern_end = ALIGNUP((physaddr_t)&_kernel_end_phys, PAGE_SIZE);
-
 	// Make sure all the numbers are correct
 	kassert(sizeof(struct stack_node) == PAGE_SIZE);
-	kassert(kern_end + PAGE_SIZE < KERNEL_PHYS_MAP_END);
+	kassert(KERN_END + PAGE_SIZE < KERNEL_PHYS_MAP_END);
 
-	stack_start = phys_to_virt(kern_end);
+	stack_start = phys_to_virt(KERN_END);
 	slist_set_next(stack_start, list, (struct stack_node *)NULL); // Mark as end of list
 	stack_start->current_idx = -1;
 
-	// Free the pages between kern_end + PAGE_SIZE and KERNEL_PHYS_MAP_END
-	boot_heap_free_pages_phys(kern_end + PAGE_SIZE, (KERNEL_PHYS_MAP_END - kern_end -  PAGE_SIZE) / PAGE_SIZE);
+	// Free the pages between KERN_END + PAGE_SIZE and KERNEL_PHYS_MAP_END
+	boot_heap_free_pages_phys(KERN_END + PAGE_SIZE, (KERNEL_PHYS_MAP_END - KERN_END -  PAGE_SIZE) / PAGE_SIZE);
 }
 
 void boot_heap_dump_info(void) {
@@ -73,12 +71,11 @@ void boot_heap_free_pages_virt(virtaddr_t k, size_t n) {
 // Must be a page aligned address
 // TODO: Sort the data structure so we don't insert randomly
 void boot_heap_free_pages_phys(physaddr_t p, size_t n) {
-	const physaddr_t kern_end = ALIGNUP((physaddr_t)&_kernel_end_phys, PAGE_SIZE);
 	physaddr_t free_start = p;
 	physaddr_t free_end = p + (n * PAGE_SIZE);
 
 	kassert(n != 0);
-	kassert(p >= kern_end && (p & 0xFFF) == 0);
+	kassert(p >= KERN_END && (p & 0xFFF) == 0);
 
 	// TODO: Please test this!
 	if (stack_start == NULL) {
