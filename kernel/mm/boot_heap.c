@@ -71,6 +71,7 @@ void boot_heap_free_pages_virt(virtaddr_t k, size_t n) {
 }
 
 // Must be a page aligned address
+// TODO: Sort the data structure so we don't insert randomly
 void boot_heap_free_pages_phys(physaddr_t p, size_t n) {
 	const physaddr_t kern_end = ALIGNUP((physaddr_t)&_kernel_end_phys, PAGE_SIZE);
 	physaddr_t free_start = p;

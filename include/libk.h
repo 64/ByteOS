@@ -26,3 +26,9 @@ __attribute__((noreturn)) void abort(void);
 		if (!(condition)) \
 			panic("kassert condition failed: %s\n", #condition); \
 	} while(0)
+
+#ifdef NDEBUG
+	#define kassert_dbg(x)
+#else
+	#define kassert_dbg(x) kassert(x)
+#endif

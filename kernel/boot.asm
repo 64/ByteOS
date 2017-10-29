@@ -1,5 +1,5 @@
 %define KERNEL_TEXT_BASE 0xFFFFFFFF80000000
-%define KERNEL_PHYS_MAP_END 0x200000
+%define KERNEL_PHYS_MAP_END 0x1000000
 %define PAGE_SIZE 0x1000
 section .multiboot_header
 align 8 ; Must be 8 byte aligned as per the specification
@@ -27,7 +27,21 @@ lower_p3_table equ $ - KERNEL_TEXT_BASE
 	resb PAGE_SIZE
 p2_table equ $ - KERNEL_TEXT_BASE
 	resb PAGE_SIZE
-p1_table equ $ - KERNEL_TEXT_BASE
+p1_table_0 equ $ - KERNEL_TEXT_BASE
+	resb PAGE_SIZE
+p1_table_1 equ $ - KERNEL_TEXT_BASE
+	resb PAGE_SIZE
+p1_table_2 equ $ - KERNEL_TEXT_BASE
+	resb PAGE_SIZE
+p1_table_3 equ $ - KERNEL_TEXT_BASE
+	resb PAGE_SIZE
+p1_table_4 equ $ - KERNEL_TEXT_BASE
+	resb PAGE_SIZE
+p1_table_5 equ $ - KERNEL_TEXT_BASE
+	resb PAGE_SIZE
+p1_table_6 equ $ - KERNEL_TEXT_BASE
+	resb PAGE_SIZE
+p1_table_7 equ $ - KERNEL_TEXT_BASE
 	resb PAGE_SIZE
 p3_table_temp equ $ - KERNEL_TEXT_BASE ; Use the top of the stack temporarily
 stack_top:
@@ -192,7 +206,14 @@ _start:
 	; Setup paging
 	map_page p4_table, 511, p3_table
 	map_page p3_table, 510, p2_table
-	map_page p2_table, 0, p1_table
+	map_page p2_table, 0, p1_table_0
+	map_page p2_table, 1, p1_table_1
+	map_page p2_table, 2, p1_table_2
+	map_page p2_table, 3, p1_table_3
+	map_page p2_table, 4, p1_table_4
+	map_page p2_table, 5, p1_table_5
+	map_page p2_table, 6, p1_table_6
+	map_page p2_table, 7, p1_table_7
 
 	; Map addresses from 0xFFFF800000000000
 	map_page p4_table, 256, lower_p3_table
@@ -232,12 +253,12 @@ _start:
 	and edi, ~(1 << 1)
 .end:
 	or edi, 0b1
-	mov edx, p1_table ; Not entirely sure why/if this is needed
+	mov edx, p1_table_0
 	mov [edx + ecx * 8], edi ; Low 4 bytes
 	add edx, 4
 	mov [edx + ecx * 8], esi ; High 4 bytes
 	inc ecx
-	cmp ecx, 512
+	cmp ecx, 512 * 8
 	jne .map_p1_table
 
 	; Make sure we allocated enough memory in the page tables for the kernel

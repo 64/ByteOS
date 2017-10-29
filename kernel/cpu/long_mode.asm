@@ -23,7 +23,7 @@ long_mode_start:
 	; Load interrupt descriptor table
 	extern load_idt
 	call load_idt
-
+	
 	; Pass multiboot information to kmain
 	pop rdi
 	extern kmain
