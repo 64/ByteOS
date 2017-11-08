@@ -50,7 +50,7 @@ stack_bottom:
 
 %macro map_page 3
 	mov eax, %3
-	or eax, 0b11
+	or eax, 0b11 ; Writable, Present
 	mov [%1 + %2 * 8], eax
 	and dword [%1 + 4 + %2 * 8], ~(1 << 31) & 0xFFFFFFFF ; Clear NXE bit
 %endmacro
@@ -252,7 +252,8 @@ _start:
 .is_rdonly:
 	and edi, ~(1 << 1)
 .end:
-	or edi, 0b1
+	or edi, 0b100000001 ; Global, Present
+	and edi, ~(1 << 2)  ; Supervisor only
 	mov edx, p1_table_0
 	mov [edx + ecx * 8], edi ; Low 4 bytes
 	add edx, 4

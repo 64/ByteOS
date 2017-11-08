@@ -63,8 +63,8 @@ disassemble: $(KERNEL)
 copy-all: copy-ds copy-cansid
 
 copy-ds:
-	@cp ../ds/include/ds/*.h ./include/kernel/ds
-	@cp ../ds/src/*.c ./kernel/ds
+	@cp ../ds/include/ds/*.h ./include/ds/
+	@cp ../ds/src/*.c ./libk/ds/
 
 copy-cansid:
 	@cp ../cansid/cansid.c ./kernel/drivers/vga_tmode
