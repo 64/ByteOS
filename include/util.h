@@ -20,4 +20,4 @@
 	const typeof((align)) _align = (align); \
 	(_val & (_align - 1)) & (_val - 1) == 0; })
 
-#define UNUSED(x) __attribute__((unused)) x
+#define UNUSED(x) x __attribute__((unused))

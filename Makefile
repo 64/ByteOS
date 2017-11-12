@@ -51,6 +51,7 @@ clean:
 	@$(RM) $(KERNEL_OBJ_ALL) $(LIBK_OBJ)
 	@$(RM) $(DEPFILES)
 
+debug: CFLAGS += -fsanitize=undefined
 debug: $(ISO)
 	@$(EMU) $(EMUFLAGS) -no-reboot -s -S &
 	@sleep 0.5
