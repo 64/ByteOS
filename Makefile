@@ -37,7 +37,7 @@ ifeq ($(OS),Linux)
 	EMUFLAGS += -M accel=kvm:tcg
 endif
 
-.PHONY: all clean run debug disassemble copy-all copy-ds copy-cansid
+.PHONY: all clean run debug disassemble copy-all copy-ds copy-cansid loc
 .SUFFIXES: .o .c .asm
 
 all: $(ISO)
@@ -72,6 +72,9 @@ copy-cansid:
 	@cp ../cansid/cansid.h ./include/kernel/drivers/
 	@cat ./kernel/drivers/vga_tmode/cansid.c | sed 's/cansid.h/drivers\/cansid.h/g' > temp.c
 	@mv temp.c ./kernel/drivers/vga_tmode/cansid.c
+
+loc:
+	cloc --vcs=git
 
 iso/boot/byteos.elf: $(KERNEL)
 	@cp $< $@

@@ -35,8 +35,8 @@ static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgta
 
 // TODO: More flexability with flags (e.g 'global' flag)
 static inline pte_t alloc_pgtab(void) {
-	// Boot heap pages are guaranteed to be mapped
-	physaddr_t pgtab_phys = boot_heap_alloc_page();
+	// Mmap low allocs are guaranteed to be mapped
+	physaddr_t pgtab_phys = mmap_alloc_low(PAGE_SIZE).base;
 	uint64_t flags = PAGE_PRESENT | PAGE_WRITABLE;
 	return (pgtab_phys & PTE_ADDR_MASK) | flags;
 }

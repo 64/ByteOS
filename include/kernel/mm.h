@@ -35,20 +35,24 @@ struct page_table {
 
 extern struct page_table *kernel_p4;
 
-physaddr_t pmm_mmap_parse(struct multiboot_info *);
-
-void boot_heap_init(void);
-physaddr_t boot_heap_alloc_page(void);
-void boot_heap_free_pages_phys(physaddr_t, size_t);
-void boot_heap_free_pages_virt(virtaddr_t, size_t);
-void boot_heap_free_pages_kern(kernaddr_t, size_t);
-void boot_heap_dump_info(void);
-
 void paging_init(void);
 physaddr_t paging_get_phys_addr(struct page_table *, void *);
 bool paging_has_flags(struct page_table *, void *, uint64_t flags);
 pte_t paging_get_pte(struct page_table *, void *);
 void paging_map_page(struct page_table *, physaddr_t, void *, uint64_t);
+
+struct mmap_region {
+	uintptr_t base;
+	size_t len;
+	enum mmap_region_flags {
+		MMAP_NONE,
+		MMAP_NOMAP
+	} type;
+};
+
+void mmap_init(struct multiboot_info *);
+void mmap_dump_info(void);
+struct mmap_region mmap_alloc_low(size_t n);
 
 static inline physaddr_t virt_to_phys(virtaddr_t v) {
 	if (v == NULL)
