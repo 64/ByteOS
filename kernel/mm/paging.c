@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "libk.h"
 #include "mm.h"
+#include "util.h"
 
 #define P4_ADDR_SHIFT 39
 #define P3_ADDR_SHIFT 30
@@ -26,6 +27,19 @@ void paging_init(void) {
 //	dump_page_tables();
 }
 
+void paging_map_all(struct mmap *mmap) {
+	// First map all regions marked "available", updating highest_mapped
+	for (size_t i = 0; i < mmap->available.count; i++) {
+		physaddr_t start = ALIGNUP(mmap->available.regions[i].base, PAGE_SIZE);	
+		physaddr_t end = mmap->available.regions[i].base + mmap->available.regions[i].len;
+		for (physaddr_t j = start; j <= (end - PAGE_SIZE); j += PAGE_SIZE) {
+			paging_map_page(kernel_p4, j, phys_to_virt(j), PAGE_WRITABLE);
+			mmap->highest_mapped = MAX(j, mmap->highest_mapped);
+		}
+	}
+	// Map all regions marked "reserved", updating highest_mapped
+}
+
 static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgtab, uint16_t index) {
 	pte_t entry = pgtab->pages[index];
 	if ((entry & PAGE_PRESENT) == 0)
@@ -36,7 +50,8 @@ static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgta
 // TODO: More flexability with flags (e.g 'global' flag)
 static inline pte_t alloc_pgtab(void) {
 	// Mmap low allocs are guaranteed to be mapped
-	physaddr_t pgtab_phys = mmap_alloc_low(PAGE_SIZE).base;
+	physaddr_t pgtab_phys = mmap_alloc_low(PAGE_SIZE, MMAP_ALLOC_PA).base;
+	kassert_dbg((pgtab_phys & 0xFFF) == 0); // Must be aligned
 	uint64_t flags = PAGE_PRESENT | PAGE_WRITABLE;
 	return (pgtab_phys & PTE_ADDR_MASK) | flags;
 }

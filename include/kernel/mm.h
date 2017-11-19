@@ -23,6 +23,8 @@
 
 #define PAGE_SIZE 4096
 
+#define MMAP_ALLOC_PA (1 << 0)
+
 typedef uintptr_t physaddr_t;
 typedef void *virtaddr_t;
 typedef void *kernaddr_t;
@@ -33,26 +35,40 @@ struct page_table {
 	pte_t pages[512];
 } __attribute__((packed, aligned(PAGE_SIZE)));
 
-extern struct page_table *kernel_p4;
-
-void paging_init(void);
-physaddr_t paging_get_phys_addr(struct page_table *, void *);
-bool paging_has_flags(struct page_table *, void *, uint64_t flags);
-pte_t paging_get_pte(struct page_table *, void *);
-void paging_map_page(struct page_table *, physaddr_t, void *, uint64_t);
-
 struct mmap_region {
 	uintptr_t base;
 	size_t len;
 	enum mmap_region_flags {
 		MMAP_NONE,
 		MMAP_NOMAP
-	} type;
+	} flags;
 };
 
-void mmap_init(struct multiboot_info *);
+struct mmap_type {
+	uint32_t count;
+	struct mmap_region *regions;
+};
+
+struct mmap {
+	physaddr_t highest_mapped;
+	struct mmap_type available;
+	struct mmap_type reserved;
+};
+
+
+extern struct page_table *kernel_p4;
+extern uintptr_t _kernel_end_phys;
+
+void paging_init(void);
+void paging_map_all(struct mmap *);
+physaddr_t paging_get_phys_addr(struct page_table *, void *);
+bool paging_has_flags(struct page_table *, void *, uint64_t flags);
+pte_t paging_get_pte(struct page_table *, void *);
+void paging_map_page(struct page_table *, physaddr_t, void *, uint64_t);
+
+struct mmap *mmap_init(struct multiboot_info *);
 void mmap_dump_info(void);
-struct mmap_region mmap_alloc_low(size_t n);
+struct mmap_region mmap_alloc_low(size_t n, unsigned int alloc_flags);
 
 static inline physaddr_t virt_to_phys(virtaddr_t v) {
 	if (v == NULL)
