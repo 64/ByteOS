@@ -1,0 +1,9 @@
+[submodule "vendor/ds"]
+	path = vendor/ds
+	url = https://github.com/64/ds
+[submodule "vendor/snow"]
+	path = vendor/snow
+	url = https://github.com/mortie/snow
+[submodule "vendor/cansid"]
+	path = vendor/cansid
+	url = https://github.com/64/cansid

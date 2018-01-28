@@ -36,11 +36,16 @@ LIBK_TESTABLE	:= $(addprefix libk/,string.c)
 DEPFILES	+= $(patsubst %.o,%.d,$(LIBK_OBJ))
 TIME_START 	:= $(shell date +"%s.%N")
 
+MOD_DS		:= vendor/ds
+MOD_CANSID	:= vendor/cansid
+MOD_SNOW	:= vendor/snow
+SUBMODULES	:= ds cansid snow
+
 ifeq ($(OS),Linux)
 	EMUFLAGS += -M accel=kvm:tcg
 endif
 
-.PHONY: all clean run debug disassemble copy-all copy-ds copy-cansid loc tidy
+.PHONY: all clean run debug disassemble update-modules copy-all copy-ds copy-cansid loc tidy
 .SUFFIXES: .o .c .asm
 
 all: $(ISO)
@@ -65,15 +70,23 @@ debug: $(ISO)
 disassemble: $(KERNEL)
 	@$(OBJDUMP) --no-show-raw-insn -d -Mintel $(KERNEL) | source-highlight -s asm -f esc256 | less -eRiMX
 
-copy-all: copy-ds copy-cansid
+update-modules:
+	git submodule update --init --recursive --remote
 
-copy-ds:
-	@cp ../ds/include/ds/*.h ./include/ds/
-	@cp ../ds/src/*.c ./libk/ds/
+$(MOD_SNOW) $(MOD_DS) $(MOD_CANSID): update-modules
 
-copy-cansid:
-	@cp ../cansid/cansid.c ./kernel/drivers/vga_tmode
-	@cp ../cansid/cansid.h ./include/kernel/drivers/
+copy-all: copy-ds copy-cansid copy-snow
+
+copy-snow: $(MOD_SNOW)
+	@cp $(MOD_SNOW)/snow/snow.h ./libk/tests/snow.h
+
+copy-ds: $(MOD_DS)
+	@cp $(MOD_DS)/include/ds/*.h ./include/ds/
+	@cp $(MOD_DS)/src/*.c ./libk/ds/
+
+copy-cansid: $(MOD_CANSID)
+	@cp $(MOD_CANSID)/cansid.c ./kernel/drivers/vga_tmode
+	@cp $(MOD_CANSID)/cansid.h ./include/kernel/drivers/
 	@cat ./kernel/drivers/vga_tmode/cansid.c | sed 's/cansid.h/drivers\/cansid.h/g' > temp.c
 	@mv temp.c ./kernel/drivers/vga_tmode/cansid.c
 
