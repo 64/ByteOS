@@ -1,6 +1,6 @@
 #include "libk.h"
 
-int memcmp(const void *s1, const void *s2, size_t n)
+int LIBK_FN(memcmp)(const void *s1, const void *s2, size_t n)
 {
 	const unsigned char *a = s1;
 	const unsigned char *b = s2;
@@ -13,7 +13,7 @@ int memcmp(const void *s1, const void *s2, size_t n)
 	return 0;
 }
 
-void *memcpy(void *restrict s1, const void *restrict s2, size_t n)
+void *LIBK_FN(memcpy)(void *restrict s1, const void *restrict s2, size_t n)
 {
 	unsigned char *dst = s1;
 	const unsigned char *src = s2;
@@ -22,7 +22,7 @@ void *memcpy(void *restrict s1, const void *restrict s2, size_t n)
 	return s1;
 }
 
-void *memmove(void *s1, const void *s2, size_t n)
+void *LIBK_FN(memmove)(void *s1, const void *s2, size_t n)
 {
 	unsigned char *dst = s1;
 	const unsigned char *src = s2;
@@ -36,7 +36,7 @@ void *memmove(void *s1, const void *s2, size_t n)
 	return s1;
 }
 
-void *memset(void *s, int c, size_t n)
+void *LIBK_FN(memset)(void *s, int c, size_t n)
 {
 	unsigned char *p = s, *end = p + n;
 	for (; p != end; p++) {
@@ -45,7 +45,7 @@ void *memset(void *s, int c, size_t n)
 	return s;
 }
 
-size_t strlen(const char *s)
+size_t LIBK_FN(strlen)(const char *s)
 {
 	size_t len = 0;
 	while (*s++)

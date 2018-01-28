@@ -19,7 +19,7 @@ CFLAGS		+= -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wswi
 CFLAGS		+= -Wunused
 ASFLAGS		:= -f elf64 -F dwarf -g -w+all -Werror
 EMUFLAGS	:= -net none -serial stdio -cdrom $(ISO)
-ASTYLEFLAGS	:= --style=linux -z2 -k3 -H -xg -p -t8 -S
+ASTYLEFLAGS	:= --style=linux -z2 -k3 -H -xg -p -T8 -S
 
 CRTI_OBJ	:= kernel/crt/crti.asm.o
 CRTBEGIN_OBJ    := kernel/crt/crtbegin.o
@@ -32,6 +32,7 @@ KERNEL_OBJ	:= $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(KERNEL_OBJ_RAW) $(CRTEND_OBJ) $(CRTN
 DEPFILES	:= $(patsubst %.o,%.d,$(KERNEL_OBJ_ALL))
 
 LIBK_OBJ	:= $(addsuffix .o,$(shell find libk -name '*.c' -o -name '*.asm'))
+LIBK_TESTABLE	:= $(addprefix libk/,string.c)
 DEPFILES	+= $(patsubst %.o,%.d,$(LIBK_OBJ))
 TIME_START 	:= $(shell date +"%s.%N")
 

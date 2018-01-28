@@ -2,11 +2,17 @@
 
 #include <stddef.h>
 
-int memcmp(const void *, const void *, size_t);
-void* memcpy(void * restrict, const void * restrict, size_t);
-void* memmove(void *, const void *, size_t);
-void* memset(void *, int, size_t);
-size_t strlen(const char *);
+#ifdef LIBK_TEST
+#define LIBK_FN(name) __libk_ ## name
+#else
+#define LIBK_FN(name) name
+#endif
+
+int LIBK_FN(memcmp)(const void *, const void *, size_t);
+void *LIBK_FN(memcpy)(void *, const void *, size_t);
+void *LIBK_FN(memmove)(void *, const void *, size_t);
+void *LIBK_FN(memset)(void *, int, size_t);
+size_t LIBK_FN(strlen)(const char *);
 
 __attribute__((format (printf, 1, 2))) int kprintf(const char *, ...);
 

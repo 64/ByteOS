@@ -11,15 +11,15 @@ static void page_fault(struct interrupt_frame *frame)
 	uintptr_t faulting_address;
 	asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
 	panic(
-	        "%s:\n"
-	        "\tfaulting address: %p\n"
-	        "\trip: %p, rsp: %p\n"
-	        "\tint_no: %lu, err_code: %lu, flags: %u\n",
-	        exception_messages[frame->int_no],
-	        (void *)faulting_address,
-	        (void *)frame->rip, (void *)frame->rsp,
-	        frame->int_no, frame->err_code,
-	        (unsigned int)frame->err_code & 0x1F
+		"%s:\n"
+		"\tfaulting address: %p\n"
+		"\trip: %p, rsp: %p\n"
+		"\tint_no: %lu, err_code: %lu, flags: %u\n",
+		exception_messages[frame->int_no],
+		(void *)faulting_address,
+		(void *)frame->rip, (void *)frame->rsp,
+		frame->int_no, frame->err_code,
+		(unsigned int)frame->err_code & 0x1F
 	);
 }
 
@@ -31,12 +31,12 @@ static void exception_handler(struct interrupt_frame *frame)
 			break;
 		default:
 			panic(
-			        "%s:\n"
-			        "\trip: %p, rsp: %p\n"
-			        "\tint_no: %lu, err_code: %lu\n",
-			        exception_messages[frame->int_no],
-			        (void *)frame->rip, (void *)frame->rsp,
-			        frame->int_no, frame->err_code
+				"%s:\n"
+				"\trip: %p, rsp: %p\n"
+				"\tint_no: %lu, err_code: %lu\n",
+				exception_messages[frame->int_no],
+				(void *)frame->rip, (void *)frame->rsp,
+				frame->int_no, frame->err_code
 			);
 	}
 }
