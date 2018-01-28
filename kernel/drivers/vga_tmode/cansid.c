@@ -5,7 +5,8 @@
 
 #define ESC '\x1B'
 
-struct cansid_state cansid_init(void) {
+struct cansid_state cansid_init(void)
+{
 	struct cansid_state rv = {
 		.state = CANSID_ESC,
 		.style = 0x0F,
@@ -14,12 +15,14 @@ struct cansid_state cansid_init(void) {
 	return rv;
 }
 
-static inline unsigned char cansid_convert_color(unsigned char color) {
+static inline unsigned char cansid_convert_color(unsigned char color)
+{
 	const unsigned char lookup_table[8] = { 0, 4, 2, 6, 1, 5, 3, 7 };
 	return lookup_table[(int)color];
 }
 
-struct color_char cansid_process(struct cansid_state *state, char x) {
+struct color_char cansid_process(struct cansid_state *state, char x)
+{
 	struct color_char rv = {
 		.style = state->style,
 		.ascii = '\0'

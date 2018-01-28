@@ -8,6 +8,7 @@
 #define MAX_REGIONS 128
 #define WITHIN(x, y, len) ((x) <= (y) && ((x) + (len) > (y)))
 
+// These could be dynamically resizable in future
 struct mmap_region available[MAX_REGIONS];
 struct mmap_region reserved[MAX_REGIONS];
 
@@ -16,13 +17,15 @@ static struct mmap mem_map = {
 	.reserved = { .count = 0, .regions = reserved }
 };
 
-static void mmap_delete_region(struct mmap_type *type, size_t i) {
+static void mmap_delete_region(struct mmap_type *type, size_t i)
+{
 	kassert_dbg(i < type->count);
 	memmove(type->regions + i, type->regions + i + 1, (type->count - i - 1) * sizeof(struct mmap_region));
 	type->count--;
 }
 
-static void mmap_insert_region(struct mmap_type *type, uintptr_t addr, size_t len, enum mmap_region_flags flags) {
+static void mmap_insert_region(struct mmap_type *type, uintptr_t addr, size_t len, enum mmap_region_flags flags)
+{
 	kassert(type->count <= MAX_REGIONS);
 	if (len == 0)
 		return;
@@ -41,12 +44,12 @@ static void mmap_insert_region(struct mmap_type *type, uintptr_t addr, size_t le
 				panic("No space left in mmap");
 			// Shift everything to the right
 			memmove(type->regions + i + 1, type->regions + i, (type->count - i) * sizeof(struct mmap_region));
-			// Create new region
-			type->regions[i] = (struct mmap_region){
+			const struct mmap_region new_region = {
 				.base = addr,
 				.len = len,
 				.flags = flags
 			};
+			type->regions[i] = new_region;
 			type->count++;
 			return;
 		}
@@ -67,14 +70,16 @@ static void mmap_insert_region(struct mmap_type *type, uintptr_t addr, size_t le
 	// Special case: we are inserting a region after all other regions
 	if (type->count == MAX_REGIONS)
 		panic("No space left in mmap");
-	type->regions[type->count++] = (struct mmap_region){
+	const struct mmap_region new_region = {
 		.base = addr,
 		.len = len,
 		.flags = flags
 	};
+	type->regions[type->count++] = new_region;
 }
 
-void mmap_dump_info(void) {
+void mmap_dump_info(void)
+{
 	kprintf("Highest mapped physical page: %p\n", (void *)mem_map.highest_mapped);
 	kprintf("Available:\n");
 	for (size_t i = 0; i < mem_map.available.count; i++)
@@ -84,7 +89,8 @@ void mmap_dump_info(void) {
 		kprintf("\tRegion base %p, len %zu\n", (void *)mem_map.reserved.regions[i].base, mem_map.reserved.regions[i].len);
 }
 
-struct mmap_region mmap_alloc_low(size_t n, unsigned int alloc_flags) {
+struct mmap_region mmap_alloc_low(size_t n, unsigned int alloc_flags)
+{
 	for (size_t i = 0; i < mem_map.available.count; i++) {
 		struct mmap_region *rg = &mem_map.available.regions[i];
 		if (rg->base >= mem_map.highest_mapped)
@@ -122,24 +128,24 @@ struct mmap_region mmap_alloc_low(size_t n, unsigned int alloc_flags) {
 }
 
 // TODO: Cleanup
-struct mmap *mmap_init(struct multiboot_info *mboot) {
+struct mmap *mmap_init(struct multiboot_info *mboot)
+{
 	// Find memory map
-	struct multiboot_tag_mmap *p = (struct multiboot_tag_mmap*)mboot->tags;
+	struct multiboot_tag_mmap *p = (struct multiboot_tag_mmap *)mboot->tags;
 	for (; p->type != MULTIBOOT_TAG_TYPE_END && p->type != MULTIBOOT_TAG_TYPE_MMAP;
-			p = (struct multiboot_tag_mmap*)ALIGNUP((uint64_t)p + p->size, 8))
+	     p = (struct multiboot_tag_mmap *)ALIGNUP((uint64_t)p + p->size, 8))
 		;
 	if (p->type != MULTIBOOT_TAG_TYPE_MMAP)
 		panic("No multiboot memory map tag found");
-		
+
 	uint32_t entry_size = p->entry_size;
 	uint32_t total_size = p->size;
 	uintptr_t kern_end = (uintptr_t)&_kernel_end_phys;
 
 	struct multiboot_mmap_entry *mmap;
 	// Loop over memory map
-	for (mmap = p->entries; (uint8_t*)mmap < (uint8_t*)p + total_size;
-                      mmap = (struct multiboot_mmap_entry*)((uintptr_t)mmap + entry_size))
-	{
+	for (mmap = p->entries; (uint8_t *)mmap < (uint8_t *)p + total_size;
+	     mmap = (struct multiboot_mmap_entry *)((uintptr_t)mmap + entry_size)) {
 		// Insert a new region for each node in the memory map
 		struct mmap_type *target;
 		if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE) {

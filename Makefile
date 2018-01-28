@@ -11,7 +11,7 @@ OBJDUMP		:= x86_64-elf-objdump
 OBJCOPY		:= x86_64-elf-objcopy
 GDB		:= gdb
 
-CFLAGS		?= -O1 -g
+CFLAGS		?= -Og -g
 CFLAGS		+= -ffreestanding -mno-red-zone -mcmodel=kernel -Iinclude -Iinclude/kernel -std=gnu11
 CFLAGS		+= -Wall -Wbad-function-cast -Werror -Wextra -Wparentheses -Wmissing-braces -Wmissing-declarations
 CFLAGS		+= -Wmissing-field-initializers -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wpedantic
@@ -19,6 +19,7 @@ CFLAGS		+= -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wswi
 CFLAGS		+= -Wunused
 ASFLAGS		:= -f elf64 -F dwarf -g -w+all -Werror
 EMUFLAGS	:= -net none -serial stdio -cdrom $(ISO)
+ASTYLEFLAGS	:= --style=linux -z2 -k3 -H -xg -p -t8 -S
 
 CRTI_OBJ	:= kernel/crt/crti.asm.o
 CRTBEGIN_OBJ    := kernel/crt/crtbegin.o
@@ -32,12 +33,13 @@ DEPFILES	:= $(patsubst %.o,%.d,$(KERNEL_OBJ_ALL))
 
 LIBK_OBJ	:= $(addsuffix .o,$(shell find libk -name '*.c' -o -name '*.asm'))
 DEPFILES	+= $(patsubst %.o,%.d,$(LIBK_OBJ))
+TIME_START 	:= $(shell date +"%s.%N")
 
 ifeq ($(OS),Linux)
 	EMUFLAGS += -M accel=kvm:tcg
 endif
 
-.PHONY: all clean run debug disassemble copy-all copy-ds copy-cansid loc
+.PHONY: all clean run debug disassemble copy-all copy-ds copy-cansid loc tidy
 .SUFFIXES: .o .c .asm
 
 all: $(ISO)
@@ -48,6 +50,7 @@ run: $(ISO)
 clean:
 	@$(RM) -r build
 	@$(RM) iso/boot/byteos.elf
+	@$(RM) -v $(shell find kernel libk -name "*.orig")
 	@$(RM) $(KERNEL_OBJ_ALL) $(LIBK_OBJ)
 	@$(RM) $(DEPFILES)
 
@@ -76,6 +79,9 @@ copy-cansid:
 loc:
 	cloc --vcs=git
 
+tidy:
+	@astyle $(shell find kernel libk -name "*.[ch]") $(ASTYLEFLAGS)
+
 iso/boot/byteos.elf: $(KERNEL)
 	@cp $< $@
 
@@ -88,7 +94,7 @@ build/libk.a: $(LIBK_OBJ)
 $(ISO): build/ iso/boot/byteos.elf
 	@printf "\t\e[32;1mCreating\e[0m $(ISO)\n"
 	@grub-mkrescue -o $@ iso 2> /dev/null
-	@printf "\t\e[32;1;4mDone\e[0m\n"
+	@printf "\t\e[32;1;4mDone\e[24m in $(shell date +%s.%3N --date='$(TIME_START) seconds ago')s\e[0m\n"
 
 $(KERNEL): $(KERNEL_OBJ_ALL) build/libk.a
 	@printf "\t\e[32;1mLinking\e[0m $(KERNEL)\n"

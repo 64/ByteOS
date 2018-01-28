@@ -22,15 +22,17 @@ extern struct page_table p4_table; // Initial kernel p4 table
 
 struct page_table *kernel_p4;
 
-void paging_init(void) {
+void paging_init(void)
+{
 	kernel_p4 = phys_to_kern((physaddr_t)&p4_table);
 //	dump_page_tables();
 }
 
-void paging_map_all(struct mmap *mmap) {
+void paging_map_all(struct mmap *mmap)
+{
 	// First map all regions marked "available", updating highest_mapped
 	for (size_t i = 0; i < mmap->available.count; i++) {
-		physaddr_t start = ALIGNUP(mmap->available.regions[i].base, PAGE_SIZE);	
+		physaddr_t start = ALIGNUP(mmap->available.regions[i].base, PAGE_SIZE);
 		physaddr_t end = mmap->available.regions[i].base + mmap->available.regions[i].len;
 		for (physaddr_t j = start; j <= (end - PAGE_SIZE); j += PAGE_SIZE) {
 			paging_map_page(kernel_p4, j, phys_to_virt(j), PAGE_WRITABLE);
@@ -40,7 +42,8 @@ void paging_map_all(struct mmap *mmap) {
 	// Map all regions marked "reserved", updating highest_mapped
 }
 
-static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgtab, uint16_t index) {
+static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgtab, uint16_t index)
+{
 	pte_t entry = pgtab->pages[index];
 	if ((entry & PAGE_PRESENT) == 0)
 		return NULL;
@@ -48,7 +51,8 @@ static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgta
 }
 
 // TODO: More flexability with flags (e.g 'global' flag)
-static inline pte_t alloc_pgtab(void) {
+static inline pte_t alloc_pgtab(void)
+{
 	// Mmap low allocs are guaranteed to be mapped
 	physaddr_t pgtab_phys = mmap_alloc_low(PAGE_SIZE, MMAP_ALLOC_PA).base;
 	kassert_dbg((pgtab_phys & 0xFFF) == 0); // Must be aligned
@@ -59,7 +63,8 @@ static inline pte_t alloc_pgtab(void) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-static void dump_page_tables(void) {
+static void dump_page_tables(void)
+{
 	for (size_t i = 0; i < 512; i++) {
 		struct page_table *pgtab = pgtab_extract_virt_addr(kernel_p4, i);
 		if (pgtab == NULL)
@@ -69,7 +74,8 @@ static void dump_page_tables(void) {
 	}
 }
 
-static void dump_page_tables_p2(struct page_table *p3, uintptr_t addr_bits) {
+static void dump_page_tables_p2(struct page_table *p3, uintptr_t addr_bits)
+{
 	for (size_t i = 0; i < 512; i++) {
 		struct page_table *pgtab = pgtab_extract_virt_addr(p3, i);
 		if (pgtab == NULL)
@@ -79,7 +85,8 @@ static void dump_page_tables_p2(struct page_table *p3, uintptr_t addr_bits) {
 	}
 }
 
-static void dump_page_tables_p1(struct page_table *p2, uintptr_t addr_bits) {
+static void dump_page_tables_p1(struct page_table *p2, uintptr_t addr_bits)
+{
 	for (size_t i = 0; i < 512; i++) {
 		struct page_table *pgtab = pgtab_extract_virt_addr(p2, i);
 		if (pgtab == NULL)
@@ -92,7 +99,8 @@ static void dump_page_tables_p1(struct page_table *p2, uintptr_t addr_bits) {
 
 #pragma GCC diagnostic pop
 
-pte_t paging_get_pte(struct page_table *p4, void *addr) {
+pte_t paging_get_pte(struct page_table *p4, void *addr)
+{
 	const uintptr_t va = (uintptr_t)addr;
 	const uint16_t p4_index = (va & P4_ADDR_MASK) >> P4_ADDR_SHIFT;
 	const uint16_t p3_index = (va & P3_ADDR_MASK) >> P3_ADDR_SHIFT;
@@ -114,12 +122,14 @@ pte_t paging_get_pte(struct page_table *p4, void *addr) {
 	return p1_table->pages[p1_index];
 }
 
-bool paging_has_flags(struct page_table *p4, void *addr, uint64_t flags) {
+bool paging_has_flags(struct page_table *p4, void *addr, uint64_t flags)
+{
 	kassert_dbg(addr != NULL);
 	return (paging_get_pte(p4, addr) & flags) != 0;
 }
 
-void paging_map_page(struct page_table *p4, physaddr_t phys, void *virt, uint64_t flags) {
+void paging_map_page(struct page_table *p4, physaddr_t phys, void *virt, uint64_t flags)
+{
 	const uintptr_t va = (uintptr_t)virt;
 	const uint16_t p4_index = (va & P4_ADDR_MASK) >> P4_ADDR_SHIFT;
 	const uint16_t p3_index = (va & P3_ADDR_MASK) >> P3_ADDR_SHIFT;
@@ -151,7 +161,8 @@ void paging_map_page(struct page_table *p4, physaddr_t phys, void *virt, uint64_
 	p1_table->pages[p1_index] = (phys & PTE_ADDR_MASK) | PAGE_PRESENT | flags;
 }
 
-physaddr_t paging_get_phys_addr(struct page_table *p4, void *virt) {
+physaddr_t paging_get_phys_addr(struct page_table *p4, void *virt)
+{
 	kassert_dbg(virt >= (void *)0x1000); // Doesn't work below this address
 	uint16_t page_offset = (uintptr_t)virt & PAGE_OFFSET_MASK;
 	physaddr_t addr = (physaddr_t)(paging_get_pte(p4, virt) & PTE_ADDR_MASK);

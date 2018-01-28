@@ -6,22 +6,25 @@
 #include "drivers/serial.h"
 
 #define to_hex_char(x) ((x) < 10 ? (x) + '0' : (x) - 10 + 'A')
+#define ATOI_BUFLEN 256
 
-static inline void kprintf_write_char(char c) {
+static inline void kprintf_write_char(char c)
+{
 	serial_write_com(1, c);
 	vga_tmode_putchar(c);
 }
 
-static inline void kprintf_write_str(char *s) {
+static inline void kprintf_write_str(char *s)
+{
 	while (*s)
 		kprintf_write_char(*s++);
 }
 
-static int atoi_print(uint64_t num, bool sign) {
-	const size_t BUFLEN = 256;
-	char buf[BUFLEN], *p_buf = buf + BUFLEN - 2;
+static int atoi_print(uint64_t num, bool sign)
+{
+	char buf[ATOI_BUFLEN], *p_buf = buf + sizeof buf - 2;
 	int nwritten = 0;
-	buf[BUFLEN - 1] = '\0';
+	buf[ATOI_BUFLEN - 1] = '\0';
 
 	if (num == 0) {
 		kprintf_write_char('0');
@@ -50,7 +53,8 @@ static int atoi_print(uint64_t num, bool sign) {
 	return nwritten;
 }
 
-int kprintf(const char *fmt, ...) {
+int kprintf(const char *fmt, ...)
+{
 	va_list params;
 	size_t nwritten = 0;
 	const char *pfmt = fmt;
@@ -72,7 +76,8 @@ int kprintf(const char *fmt, ...) {
 					const char *s = va_arg(params, const char *);
 					kprintf_write_str((char *)s);
 					nwritten += strlen(s);
-					break; }
+					break;
+				}
 				case 'p': {
 					char buf[17], *p_buf = buf + 15;
 					buf[16] = '\0';
@@ -85,7 +90,8 @@ int kprintf(const char *fmt, ...) {
 					kprintf_write_char('x');
 					kprintf_write_str(buf);
 					nwritten += 18;
-					break; }
+					break;
+				}
 				case 'l':
 					if (pfmt[2] == 'l')
 						pfmt++;

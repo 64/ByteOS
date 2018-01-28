@@ -5,6 +5,7 @@ build/*
 *.d
 *.o
 *.a
+*.orig
 *.gch
 
 .*
