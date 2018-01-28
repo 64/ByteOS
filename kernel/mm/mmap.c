@@ -133,7 +133,7 @@ struct mmap *mmap_init(struct multiboot_info *mboot)
 	// Find memory map
 	struct multiboot_tag_mmap *p = (struct multiboot_tag_mmap *)mboot->tags;
 	for (; p->type != MULTIBOOT_TAG_TYPE_END && p->type != MULTIBOOT_TAG_TYPE_MMAP;
-	     p = (struct multiboot_tag_mmap *)ALIGNUP((uint64_t)p + p->size, 8))
+	     p = (struct multiboot_tag_mmap *)ALIGNUP((uintptr_t)p + p->size, 8))
 		;
 	if (p->type != MULTIBOOT_TAG_TYPE_MMAP)
 		panic("No multiboot memory map tag found");

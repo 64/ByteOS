@@ -4,6 +4,8 @@ A simple hobby operating system for the x86_64 architecture, written in C.
 
 ![Screenshot](https://i.gyazo.com/cbd3707fdcc2e3e01776f62399c53a1b.png)
 
+This repository is licensed under the GPLv3. See `LICENSE.md` for more details.
+
 ## Building
 
 You will need:
@@ -17,6 +19,8 @@ Then, to build `byteos.iso`, simply run:
 ```sh
 make
 ```
+
+To update the dependencies, use the `update-modules` make target. Tests for `libk` can be run using the `test` target.
 
 ## Running
 

@@ -99,7 +99,7 @@ tidy:
 	@astyle $(filter-out libk/tests/snow.h,$(shell find kernel libk -name "*.[ch]")) $(ASTYLEFLAGS)
 
 build/tmain: build/ libk/tests/tstring.c
-	$(TEST_CC) libk/tests/tmain.c -Iinclude -Wall -std=gnu11 -o build/tmain
+	$(TEST_CC) libk/tests/tmain.c -Iinclude -Wall -std=gnu11 -o $@
 
 test: build/tmain
 	@./build/tmain	
