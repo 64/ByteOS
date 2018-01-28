@@ -8,7 +8,6 @@ build/*
 *.orig
 *.gch
 
-kernel/drivers/vga_tmode/cansid.c
 libk/tests/snow.h
 
 .*

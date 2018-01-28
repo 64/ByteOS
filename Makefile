@@ -6,6 +6,8 @@ OS		:= $(shell uname -s)
 AS		:= nasm
 EMU		:= qemu-system-x86_64
 AR		:= x86_64-elf-ar
+CC		?= cc
+TEST_CC		:= $(CC)
 CC		:= x86_64-elf-gcc
 OBJDUMP		:= x86_64-elf-objdump
 OBJCOPY		:= x86_64-elf-objcopy
@@ -31,7 +33,7 @@ KERNEL_OBJ	:= $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(KERNEL_OBJ_RAW) $(CRTEND_OBJ) $(CRTN
 
 DEPFILES	:= $(patsubst %.o,%.d,$(KERNEL_OBJ_ALL))
 
-LIBK_OBJ	:= $(addsuffix .o,$(shell find libk -name '*.c' -o -name '*.asm'))
+LIBK_OBJ	:= $(addsuffix .o,$(shell find libk -not -path "*tests*" -name '*.c' -o -name '*.asm'))
 LIBK_TESTABLE	:= $(addprefix libk/,string.c)
 DEPFILES	+= $(patsubst %.o,%.d,$(LIBK_OBJ))
 TIME_START 	:= $(shell date +"%s.%N")
@@ -45,7 +47,7 @@ ifeq ($(OS),Linux)
 	EMUFLAGS += -M accel=kvm:tcg
 endif
 
-.PHONY: all clean run debug disassemble update-modules copy-all copy-ds copy-cansid loc tidy
+.PHONY: all clean run debug disassemble update-modules copy-all copy-snow copy-ds copy-cansid loc tidy test
 .SUFFIXES: .o .c .asm
 
 all: $(ISO)
@@ -94,7 +96,13 @@ loc:
 	cloc --vcs=git
 
 tidy:
-	@astyle $(shell find kernel libk -name "*.[ch]") $(ASTYLEFLAGS)
+	@astyle $(filter-out libk/tests/snow.h,$(shell find kernel libk -name "*.[ch]")) $(ASTYLEFLAGS)
+
+build/tmain: build/ libk/tests/tstring.c
+	$(TEST_CC) libk/tests/tmain.c -Iinclude -Wall -std=gnu11 -o build/tmain
+
+test: build/tmain
+	@./build/tmain	
 
 iso/boot/byteos.elf: $(KERNEL)
 	@cp $< $@
