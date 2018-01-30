@@ -12,4 +12,5 @@ void kmain(void *mboot_info_physical)
 	struct mmap *mem_map = mmap_init(mboot_info_virtual);
 	paging_map_all(mem_map);
 	mmap_dump_info();
+	pmm_init(&mem_map->available);
 }

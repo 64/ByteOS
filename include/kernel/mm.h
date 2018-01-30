@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "multiboot2.h"
 #include "system.h"
+#include "ds/linked.h"
 
 #define KERNEL_TEXT_BASE 0xFFFFFFFF80000000
 #define KERNEL_LOGICAL_BASE 0xFFFF800000000000
@@ -22,8 +23,12 @@
 #define PAGE_NO_EXEC (1ULL << 63)
 
 #define PAGE_SIZE 4096
+#define PAGE_SHIFT 12
 
 #define MMAP_ALLOC_PA (1 << 0)
+
+// This means that the largest allocation is 2^(MAX_ORDER - 1) * 4096 bytes
+#define MAX_ORDER 12
 
 typedef uintptr_t physaddr_t;
 typedef void *virtaddr_t;
@@ -38,6 +43,7 @@ struct page_table {
 struct mmap_region {
 	uintptr_t base;
 	size_t len;
+	// TODO: Don't name this flags, it's an enum
 	enum mmap_region_flags {
 		MMAP_NONE,
 		MMAP_NOMAP
@@ -55,6 +61,13 @@ struct mmap {
 	struct mmap_type reserved;
 };
 
+// This should be kept as small as possible
+struct page {
+	struct slist_entry list; // Points to the next page
+	virtaddr_t virt;
+	uint32_t nr_mapped; // If 0, page is free
+	uint32_t order; // For buddy allocator system
+};
 
 extern struct page_table *kernel_p4;
 extern uintptr_t _kernel_end_phys;
@@ -69,6 +82,9 @@ void paging_map_page(struct page_table *, physaddr_t, void *, uint64_t);
 struct mmap *mmap_init(struct multiboot_info *);
 void mmap_dump_info(void);
 struct mmap_region mmap_alloc_low(size_t n, unsigned int alloc_flags);
+
+void pmm_init(struct mmap_type *available);
+struct page *pmm_region_alloc_page(struct mmap_region *rg, unsigned int alloc_flags);
 
 static inline physaddr_t virt_to_phys(virtaddr_t v) {
 	if (v == NULL)

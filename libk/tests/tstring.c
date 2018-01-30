@@ -33,14 +33,14 @@ describe(string, {
 			char expected[10] = { 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 };
 			__libk_memmove(buf, buf + 4, 10);
 			asserteq_buf(buf, expected, 10);
-		}); 
-	
+		});
+
 		it("moves 10 high-overlapping bytes", {
 			char buf[15] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
 			char expected[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 			__libk_memmove(buf + 4, buf, 10);
 			asserteq_buf(buf + 4, expected, 10);
-		}); 
+		});
 	});
 
 	subdesc(memcmp, {
@@ -54,6 +54,23 @@ describe(string, {
 			char a[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 			char b[10] = { 1, 2, 4, 4, 5, 6, 7, 8, 9, 10 };
 			assertneq(__libk_memcmp(a, b, 10), 0);
+		});
+	});
+
+	subdesc(memchr, {
+		it("finds a needle", {
+			char a[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+			asserteq(__libk_memchr(a, 3, 10), (void *)(a + 2));
+		});
+
+		it("returns NULL if no needle was found", {
+			char a[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+			asserteq(__libk_memchr(a, 11, 10), NULL);
+		});
+
+		it("truncates the integer argument", {
+			char a[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+			asserteq(__libk_memchr(a, 256 + 3, 10), (void *)(a + 2));
 		});
 	});
 

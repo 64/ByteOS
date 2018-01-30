@@ -45,6 +45,18 @@ void *LIBK_FN(memset)(void *s, int c, size_t n)
 	return s;
 }
 
+void *LIBK_FN(memchr)(const void *s, int c, size_t n)
+{
+	const unsigned char *p = (const unsigned char *)s;
+	while (n-- > 0) {
+		if (*p == (unsigned char)c)
+			return (void *)p;
+		else
+			p++;
+	}
+	return NULL;
+}
+
 size_t LIBK_FN(strlen)(const char *s)
 {
 	size_t len = 0;

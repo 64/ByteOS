@@ -12,6 +12,7 @@ int LIBK_FN(memcmp)(const void *, const void *, size_t);
 void *LIBK_FN(memcpy)(void *, const void *, size_t);
 void *LIBK_FN(memmove)(void *, const void *, size_t);
 void *LIBK_FN(memset)(void *, int, size_t);
+void *LIBK_FN(memchr)(const void *, int, size_t);
 size_t LIBK_FN(strlen)(const char *);
 
 __attribute__((format (printf, 1, 2))) int kprintf(const char *, ...);
