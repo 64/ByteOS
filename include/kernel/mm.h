@@ -64,9 +64,17 @@ struct mmap {
 // This should be kept as small as possible
 struct page {
 	struct slist_entry list; // Points to the next page
-	virtaddr_t virt;
-	uint32_t nr_mapped; // If 0, page is free
-	uint32_t order; // For buddy allocator system
+	uint32_t count; // If 0, page is free
+	uint8_t order; // For buddy allocator system
+};
+
+// Describes a contiguous block of memory
+struct zone {
+	struct slist_entry list;
+	physaddr_t pa_start; // Start of available memory in zone
+	size_t len; // Length of available memory in zone
+	struct page *free_lists[MAX_ORDER];
+	struct page pgdata[];
 };
 
 extern struct page_table *kernel_p4;
@@ -83,8 +91,8 @@ struct mmap *mmap_init(struct multiboot_info *);
 void mmap_dump_info(void);
 struct mmap_region mmap_alloc_low(size_t n, unsigned int alloc_flags);
 
-void pmm_init(struct mmap_type *available);
-struct page *pmm_region_alloc_page(struct mmap_region *rg, unsigned int alloc_flags);
+void pmm_init(struct mmap *);
+struct page *pmm_alloc_order(unsigned int order, unsigned int alloc_flags);
 
 static inline physaddr_t virt_to_phys(virtaddr_t v) {
 	if (v == NULL)

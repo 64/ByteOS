@@ -4,6 +4,8 @@ A simple hobby operating system for the x86_64 architecture, written in C.
 
 ![Screenshot](https://i.gyazo.com/cbd3707fdcc2e3e01776f62399c53a1b.png)
 
+The design is heavily influenced by the Linux kernel, and as such you may find many similarities between the two.
+
 This repository is licensed under the GPLv3. See `LICENSE.md` for more details.
 
 ## Building
@@ -20,22 +22,23 @@ Then, to build `byteos.iso`, simply run:
 make
 ```
 
-To update the dependencies, use the `update-modules` make target. Tests for `libk` can be run using the `test` target.
-
 ## Running
 
 You will need (in addition to the above dependencies):
 * QEMU `x86_64`
-* Debugging also requires a [specially patched version of GDB](http://wiki.osdev.org/QEMU_and_GDB_in_long_mode#Workaround_2%3A_Patching_GDB) for interoperability with QEMU
 
 Then, to run in QEMU:
 ```sh
 make run
 ```
-or to debug with GDB:
-```sh
-make debug
-```
+
+## Debugging
+
+Debugging requires a [specially patched version of GDB](http://wiki.osdev.org/QEMU_and_GDB_in_long_mode#Workaround_2%3A_Patching_GDB) for interoperability with QEMU. Once you have this installed, simply run the `debug` make target.
+
+## Testing
+
+First run the `update-modules` make target to download the necessary files. Then, simply run `make test`.
 
 See [`Makefile`](https://github.com/64/ByteOS/blob/master/Makefile) for more details.
 

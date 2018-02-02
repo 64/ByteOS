@@ -15,6 +15,11 @@
 	const typeof((align)) _align = (align); \
 	(_val + (_align - 1)) & -_align; })
 
+#define ALIGNDOWN(val, align) ({ \
+	const typeof((val)) _val = (val); \
+	const typeof((align)) _align = (align); \
+	_val & ~(_align - 1); })
+
 #define ISALIGN_POW2(val, align) ({ \
 	const typeof((val)) _val = (val); \
 	const typeof((align)) _align = (align); \

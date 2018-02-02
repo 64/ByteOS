@@ -12,5 +12,17 @@ void kmain(void *mboot_info_physical)
 	struct mmap *mem_map = mmap_init(mboot_info_virtual);
 	paging_map_all(mem_map);
 	mmap_dump_info();
-	pmm_init(&mem_map->available);
+	pmm_init(mem_map);
+	struct page *rv = pmm_alloc_order(0, 0);
+	kprintf("Allocated single page at address %p\n", (void *)rv);
+	rv = pmm_alloc_order(0, 0);
+	kprintf("Allocated single page at address %p\n", (void *)rv);
+	rv = pmm_alloc_order(0, 0);
+	kprintf("Allocated single page at address %p\n", (void *)rv);
+	rv = pmm_alloc_order(1, 0);
+	kprintf("Allocated single page at address %p\n", (void *)rv);
+	rv = pmm_alloc_order(1, 0);
+	kprintf("Allocated single page at address %p\n", (void *)rv);
+	rv = pmm_alloc_order(2, 0);
+	kprintf("Allocated single page at address %p\n", (void *)rv);
 }
