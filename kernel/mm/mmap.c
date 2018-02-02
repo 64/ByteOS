@@ -5,12 +5,11 @@
 #include "multiboot2.h"
 #include "util.h"
 
-#define MAX_REGIONS 128
 #define WITHIN(x, y, len) ((x) <= (y) && ((x) + (len) > (y)))
 
 // These could be dynamically resizable in future
-struct mmap_region available[MAX_REGIONS];
-struct mmap_region reserved[MAX_REGIONS];
+struct mmap_region available[MMAP_MAX_REGIONS];
+struct mmap_region reserved[MMAP_MAX_REGIONS];
 
 static struct mmap mem_map = {
 	.available = { .count = 0, .regions = available },
@@ -26,7 +25,7 @@ static void mmap_delete_region(struct mmap_type *type, size_t i)
 
 static void mmap_insert_region(struct mmap_type *type, uintptr_t addr, size_t len, enum mmap_region_flags flags)
 {
-	kassert(type->count <= MAX_REGIONS);
+	kassert(type->count <= MMAP_MAX_REGIONS);
 	if (len == 0)
 		return;
 	// Search for correct position in region list
@@ -40,7 +39,7 @@ static void mmap_insert_region(struct mmap_type *type, uintptr_t addr, size_t le
 		}
 		// If the region is below, insert
 		else if (addr + len < rg_addr) {
-			if (type->count == MAX_REGIONS)
+			if (type->count == MMAP_MAX_REGIONS)
 				panic("No space left in mmap");
 			// Shift everything to the right
 			memmove(type->regions + i + 1, type->regions + i, (type->count - i) * sizeof(struct mmap_region));
@@ -68,7 +67,7 @@ static void mmap_insert_region(struct mmap_type *type, uintptr_t addr, size_t le
 	}
 
 	// Special case: we are inserting a region after all other regions
-	if (type->count == MAX_REGIONS)
+	if (type->count == MMAP_MAX_REGIONS)
 		panic("No space left in mmap");
 	const struct mmap_region new_region = {
 		.base = addr,

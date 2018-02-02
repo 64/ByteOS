@@ -8,8 +8,9 @@
 #include "ds/linked.h"
 
 #define KERNEL_TEXT_BASE 0xFFFFFFFF80000000
-#define KERNEL_LOGICAL_BASE 0xFFFF800000000000
 #define KERNEL_PHYS_MAP_END 0x1000000
+#define KERNEL_LOGICAL_BASE 0xFFFF800000000000
+#define KERNEL_PAGE_DATA (KERNEL_TEXT_BASE + KERNEL_PHYS_MAP_END)
 
 #define PAGE_PRESENT (1ULL << 0)
 #define PAGE_WRITABLE (1ULL << 1)
@@ -26,6 +27,7 @@
 #define PAGE_SHIFT 12
 
 #define MMAP_ALLOC_PA (1 << 0)
+#define MMAP_MAX_REGIONS 128
 
 // This means that the largest allocation is 2^(MAX_ORDER - 1) * 4096 bytes
 #define MAX_ORDER 12
@@ -74,11 +76,11 @@ struct zone {
 	physaddr_t pa_start; // Start of available memory in zone
 	size_t len; // Length of available memory in zone
 	struct page *free_lists[MAX_ORDER];
-	struct page pgdata[];
 };
 
 extern struct page_table *kernel_p4;
-extern uintptr_t _kernel_end_phys;
+extern const uintptr_t _kernel_end_phys;
+extern struct page * const page_data;
 
 void paging_init(void);
 void paging_map_all(struct mmap *);
@@ -116,4 +118,16 @@ static inline kernaddr_t phys_to_kern(physaddr_t p) {
 	if (p == (physaddr_t)NULL)
 		return NULL;
 	return (kernaddr_t)(p + KERNEL_TEXT_BASE);
+}
+
+static inline struct page *phys_to_page(physaddr_t p) {
+	if (p == (physaddr_t)NULL)
+		return NULL;
+	return (struct page *)(page_data + (p / PAGE_SIZE));
+}
+
+static inline physaddr_t page_to_phys(struct page *p) {
+	if (p == NULL)
+		return (physaddr_t)NULL;
+	return (physaddr_t)((p - page_data) * PAGE_SIZE);
 }

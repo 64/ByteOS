@@ -5,16 +5,47 @@
 
 struct zone *zone_list;
 
+struct page * const page_data = (struct page *)KERNEL_PAGE_DATA;
+
 // Buddy allocator reserves some pages as overhead for the region
 static inline uint64_t calc_available_pages(struct mmap_region *available)
 {
 	// TODO: Check we aren't losing any bytes here
-	uintptr_t effective_start = ALIGNUP(available->base, PAGE_SIZE);
-	size_t effective_len = ALIGNDOWN(available->len, PAGE_SIZE);
-	size_t overhead = sizeof(struct zone) + sizeof(struct page) * (effective_len / PAGE_SIZE);
-	uintptr_t final_available_start = MAX(effective_start, available->base + overhead);
-	size_t final_available_len = ALIGNDOWN(effective_len - (final_available_start - effective_start), PAGE_SIZE);
-	return final_available_len / PAGE_SIZE;
+	physaddr_t effective_start = ALIGNUP(available->base + sizeof(struct zone), PAGE_SIZE);
+	size_t effective_len = available->len - (effective_start - (available->base + sizeof(struct zone)));
+	return effective_len / PAGE_SIZE;
+}
+
+static void reserve_page_data_range(physaddr_t start, size_t num_pages)
+{
+	size_t pfn_start = (start / PAGE_SIZE);
+	size_t pfn_end = pfn_start + num_pages;
+	for (size_t pfn = pfn_start; pfn < pfn_end; pfn++) {
+		virtaddr_t array_addr = page_data + pfn;
+		if (!paging_has_flags(kernel_p4, array_addr, PAGE_PRESENT)) {
+			// Need to alloc + map
+			struct mmap_region rg = mmap_alloc_low(PAGE_SIZE, MMAP_ALLOC_PA);
+			kassert(rg.len == PAGE_SIZE);
+			paging_map_page(kernel_p4, (physaddr_t)rg.base, array_addr, PAGE_WRITABLE | PAGE_GLOBAL | PAGE_NO_EXEC);
+		}
+	}
+	memset(page_data + pfn_start, 0, (pfn_end - pfn_start) * sizeof(struct page));
+}
+
+static void reserve_page_data(struct mmap *mmap)
+{
+	// Copy into a new temporary array, since allocating might edit the array underneath us, so we need a separate copy
+	struct mmap_region temp_rgs[MMAP_MAX_REGIONS];
+	struct mmap_type temp_avail = {
+		.count = mmap->available.count,
+		.regions = temp_rgs
+	};
+	for (size_t i = 0; i < mmap->available.count; i++)
+		memcpy(temp_rgs + i, &mmap->available.regions[i], sizeof(struct mmap_region));
+	for (size_t i = 0; i < temp_avail.count; i++) {
+		struct mmap_region *rg = &temp_rgs[i];
+		reserve_page_data_range(ALIGNUP(rg->base, PAGE_SIZE), calc_available_pages(rg));
+	}
 }
 
 static struct zone *init_zone(struct mmap_region *rg)
@@ -27,7 +58,6 @@ static struct zone *init_zone(struct mmap_region *rg)
 	zone->len = avail_pages * PAGE_SIZE;
 	zone->pa_start = ALIGNUP(rg->base + sizeof(struct zone) + avail_pages * (sizeof(struct page)), PAGE_SIZE);
 	memset(zone->free_lists, 0, sizeof(zone->free_lists));
-	memset(zone->pgdata, 0, avail_pages * sizeof(struct page)); // Zero all struct pages
 
 	// Populate the free_lists
 	size_t pages_inserted = 0;
@@ -36,7 +66,7 @@ static struct zone *init_zone(struct mmap_region *rg)
 		// TODO: Make this not give me eye cancer
 		size_t highest_order = MAX_ORDER - (__builtin_clz(MIN(remaining, 1LU << (MAX_ORDER - 1))) - __builtin_clz((1 << MAX_ORDER)));
 		kassert(highest_order < MAX_ORDER);
-		struct page *inserted = &zone->pgdata[pages_inserted];
+		struct page *inserted = &page_data[pages_inserted + (zone->pa_start / PAGE_SIZE)];
 		inserted->order = highest_order;
 		slist_set_next(inserted, list, zone->free_lists[highest_order]);
 		zone->free_lists[highest_order] = inserted;
@@ -56,6 +86,7 @@ static struct zone *init_zone(struct mmap_region *rg)
 void pmm_init(struct mmap *mmap)
 {
 	struct zone *tail = NULL;
+	reserve_page_data(mmap);
 	for (size_t i = 0; i < mmap->available.count; i++) {
 		struct zone *tmp = init_zone(&mmap->available.regions[i]);
 		if (tail == NULL)
@@ -66,15 +97,15 @@ void pmm_init(struct mmap *mmap)
 	}
 
 	slist_foreach(zone, list, zone_list) {
-		kprintf("Zone: %p virtual, %zu pages\n", (void *)zone, zone->len / PAGE_SIZE);
+		kprintf("Zone: %p physical, %zu pages\n", (void *)virt_to_phys(zone), zone->len / PAGE_SIZE);
 	}
 }
 
-static struct page *page_buddy(struct zone *zone, struct page *page, unsigned int order)
+static struct page *page_buddy(struct page *page, unsigned int order)
 {
-	size_t pgdata_index = page - zone->pgdata;	
+	size_t pgdata_index = page - page_data;	
 	size_t buddy_index = pgdata_index ^ (1 << order);
-	return &zone->pgdata[buddy_index];
+	return &page_data[buddy_index];
 }
 
 static struct page *zone_alloc_order(struct zone *zone, unsigned int order, unsigned int alloc_flags)
@@ -93,9 +124,8 @@ static struct page *zone_alloc_order(struct zone *zone, unsigned int order, unsi
 			return NULL;
 		// Keep splitting downwards until there is room in free_lists[order]
 		for (; free_order > order; free_order--) {
-			kprintf("Splitting page of order %u\n", free_order);
 			struct page *removed = zone->free_lists[free_order];
-			struct page *buddy = page_buddy(zone, removed, free_order - 1);
+			struct page *buddy = page_buddy(removed, free_order - 1);
 			removed->order = buddy->order = free_order - 1;
 			zone->free_lists[free_order] = slist_get_next(zone->free_lists[free_order], list);
 			slist_set_next(removed, list, buddy);
@@ -108,6 +138,7 @@ static struct page *zone_alloc_order(struct zone *zone, unsigned int order, unsi
 	kassert(head != NULL);
 	zone->free_lists[order] = slist_get_next(head, list);
 	slist_set_next(head, list, (struct page *)NULL); // Not strictly necessary
+	kprintf("Allocated order %u at %p\n", order, (virtaddr_t)page_to_phys(head));
 	return head;
 }
 

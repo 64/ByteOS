@@ -15,7 +15,7 @@ GDB		:= gdb
 
 CFLAGS		?= -Og -g
 CFLAGS		+= -ffreestanding -mno-red-zone -mcmodel=kernel -Iinclude -Iinclude/kernel -std=gnu11
-CFLAGS		+= -Wall -Wbad-function-cast -Werror -Wextra -Wparentheses -Wmissing-braces -Wmissing-declarations
+CFLAGS		+= -Wall -Werror -Wextra -Wparentheses -Wmissing-braces -Wmissing-declarations
 CFLAGS		+= -Wmissing-field-initializers -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wpedantic
 CFLAGS		+= -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wswitch-enum -Wuninitialized -Wunreachable-code
 CFLAGS		+= -Wunused
