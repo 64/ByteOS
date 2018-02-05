@@ -5,6 +5,7 @@ OS		:= $(shell uname -s)
 
 AS		:= nasm
 EMU		:= qemu-system-x86_64
+BOCHS           := bochs
 AR		:= x86_64-elf-ar
 CC		?= cc
 TEST_CC		:= $(CC)
@@ -15,13 +16,14 @@ GDB		:= gdb
 
 CFLAGS		?= -Og -g
 CFLAGS		+= -ffreestanding -mno-red-zone -mcmodel=kernel -Iinclude -Iinclude/kernel -std=gnu11
-CFLAGS		+= -Wall -Werror -Wextra -Wparentheses -Wmissing-braces -Wmissing-declarations
+CFLAGS		+= -Wall -Werror -Wextra -Wparentheses -Wmissing-declarations -Wunreachable-code -Wunused 
 CFLAGS		+= -Wmissing-field-initializers -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wpedantic
-CFLAGS		+= -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wswitch-enum -Wuninitialized -Wunreachable-code
-CFLAGS		+= -Wunused
+CFLAGS		+= -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wswitch-enum -Wuninitialized
+CFLAGS		+= -mno-sse -mno-mmx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-sse4a
 ASFLAGS		:= -f elf64 -F dwarf -g -w+all -Werror
 EMUFLAGS	:= -net none -serial stdio -cdrom $(ISO)
 ASTYLEFLAGS	:= --style=linux -z2 -k3 -H -xg -p -T8 -S
+BOCHSFLAGS      := -f .bochsrc -q
 
 CRTI_OBJ	:= kernel/crt/crti.asm.o
 CRTBEGIN_OBJ    := kernel/crt/crtbegin.o
@@ -47,13 +49,16 @@ ifeq ($(OS),Linux)
 	EMUFLAGS += -M accel=kvm:tcg
 endif
 
-.PHONY: all clean run debug disassemble update-modules copy-all copy-snow copy-ds copy-cansid loc tidy test
+.PHONY: all clean run debug bochs disassemble update-modules copy-all copy-snow copy-ds copy-cansid loc tidy test
 .SUFFIXES: .o .c .asm
 
 all: $(ISO)
 
 run: $(ISO)
 	@$(EMU) $(EMUFLAGS)
+
+bochs: $(ISO)
+	@$(BOCHS) $(BOCHSFLAGS)
 
 clean:
 	@$(RM) -r build

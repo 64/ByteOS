@@ -8,7 +8,6 @@ idt64:
 
 section .text
 isr_common:
-	; TODO: Save SSE state, save segments for 32-bit code
 	; We don't save all the registers because we assume the C compiler to
 	; preserve some: rbx, rbp, r8 - r11 (and rsp is also restored by iretq)
 	; TODO: Push the other registers for exceptions
@@ -40,13 +39,13 @@ global load_idt
 load_idt:
 	jmp .isr_install
 .isr_post_install:
-	; Remap the PIC
 ; outb(port, val)
 %macro outb 2
 	mov al, %2
 	out %1, al
 %endmacro
 
+	; Remap the PIC
 	outb 0x20, 0x11
 	outb 0xA0, 0x11
 	outb 0x21, 0x20
@@ -67,7 +66,7 @@ load_idt:
 	lea rdi, [rdi + rdx]
 	mov word [rdi], ax
 	mov word [rdi + 2], 0x08
-	mov byte [rdi + 4], 0x00
+	mov byte [rdi + 4], sil ; IST index
 	mov byte [rdi + 5], 0x8E
 	shr rax, 16
 	mov word [rdi + 6], ax
@@ -76,22 +75,28 @@ load_idt:
 	mov dword [rdi + 12], 0x00000000
 	ret
 
-%macro isr_addentry 1
+%macro isr_addentry_ist 2
 	mov rax, interrupt_service_routines.isr_%1
 	mov rdx, %1 * 16
+	mov sil, %2
 	call .isr_install_single
 %endmacro
+
+%macro isr_addentry 1
+	isr_addentry_ist %1, 0
+%endmacro
+
 
 .isr_install:
 	isr_addentry 0
 	isr_addentry 1
-	isr_addentry 2
+	isr_addentry_ist 2, 1 ; NMI
 	isr_addentry 3
 	isr_addentry 4
 	isr_addentry 5
 	isr_addentry 6
 	isr_addentry 7
-	isr_addentry 8
+	isr_addentry_ist 8, 2 ; Double fault
 	isr_addentry 9
 	isr_addentry 10
 	isr_addentry 11

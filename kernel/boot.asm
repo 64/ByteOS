@@ -48,6 +48,12 @@ stack_top:
 	resb PAGE_SIZE * 4 ; 16kB
 stack_bottom:
 
+; Stacks for the Interrupt Stack Table
+	resb PAGE_SIZE
+ist_stack_1:
+	resb PAGE_SIZE
+ist_stack_2:
+
 %macro map_page 3
 	mov eax, %3
 	or eax, 0b11 ; Writable, Present
@@ -67,31 +73,58 @@ stack_bottom:
 %endmacro
 
 section .data
-global gdt64
-gdt64:                           ; Global Descriptor Table (64-bit).
-    .null equ $ - gdt64          ; The null descriptor.
-    dw 0                         ; Limit (low).
-    dw 0                         ; Base (low).
-    db 0                         ; Base (middle)
-    db 0                         ; Access.
-    db 0                         ; Granularity.
-    db 0                         ; Base (high).
-    .code equ $ - gdt64          ; The code descriptor.
-    dw 0                         ; Limit (low).
-    dw 0                         ; Base (low).
-    db 0                         ; Base (middle)
-    db 10011010b                 ; Access (exec/read).
-    db 00100000b                 ; Granularity.
-    db 0                         ; Base (high).
-    .data equ $ - gdt64          ; The data descriptor.
-    dw 0                         ; Limit (low).
-    dw 0                         ; Base (low).
-    db 0                         ; Base (middle)
-    db 10010010b                 ; Access (read/write).
-    db 00000000b                 ; Granularity.
-    db 0                         ; Base (high).
+global tss64
+global interrupt_stack_table
+tss64:
+	dd 0
+	times 3 dq 0 ; RSPn
+	dq 0 ; Reserved
+interrupt_stack_table:
+	dq ist_stack_1 ; IST1, NMI
+	dq ist_stack_2 ; IST2, Double fault
+	dq 0 ; IST3
+	dq 0 ; IST4
+	dq 0 ; IST5
+	dq 0 ; IST6
+	dq 0 ; IST7
+	dq 0 ; Reserved
+	dw 0 ; Reserved
+	dw 0 ; I/O Map Base Address
+tss_size equ $ - tss64 - 1
 
-gdt_size equ 0x18
+global gdt64
+gdt64:                               ; Global Descriptor Table (64-bit)
+	.null equ $ - gdt64          ; The null descriptor
+	dw 0                         ; Limit (low)
+	dw 0                         ; Base (low)
+	db 0                         ; Base (middle)
+	db 0                         ; Access
+	db 0                         ; Granularity
+	db 0                         ; Base (high)
+	.code equ $ - gdt64          ; The code descriptor
+	dw 0                         ; Limit (low)
+	dw 0                         ; Base (low)
+	db 0                         ; Base (middle)
+	db 10011010b                 ; Access (exec/read)
+	db 00100000b                 ; Granularity
+	db 0                         ; Base (high)
+	.data equ $ - gdt64          ; The data descriptor
+	dw 0                         ; Limit (low)
+	dw 0                         ; Base (low)
+	db 0                         ; Base (middle)
+	db 10010010b                 ; Access (read/write)
+	db 00000000b                 ; Granularity
+	db 0                         ; Base (high)
+	.tss equ $ - gdt64           ; The TSS descriptor
+	dw tss_size & 0xFFFF         ; Limit
+	dw 0                         ; Base (bytes 0-2)
+	db 0                         ; Base (byte 3)
+	db 10001001b                 ; Type, present
+	db 00000000b                 ; Misc
+	db 0                         ; Base (byte 4)
+	dd 0                         ; Base (bytes 5-8)
+	dd 0                         ; Zero / reserved
+gdt_size equ $ - gdt64 - 1
 
 section .text
 bits 32
@@ -200,8 +233,6 @@ _start:
 	mov eax, cr4
 	or ax, 3 << 9
 	mov cr4, eax
-
-
 
 	; Setup paging
 	map_page p4_table, 511, p3_table
@@ -326,6 +357,19 @@ _start:
 
 bits 64
 long_mode equ $ - KERNEL_TEXT_BASE
+	; Load TSS descriptor into GDT
+	mov rdi, gdt64
+	add rdi, gdt64.tss
+	mov rax, tss64
+	mov word [rdi + 2], ax
+	shr rax, 16
+	mov byte [rdi + 4], al
+	shr rax, 8
+	mov byte [rdi + 7], al
+	shr rax, 8
+	mov dword [rdi + 8], eax
+
+	; Load GDT
 	add rsp, KERNEL_TEXT_BASE
 	mov qword [rsp + 2], gdt64
 	lgdt [rsp]

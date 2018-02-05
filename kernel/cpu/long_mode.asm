@@ -10,7 +10,8 @@ long_mode_start:
 
 	push rbx ; Multiboot structure (physical address)
 
-	; TODO: Enable AVX
+	; Enable SSE3+, AVX
+	call enable_simd
 
 	; Call global constructors
 	extern _init
@@ -23,7 +24,11 @@ long_mode_start:
 	; Load interrupt descriptor table
 	extern load_idt
 	call load_idt
-	
+
+	; Load TSS
+	mov ax, 0x18
+	ltr ax
+
 	; Pass multiboot information to kmain
 	pop rdi
 	extern kmain
@@ -37,3 +42,52 @@ long_mode_start:
 .end:
 	hlt
 	jmp .end
+
+; Enables AVX and AVX-512 if available
+; TODO: Test this
+enable_simd:
+	push rax
+	push rbx
+	push rcx
+	push rdx
+
+	; AVX
+	mov eax, 1
+	xor rcx, rcx
+	cpuid
+	and ecx, (1 << 26) ; Detect XSAVE
+	test ecx, ecx
+	jz .done
+	mov eax, 1
+	xor rcx, rcx
+	cpuid
+	and ecx, (1 << 28) ; Detect AVX
+	test ecx, ecx
+	jz .done
+	
+	; Enable it
+	xor ecx, ecx
+	xgetbv
+	or eax, 7
+	xsetbv
+
+	; AVX-512
+	mov eax, 0x0D
+	xor rcx, rcx
+	cpuid
+	and ecx, 0xE0 ; Detect AVX-512
+	cmp ecx, 0xE0
+	jne .done
+	
+	; Enable it
+	xor ecx, ecx
+	xgetbv
+	or eax, 0xE0
+	xsetbv
+
+.done:
+	pop rdx
+	pop rcx
+	pop rbx
+	pop rax
+	ret

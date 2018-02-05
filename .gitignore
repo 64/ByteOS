@@ -7,7 +7,7 @@ build/*
 *.a
 *.orig
 *.gch
-
+bochsout.txt
 libk/tests/snow.h
 
 .*

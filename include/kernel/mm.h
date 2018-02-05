@@ -32,10 +32,6 @@
 // This means that the largest allocation is 2^(MAX_ORDER - 1) * 4096 bytes
 #define MAX_ORDER 12
 
-typedef uintptr_t physaddr_t;
-typedef void *virtaddr_t;
-typedef void *kernaddr_t;
-
 typedef uint64_t pte_t;
 
 struct page_table {
@@ -65,9 +61,9 @@ struct mmap {
 
 // This should be kept as small as possible
 struct page {
-	struct slist_entry list; // Points to the next page
+	struct dlist_entry list; // Can be used for whatever purpose
 	uint32_t count; // If 0, page is free
-	uint8_t order; // For buddy allocator system
+	int8_t order; // For buddy allocator system
 };
 
 // Describes a contiguous block of memory
@@ -94,7 +90,8 @@ void mmap_dump_info(void);
 struct mmap_region mmap_alloc_low(size_t n, unsigned int alloc_flags);
 
 void pmm_init(struct mmap *);
-struct page *pmm_alloc_order(unsigned int order, unsigned int alloc_flags);
+struct page *pmm_alloc_order(unsigned int order, unsigned int alloc_flags) __attribute__((warn_unused_result));
+void pmm_free_order(struct page *page, unsigned int order);
 
 static inline physaddr_t virt_to_phys(virtaddr_t v) {
 	if (v == NULL)

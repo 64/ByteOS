@@ -111,6 +111,7 @@ int kprintf(const char *fmt, ...)
 					nwritten += atoi_print(va_arg(params, unsigned int), false);
 					break;
 				default:
+					panic("kprintf: unknown format string character '%c'", pfmt[1]);
 					break;
 			}
 			pfmt++;

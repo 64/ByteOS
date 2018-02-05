@@ -2,6 +2,12 @@
 #include "system.h"
 #include "io.h"
 
+#define INT_PAGE_FAULT 14
+#define INT_PIT 32
+#define IST_LEN 7
+
+extern virtaddr_t interrupt_stack_table[IST_LEN];
+
 static const char *const exception_messages[32];
 
 void isr_handler(struct interrupt_frame *frame);
@@ -26,7 +32,7 @@ static void page_fault(struct interrupt_frame *frame)
 static void exception_handler(struct interrupt_frame *frame)
 {
 	switch (frame->int_no) {
-		case 14: // TODO: Replace with constant
+		case INT_PAGE_FAULT:
 			page_fault(frame);
 			break;
 		default:
@@ -43,7 +49,7 @@ static void exception_handler(struct interrupt_frame *frame)
 
 static void irq_handler(struct interrupt_frame *frame)
 {
-	if (frame->int_no != 32)
+	if (frame->int_no != INT_PIT)
 		kprintf("Hit interrupt %zu: %p\n", frame->int_no, (void *)frame->rip);
 	irq_ack(frame->int_no);
 }
