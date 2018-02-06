@@ -26,7 +26,7 @@ long_mode_start:
 	call load_idt
 
 	; Load TSS
-	mov ax, 0x18
+	mov ax, 0x28
 	ltr ax
 
 	; Pass multiboot information to kmain

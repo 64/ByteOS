@@ -32,6 +32,9 @@
 // This means that the largest allocation is 2^(MAX_ORDER - 1) * 4096 bytes
 #define MAX_ORDER 12
 
+#define GFP_NONE 0
+#define KM_NONE 0
+
 typedef uint64_t pte_t;
 
 struct page_table {
@@ -93,6 +96,9 @@ void pmm_init(struct mmap *);
 struct page *pmm_alloc_order(unsigned int order, unsigned int alloc_flags) __attribute__((warn_unused_result));
 void pmm_free_order(struct page *page, unsigned int order);
 
+void *kmalloc(size_t, unsigned int) __attribute__((malloc));
+void kfree(void *);
+
 static inline physaddr_t virt_to_phys(virtaddr_t v) {
 	if (v == NULL)
 		return (physaddr_t)NULL;
@@ -127,4 +133,12 @@ static inline physaddr_t page_to_phys(struct page *p) {
 	if (p == NULL)
 		return (physaddr_t)NULL;
 	return (physaddr_t)((p - page_data) * PAGE_SIZE);
+}
+
+static inline struct page *virt_to_page(virtaddr_t p) {
+	return phys_to_page(virt_to_phys(p));
+}
+
+static inline virtaddr_t page_to_virt(struct page *p) {
+	return phys_to_virt(page_to_phys(p));
 }
