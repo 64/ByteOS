@@ -7,32 +7,25 @@ idt64:
 	dq idt64
 
 section .text
+%define CTX_SIZE (21 * 8)
 isr_common:
-	; We don't save all the registers because we assume the C compiler to
-	; preserve some: rbx, rbp, r8 - r11 (and rsp is also restored by iretq)
-	; TODO: Push the other registers for exceptions
-	push rax
-	push rcx
-	push rdx
-	push rsi
-	push rdi
-	push r8
-	push r9
-	push r10
-	push r11
-	lea rdi, [rsp]
+	sub rsp, CTX_SIZE
+	mov [rsp + 4 * 8], rdi ; Save RDI
+	mov [rsp + 5 * 8], rsi ; Save RSI
+	mov rdi, rsp
+	lea rsi, [rsp + CTX_SIZE] ; Interrupt frame
+	extern save_context
+	call save_context
+
+	lea rdi, [rsp + CTX_SIZE] ; Interrupt frame
+	lea rsi, [rsp] ; Struct context
 	extern isr_handler
 	call isr_handler
-	pop r11
-	pop r10
-	pop r9
-	pop r8
-	pop rdi
-	pop rsi
-	pop rdx
-	pop rcx
-	pop rax
-	add rsp, 16
+
+	lea rdi, [rsp]
+	extern restore_context
+	call restore_context
+	add rsp, CTX_SIZE + 16 ; Struct context, error code, interrupt number
 	iretq
 
 global load_idt

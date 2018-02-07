@@ -1,6 +1,7 @@
 #include "libk.h"
 #include "multiboot2.h"
 #include "mm.h"
+#include "proc.h"
 #include "system.h"
 
 void kmain(void *mboot_info_physical);
@@ -15,5 +16,5 @@ void kmain(void *mboot_info_physical)
 	pmm_init(mem_map);
 
 	// At this point, we have physical and virtual memory allocation
-	kfree(kmalloc(64, KM_NONE));
+	run_tasks();
 }
