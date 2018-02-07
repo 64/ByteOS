@@ -11,6 +11,8 @@ static void task_init(struct task *t, virtaddr_t entry)
 	t->ctx.rsp = (uint64_t)page_to_virt(pmm_alloc_order(0, 0));
 	t->ctx.cr3 = (uint64_t)kern_to_phys(kernel_p4);
 	t->ctx.rip = (uint64_t)entry;
+	t->ctx.cs = 0x8;  // Kernel code selector
+	t->ctx.ss = 0x10; // Kernel data selector
 }
 
 static void task_one(void)

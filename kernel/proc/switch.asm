@@ -73,22 +73,16 @@ restore_context:
 
 global context_switch
 context_switch:
-	sub rsp, 64
 	and rsp, ~15 ; Align to 16 bytes (is this necessary?)
-	mov qword [rsp], 0 ; Error code
+	sub rsp, 48
 
 	; Copy the struct onto the stack
 	; TODO: Is there a more concise way to express this in assembly?
-	mov rax, [rdi + 17 * 8] ; rip
-	mov [rsp + 8],  rax
-	mov rax, [rdi + 18 * 8] ; cs
-	mov [rsp + 16], rax
-	mov rax, [rdi + 16 * 8] ; rflags
-	mov [rsp + 24], rax
-	mov rax, [rdi + 6 * 8] ; rsp
-	mov [rsp + 32], rax
-	mov rax, [rdi + 19 * 8] ; ss
-	mov [rsp + 40], rax
+	push qword [rdi + 19 * 8] ; ss
+	push qword [rdi + 6 * 8] ; rsp
+	push qword [rdi + 16 * 8] ; rflags
+	push qword [rdi + 18 * 8] ; cs
+	push qword [rdi + 17 * 8] ; rip
 
 	call restore_context
 

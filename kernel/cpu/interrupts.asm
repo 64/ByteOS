@@ -129,6 +129,24 @@ load_idt:
 	isr_addentry 45
 	isr_addentry 46
 	isr_addentry 47
+	isr_addentry 47
+	isr_addentry 48
+	isr_addentry 49
+	isr_addentry 50
+	isr_addentry 51
+	isr_addentry 52
+	isr_addentry 53
+	isr_addentry 54
+	isr_addentry 55
+	isr_addentry 56
+	isr_addentry 57
+	isr_addentry 58
+	isr_addentry 59
+	isr_addentry 60
+	isr_addentry 61
+	isr_addentry 62
+	isr_addentry 63
+	isr_addentry 64
 
 	jmp .isr_post_install
 
@@ -197,3 +215,23 @@ interrupt_service_routines:
 	isr_noerr 45
 	isr_noerr 46
 	isr_noerr 47
+
+	; Extra stuff
+	isr_noerr 48
+	isr_noerr 49
+	isr_noerr 50
+	isr_noerr 51
+	isr_noerr 52
+	isr_noerr 53
+	isr_noerr 54
+	isr_noerr 55
+	isr_noerr 56
+	isr_noerr 57
+	isr_noerr 58
+	isr_noerr 59
+	isr_noerr 60
+	isr_noerr 61
+	isr_noerr 62
+	isr_noerr 63
+	isr_noerr 64
+
