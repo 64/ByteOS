@@ -17,7 +17,11 @@ struct task {
 };
 
 __attribute__((noreturn))
-void context_switch(struct context *);
+void switch_to(struct context *);
 
-void save_context(struct context *);
+__attribute__((noreturn))
+void schedule(struct context *ctx);
+
+void task_switch_fn(void);
+
 void run_tasks(void);

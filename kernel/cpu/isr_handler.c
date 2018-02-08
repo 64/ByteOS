@@ -11,7 +11,7 @@ extern virtaddr_t interrupt_stack_table[IST_LEN];
 
 static const char *const exception_messages[32];
 
-void isr_handler(struct interrupt_frame *frame, struct context *ctx);
+void isr_handler(struct interrupt_frame *frame);
 
 static void page_fault(struct interrupt_frame *frame)
 {
@@ -68,9 +68,8 @@ void irq_ack(int int_no)
 	outb(0x20, 0x20);
 }
 
-void isr_handler(struct interrupt_frame *frame, struct context *ctx)
+void isr_handler(struct interrupt_frame *frame)
 {
-	(void)ctx;
 	if (frame->int_no < 32)
 		exception_handler(frame);
 	else if (frame->int_no < 48) {

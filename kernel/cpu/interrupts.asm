@@ -1,31 +1,35 @@
 section .data
 global idt64
 idt64:
-	times 48 dq 0, 0
+	times 65 dq 0, 0
 .pointer:
 	dw $ - idt64 - 1
 	dq idt64
 
 section .text
-%define CTX_SIZE (21 * 8)
 isr_common:
-	sub rsp, CTX_SIZE
-	mov [rsp + 4 * 8], rdi ; Save RDI
-	mov [rsp + 5 * 8], rsi ; Save RSI
-	mov rdi, rsp
-	lea rsi, [rsp + CTX_SIZE] ; Interrupt frame
-	extern save_context
-	call save_context
-
-	lea rdi, [rsp + CTX_SIZE] ; Interrupt frame
-	lea rsi, [rsp] ; Struct context
+	push rax
+	push rcx
+	push rdx
+	push rsi
+	push rdi
+	push r8
+	push r9
+	push r10
+	push r11
+	lea rdi, [rsp + 72] ; Pointer to interrupt frame
 	extern isr_handler
 	call isr_handler
-
-	lea rdi, [rsp]
-	extern restore_context
-	call restore_context
-	add rsp, CTX_SIZE + 16 ; Struct context, error code, interrupt number
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	pop rdi
+	pop rsi
+	pop rdx
+	pop rcx
+	pop rax
+	add rsp, 16 ; rsp points to rip before iretq
 	iretq
 
 global load_idt
@@ -146,7 +150,13 @@ load_idt:
 	isr_addentry 61
 	isr_addentry 62
 	isr_addentry 63
-	isr_addentry 64
+
+	; Setup task switch interrupt
+	extern task_switch_isr
+	mov rax, task_switch_isr
+	mov rdx, 64 * 16
+	mov sil, 0
+	call .isr_install_single
 
 	jmp .isr_post_install
 
@@ -233,5 +243,3 @@ interrupt_service_routines:
 	isr_noerr 61
 	isr_noerr 62
 	isr_noerr 63
-	isr_noerr 64
-
