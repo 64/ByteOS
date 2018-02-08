@@ -26,8 +26,12 @@ long_mode_start:
 	call load_idt
 
 	; Load TSS
-	mov ax, 0x28
+	mov ax, 0x30
 	ltr ax
+
+	; Enable syscall instruction
+	extern syscall_enable
+	;call syscall_enable
 
 	; Pass multiboot information to kmain
 	pop rdi

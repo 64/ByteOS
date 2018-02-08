@@ -115,12 +115,12 @@ gdt64:                               ; Global Descriptor Table (64-bit)
 	db 10010010b                 ; Access (read/write)
 	db 00000000b                 ; Granularity
 	db 0                         ; Base (high)
-	.user_code equ $ - gdt64     ; Ring 3 code descriptor
+	.user_code32 equ $ - gdt64   ; Ring 3 code descriptor (32-bit)
 	dw 0                         ; Limit (low)
 	dw 0                         ; Base (low)
 	db 0                         ; Base (middle)
-	db 11111010b                 ; Access (exec/read)
-	db 00100000b                 ; Granularity
+	db 0                         ; Access (exec/read)
+	db 0                         ; Granularity
 	db 0                         ; Base (high)
 	.user_data equ $ - gdt64     ; Ring 3 data descriptor
 	dw 0                         ; Limit (low)
@@ -128,6 +128,13 @@ gdt64:                               ; Global Descriptor Table (64-bit)
 	db 0                         ; Base (middle)
 	db 11110010b                 ; Access (read/write)
 	db 00000000b                 ; Granularity
+	db 0                         ; Base (high)
+	.user_code64 equ $ - gdt64   ; Ring 3 code descriptor (64-bit)
+	dw 0                         ; Limit (low)
+	dw 0                         ; Base (low)
+	db 0                         ; Base (middle)
+	db 11111010b                 ; Access (exec/read)
+	db 00100000b                 ; Granularity
 	db 0                         ; Base (high)
 	.tss equ $ - gdt64           ; The TSS descriptor
 	dw tss_size & 0xFFFF         ; Limit
