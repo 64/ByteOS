@@ -26,6 +26,9 @@
 #define PAGE_SIZE 4096
 #define PAGE_SHIFT 12
 
+#define PAGING_ALLOC_MMAP (1 << 0)
+#define PAGING_NONE 0
+
 #define MMAP_ALLOC_PA (1 << 0)
 #define MMAP_MAX_REGIONS 128
 
@@ -86,7 +89,7 @@ void paging_map_all(struct mmap *);
 physaddr_t paging_get_phys_addr(struct page_table *, void *);
 bool paging_has_flags(struct page_table *, void *, uint64_t flags);
 pte_t paging_get_pte(struct page_table *, void *);
-void paging_map_page(struct page_table *, physaddr_t, void *, uint64_t);
+void paging_map_page(struct page_table *, physaddr_t, virtaddr_t, unsigned long);
 
 struct mmap *mmap_init(struct multiboot_info *);
 void mmap_dump_info(void);

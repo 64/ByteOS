@@ -38,6 +38,13 @@ task_switch_isr:
 	extern schedule
 	jmp schedule
 
+global set_ring0_stack
+; rdi: Target ring 0 rsp
+set_ring0_stack:
+	extern tss64
+	mov [tss64 + 4], rdi ; RSP0
+	ret
+
 global task_switch_fn
 task_switch_fn:
 	sub rsp, CTX_SIZE

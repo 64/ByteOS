@@ -35,7 +35,7 @@ void paging_map_all(struct mmap *mmap)
 		physaddr_t start = ALIGNUP(mmap->available.regions[i].base, PAGE_SIZE);
 		physaddr_t end = mmap->available.regions[i].base + mmap->available.regions[i].len;
 		for (physaddr_t j = start; j <= (end - PAGE_SIZE); j += PAGE_SIZE) {
-			paging_map_page(kernel_p4, j, phys_to_virt(j), PAGE_WRITABLE);
+			paging_map_page(kernel_p4, j, phys_to_virt(j), PAGING_ALLOC_MMAP | PAGE_WRITABLE | PAGE_NO_EXEC);
 			mmap->highest_mapped = MAX(j, mmap->highest_mapped);
 		}
 	}
@@ -51,13 +51,20 @@ static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgta
 }
 
 // TODO: More flexability with flags (e.g 'global' flag)
-static inline pte_t alloc_pgtab(void)
+static inline pte_t alloc_pgtab(unsigned int alloc_flags)
 {
-	// Mmap low allocs are guaranteed to be mapped
-	physaddr_t pgtab_phys = mmap_alloc_low(PAGE_SIZE, MMAP_ALLOC_PA).base;
-	kassert_dbg((pgtab_phys & 0xFFF) == 0); // Must be aligned
 	uint64_t flags = PAGE_PRESENT | PAGE_WRITABLE;
-	return (pgtab_phys & PTE_ADDR_MASK) | flags;
+	if (alloc_flags & PAGE_USER_ACCESSIBLE)
+		flags |= PAGE_USER_ACCESSIBLE;
+	if (alloc_flags & PAGING_ALLOC_MMAP) {
+		// Mmap low allocs are guaranteed to be mapped
+		physaddr_t pgtab_phys = mmap_alloc_low(PAGE_SIZE, MMAP_ALLOC_PA).base;
+		kassert_dbg((pgtab_phys & 0xFFF) == 0); // Must be aligned
+		return (pgtab_phys & PTE_ADDR_MASK) | flags;
+	} else {
+		physaddr_t pgtab_phys = page_to_phys(pmm_alloc_order(0, 0));
+		return (pgtab_phys & PTE_ADDR_MASK) | flags;
+	}
 }
 
 #pragma GCC diagnostic push
@@ -128,7 +135,7 @@ bool paging_has_flags(struct page_table *p4, void *addr, uint64_t flags)
 	return (paging_get_pte(p4, addr) & flags) != 0;
 }
 
-void paging_map_page(struct page_table *p4, physaddr_t phys, void *virt, uint64_t flags)
+void paging_map_page(struct page_table *p4, physaddr_t phys, virtaddr_t virt, unsigned long flags)
 {
 	const uintptr_t va = (uintptr_t)virt;
 	const uint16_t p4_index = (va & P4_ADDR_MASK) >> P4_ADDR_SHIFT;
@@ -138,14 +145,14 @@ void paging_map_page(struct page_table *p4, physaddr_t phys, void *virt, uint64_
 
 	struct page_table *p3_table = pgtab_extract_virt_addr(p4, p4_index);
 	if (p3_table == NULL) {
-		p4->pages[p4_index] = alloc_pgtab();
+		p4->pages[p4_index] = alloc_pgtab(flags);
 		p3_table = pgtab_extract_virt_addr(p4, p4_index);
 		memset(p3_table, 0, sizeof(struct page_table));
 	}
 
 	struct page_table *p2_table = pgtab_extract_virt_addr(p3_table, p3_index);
 	if (p2_table == NULL) {
-		p3_table->pages[p3_index] = alloc_pgtab();
+		p3_table->pages[p3_index] = alloc_pgtab(flags);
 		p2_table = pgtab_extract_virt_addr(p3_table, p3_index);
 		memset(p2_table, 0, sizeof(struct page_table));
 	}
@@ -153,11 +160,12 @@ void paging_map_page(struct page_table *p4, physaddr_t phys, void *virt, uint64_
 
 	struct page_table *p1_table = pgtab_extract_virt_addr(p2_table, p2_index);
 	if (p1_table == NULL) {
-		p2_table->pages[p2_index] = alloc_pgtab();
+		p2_table->pages[p2_index] = alloc_pgtab(flags);
 		p1_table = pgtab_extract_virt_addr(p2_table, p2_index);
 		memset(p1_table, 0, sizeof(struct page_table));
 	}
 
+	flags &= ~PAGING_ALLOC_MMAP;
 	p1_table->pages[p1_index] = (phys & PTE_ADDR_MASK) | PAGE_PRESENT | flags;
 }
 

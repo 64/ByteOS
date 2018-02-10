@@ -29,9 +29,9 @@ long_mode_start:
 	mov ax, 0x30
 	ltr ax
 
-	; Enable syscall instruction
+	; Enable syscall/sysret instruction
 	extern syscall_enable
-	;call syscall_enable
+	call syscall_enable
 
 	; Pass multiboot information to kmain
 	pop rdi
