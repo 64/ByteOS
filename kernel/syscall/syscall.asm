@@ -38,7 +38,12 @@ syscall_enable:
 	or eax, (1 << 0)
 	wrmsr
 
-	; TODO: Maybe set FMASK MSR for rflags?
+	; Set FMASK MSR for rflags
+	mov ecx, 0xC0000084 ; IA32_FMASK MSR
+	rdmsr
+	or eax, (1 << 9) ; Disable interrupts upon syscall entry
+	wrmsr
+
 	ret
 .no_syscall:
 	mov rdi, no_syscall_message
@@ -57,6 +62,10 @@ syscall_entry:
 	mov [gs:0x8], rsp
 	mov rsp, [gs:0x0]
 	mov rsp, [rsp + SIZEOF_STRUCT_CONTEXT]
+	push qword [gs:0x8] ; Push old RSP to the stack
+
+	; Interrupts will be safely handled on the kernel stack
+	sti
 
 	; Execute syscall code
 	cmp rax, NUM_SYSCALLS
@@ -88,8 +97,11 @@ syscall_entry:
 .bad_syscall:
 	mov rax, SYSCALL_ERROR
 .done:
-	; Switch to user stack
-	mov rsp, [gs:0x8]
+	; Disable interrupts (don't want interrupts using a ring 3 stack)
+	cli
+
+	; Switch to user stack again
+	pop rsp
 
 	; rip is in rcx
 	; rflags is in r11
