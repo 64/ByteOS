@@ -1,8 +1,11 @@
+%include "include.asm"
+
 section .text
 global long_mode_start
 long_mode_start:
-	mov ax, 0x10
+	mov ax, GDT_USER_DATA
 	mov ss, ax
+	mov ax, 0
 	mov ds, ax
 	mov es, ax
 	mov fs, ax
@@ -26,7 +29,7 @@ long_mode_start:
 	call load_idt
 
 	; Load TSS
-	mov ax, 0x30
+	mov ax, GDT_TSS
 	ltr ax
 
 	; Enable syscall/sysret instruction
@@ -88,7 +91,6 @@ enable_simd:
 	xgetbv
 	or eax, 0xE0
 	xsetbv
-
 .done:
 	pop rdx
 	pop rcx

@@ -14,6 +14,7 @@ void kmain(void *mboot_info_physical)
 	paging_map_all(mem_map);
 	mmap_dump_info();
 	pmm_init(mem_map);
+	cpu_local_init();
 
 	// At this point, we have physical and virtual memory allocation
 	run_tasks();

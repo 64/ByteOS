@@ -8,4 +8,12 @@ continue
 define hook-stop
 list *$pc
 end
+define myn
+next
+refresh
+end
+define mys
+step
+refresh
+end
 tui enable

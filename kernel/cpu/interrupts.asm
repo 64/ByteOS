@@ -1,3 +1,5 @@
+%include "include.asm"
+
 section .data
 global idt64
 idt64:

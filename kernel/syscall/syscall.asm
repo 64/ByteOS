@@ -1,3 +1,5 @@
+%include "include.asm"
+
 section .rodata
 no_syscall_message:
 	db 0x1B, '[41mFatal error: syscall/sysret are not supported', 0xA, 0 ; Newline, NUL
@@ -17,7 +19,7 @@ syscall_enable:
 	mov ecx, 0xC0000081
 	rdmsr
 	; Load user 32-bit cs into STAR[63:48] and load kernel cs into STAR[47:32]
-	mov edx, 0x1808
+	mov edx, 0x00180008
 	wrmsr
 
 	; IA32_LSTAR MSR
@@ -51,13 +53,44 @@ syscall_entry:
 	; rip is in rcx
 	; rflags is in r11
 
-	; Important: switch to kernel stack
+	; Switch to kernel stack
+	mov [gs:0x8], rsp
+	mov rsp, [gs:0x0]
+	mov rsp, [rsp + SIZEOF_STRUCT_CONTEXT]
 
 	; Execute syscall code
-	hlt ; TODO: Implement
+	cmp rax, NUM_SYSCALLS
+	ja .bad_syscall
 
-	; Important: switch to user stack
+	extern syscall_table
+	mov rax, [syscall_table + rax * 8]
+
+	; Save registers
+	push rcx
+	push rbx
+	push rbp
+	push r11
+	push r12
+	push r13
+	push r14
+	push r15
+	call rax ; Execute the syscall
+	pop r15
+	pop r14
+	pop r13
+	pop r12
+	pop r11
+	pop rbp
+	pop rbx
+	pop rcx
+	; Restore registers
+	jmp .done
+.bad_syscall:
+	mov rax, SYSCALL_ERROR
+.done:
+	; Switch to user stack
+	mov rsp, [gs:0x8]
 
 	; rip is in rcx
 	; rflags is in r11
-	sysret
+	o64 sysret

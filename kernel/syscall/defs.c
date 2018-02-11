@@ -1,17 +1,26 @@
+#include "libk.h"
+#include "proc.h"
 #include "syscall.h"
 
-#define DECL(name) static uint64_t name(struct syscall_frame *)
+#define NAME(name) syscall_ ## name
+#define CAST(name) (syscall_t)NAME(name)
 
-DECL(test_syscall_zero);
-
-syscall_t syscall_table[NUM_SYSCALLS] = {
-	test_syscall_zero
-};
-
-static uint64_t test_syscall_zero(struct syscall_frame *frame)
+static uint64_t NAME(write)(uint64_t arg)
 {
-	(void)frame;
+	kprintf("%s", (char *)arg);
 	return 0;
 }
+
+static uint64_t NAME(yield)(void)
+{
+	task_switch_fn();
+	return 0;
+}
+
+syscall_t syscall_table[NUM_SYSCALLS] = {
+	CAST(write),
+	CAST(yield)
+};
+
 
 

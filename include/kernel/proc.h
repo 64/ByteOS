@@ -14,13 +14,14 @@ struct context {
 
 struct task {
 	struct context ctx;
+	virtaddr_t kernel_stack;
 };
 
 __attribute__((noreturn))
-void switch_to(struct context *);
+void switch_to(struct task *);
 
 __attribute__((noreturn))
-void schedule(struct context *ctx);
+void schedule(struct context *);
 
 void task_switch_fn(void);
 

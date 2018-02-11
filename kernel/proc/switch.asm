@@ -1,9 +1,10 @@
-%define CTX_SIZE (21 * 8)
+%include "include.asm"
+
 section .text
 global task_switch_isr
 %define save(reg, index) mov [rsp + 8 * (index)], reg
 task_switch_isr:
-	sub rsp, CTX_SIZE
+	sub rsp, SIZEOF_STRUCT_CONTEXT
 	; General purpose registers
 	; TODO: These can be replaced by push instructions instead of mov
 	save(rax, 0)
@@ -38,16 +39,9 @@ task_switch_isr:
 	extern schedule
 	jmp schedule
 
-global set_ring0_stack
-; rdi: Target ring 0 rsp
-set_ring0_stack:
-	extern tss64
-	mov [tss64 + 4], rdi ; RSP0
-	ret
-
 global task_switch_fn
 task_switch_fn:
-	sub rsp, CTX_SIZE
+	sub rsp, SIZEOF_STRUCT_CONTEXT
 	; Save rflags and rax for some room
 	pushf
 	push qword rax
@@ -64,7 +58,7 @@ task_switch_fn:
 	save(rdx, 3)
 	save(rdi, 4)
 	save(rsi, 5)
-	lea rax, [rsp + CTX_SIZE + 8] ; rsp (+8 is for return address)
+	lea rax, [rsp + SIZEOF_STRUCT_CONTEXT + 8] ; rsp (+8 is for return address)
 	save(rax, 6)
 	save(rbp, 7)
 	save(r8, 8)
@@ -76,7 +70,7 @@ task_switch_fn:
 	save(r14, 14)
 	save(r15, 15)
 	; rflags already done
-	mov rax, [rsp + CTX_SIZE] ; rip
+	mov rax, [rsp + SIZEOF_STRUCT_CONTEXT] ; rip
 	save(rax, 17)
 	mov rax, 0x8 ; cs (guaranteed here to be from kernel)
 	save(rax, 18)
@@ -91,8 +85,13 @@ task_switch_fn:
 
 global switch_to
 %define restore(reg, index) mov reg, [rdi + 8 * (index)]
-; rdi: Pointer to struct context
+; rdi: Pointer to struct task
 switch_to:
+	push rdi
+	extern cpu_local_set_task
+	call cpu_local_set_task
+	pop rdi
+
 	; Setup the simulated interrupt frame
 	push qword [rdi + 19 * 8] ; ss
 	push qword [rdi + 6 * 8] ; rsp
