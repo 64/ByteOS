@@ -30,9 +30,8 @@ static void task_init(struct task *t, virtaddr_t entry, bool kernel)
 		t->ctx.cs = 0x28 | 0x03; // 0x28 User 64-bit code selector, RPL 3
 		t->ctx.ss = 0x20 | 0x03; // 0x20 User data selector, RPL 3
 	}
-	paging_map_page(task_p4, ALIGNDOWN(kern_to_phys(entry), PAGE_SIZE), (virtaddr_t)0x100000, PAGE_USER_ACCESSIBLE);
-	paging_map_page(task_p4, virt_to_phys(user_stack), (virtaddr_t)0x200000, PAGE_USER_ACCESSIBLE | PAGE_NO_EXEC | PAGE_WRITABLE);
-	kprintf("%p %p\n", user_stack, (void *)paging_get_pte(task_p4, (virtaddr_t)0x200000));
+	paging_map_page(task_p4, ALIGNDOWN(kern_to_phys(entry), PAGE_SIZE), (virtaddr_t)0x100000, PAGE_EXECUTABLE);
+	paging_map_page(task_p4, virt_to_phys(user_stack), (virtaddr_t)0x200000, PAGE_WRITABLE);
 	t->ctx.rsp = 0x200000 + PAGE_SIZE;
 }
 

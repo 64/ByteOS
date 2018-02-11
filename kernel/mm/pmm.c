@@ -28,7 +28,7 @@ static void reserve_page_data_range(physaddr_t start, size_t num_pages)
 			struct mmap_region rg = mmap_alloc_low(PAGE_SIZE, MMAP_ALLOC_PA);
 			kprintf("Allocated struct pages for pfn %zu\n", pfn);
 			kassert(rg.len == PAGE_SIZE);
-			paging_map_page(kernel_p4, (physaddr_t)rg.base, array_addr, PAGE_WRITABLE | PAGE_GLOBAL | PAGE_NO_EXEC);
+			paging_map_page(kernel_p4, (physaddr_t)rg.base, array_addr, PAGE_WRITABLE);
 		}
 	}
 	memset(page_data + pfn_start, 0, (pfn_end - pfn_start) * sizeof(struct page));

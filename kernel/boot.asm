@@ -290,19 +290,22 @@ _start:
 	mov edx, edi
 	within_labels _text_begin_phys, _text_end_phys
 	test al, al
-	jnz .is_executable
+	jnz .is_text
 	mov edx, edi
 	within_labels _rodata_begin_phys, _rodata_end_phys
 	test al, al
-	jnz .is_rdonly
-.is_none:
+	jnz .is_rodata
+.is_none: ; data, bss
 	or edi, 1 << 1
 	or esi, 1 << 31
 	jmp .end
-.is_executable:
+.is_text:
 	and esi, ~(1 << 31) & 0xFFFFFFFF
-.is_rdonly:
 	and edi, ~(1 << 1)
+	jmp .end
+.is_rodata: ; rodata
+	and edi, ~(1 << 1)
+	or esi, 1 << 31
 .end:
 	or edi, 0b100000001 ; Global, Present
 	and edi, ~(1 << 2)  ; Supervisor only

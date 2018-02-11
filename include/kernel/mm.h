@@ -21,7 +21,7 @@
 #define PAGE_DIRTY (1ULL << 6)
 #define PAGE_HUGE (1ULL << 7)
 #define PAGE_GLOBAL (1ULL << 8)
-#define PAGE_NO_EXEC (1ULL << 63)
+#define PAGE_EXECUTABLE (1ULL << 63)
 
 #define PAGE_SIZE 4096
 #define PAGE_SHIFT 12
