@@ -4,6 +4,7 @@ section .text
 global task_switch_isr
 %define save(reg, index) mov [rsp + 8 * (index)], reg
 task_switch_isr:
+	nop
 	sub rsp, SIZEOF_STRUCT_CONTEXT
 	; General purpose registers
 	; TODO: These can be replaced by push instructions instead of mov

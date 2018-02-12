@@ -9,7 +9,7 @@
 %define GDT_USER_DATA 0x10
 %define GDT_TSS 0x30
 
-%define NUM_SYSCALLS 1
+%define NUM_SYSCALLS 2
 %define SYSCALL_ERROR 0xFFFFFFFFFFFFFFFF
 
 ; outb(port, val)

@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include "system.h"
+#include "types.h"
 
 struct context {
 	uint64_t rax, rbx, rcx, rdx, rdi, rsi, rsp, rbp;

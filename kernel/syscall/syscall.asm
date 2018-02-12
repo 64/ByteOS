@@ -69,7 +69,7 @@ syscall_entry:
 
 	; Execute syscall code
 	cmp rax, NUM_SYSCALLS
-	ja .bad_syscall
+	jae .bad_syscall
 
 	extern syscall_table
 	mov rax, [syscall_table + rax * 8]
@@ -84,6 +84,7 @@ syscall_entry:
 	push r14
 	push r15
 	call rax ; Execute the syscall
+	; Restore registers
 	pop r15
 	pop r14
 	pop r13
@@ -92,7 +93,6 @@ syscall_entry:
 	pop rbp
 	pop rbx
 	pop rcx
-	; Restore registers
 	jmp .done
 .bad_syscall:
 	mov rax, SYSCALL_ERROR

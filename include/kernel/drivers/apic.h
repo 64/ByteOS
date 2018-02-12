@@ -1,3 +1,3 @@
 #pragma once
 
-void apic_init(void);
+void lapic_init(void);

@@ -1,17 +1,14 @@
 #include "libk.h"
 #include "proc.h"
-#include "system.h"
+#include "types.h"
+#include "cpu.h"
 #include "io.h"
 
 #define INT_PAGE_FAULT 14
 #define INT_PIT 32
 #define IST_LEN 7
 
-extern virtaddr_t interrupt_stack_table[IST_LEN];
-
 static const char *const exception_messages[32];
-
-void isr_handler(struct interrupt_frame *frame);
 
 static void page_fault(struct interrupt_frame *frame)
 {
@@ -30,7 +27,7 @@ static void page_fault(struct interrupt_frame *frame)
 	);
 }
 
-static void exception_handler(struct interrupt_frame *frame)
+void exception_handler(struct interrupt_frame *frame)
 {
 	switch (frame->int_no) {
 		case INT_PAGE_FAULT:
@@ -48,37 +45,18 @@ static void exception_handler(struct interrupt_frame *frame)
 	}
 }
 
-static void syscall_handler(struct interrupt_frame *frame)
-{
-	// Handle syscall
-	(void)frame;
-}
-
-static void irq_handler(struct interrupt_frame *frame)
-{
-	if (frame->int_no != INT_PIT)
-		kprintf("Hit interrupt %zu: %p\n", frame->int_no, (void *)frame->rip);
-	irq_ack(frame->int_no);
-}
-
-void irq_ack(int int_no)
+static inline void irq_ack(int int_no)
 {
 	if (int_no >= 40)
 		outb(0xA0, 0x20);
 	outb(0x20, 0x20);
 }
 
-void isr_handler(struct interrupt_frame *frame)
+void irq_handler(struct interrupt_frame *frame)
 {
-	if (frame->int_no < 32)
-		exception_handler(frame);
-	else if (frame->int_no < 48) {
-		irq_handler(frame);
-	} else if (frame->int_no == 0x40) {
-		syscall_handler(frame);
-	} else {
+	if (frame->int_no != INT_PIT)
 		kprintf("Hit interrupt %zu: %p\n", frame->int_no, (void *)frame->rip);
-	}
+	irq_ack(frame->int_no);
 }
 
 static const char *const exception_messages[32] = {
