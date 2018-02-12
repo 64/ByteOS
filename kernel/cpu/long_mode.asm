@@ -36,6 +36,10 @@ long_mode_start:
 	extern syscall_enable
 	call syscall_enable
 
+	; Initialise the APIC
+	extern apic_init
+	call apic_init
+
 	; Pass multiboot information to kmain
 	pop rdi
 	extern kmain

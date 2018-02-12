@@ -1,6 +1,5 @@
-%define KERNEL_TEXT_BASE 0xFFFFFFFF80000000
-%define KERNEL_PHYS_MAP_END 0x1000000
-%define PAGE_SIZE 0x1000
+%include "include.asm"
+
 section .multiboot_header
 align 8 ; Must be 8 byte aligned as per the specification
 header_start:
@@ -181,38 +180,19 @@ _start:
 	jnz .no_multiboot
 
 	; Set the cursor to blink
-	mov dx, 0x3D4
-	mov al, 0x09
-	out dx, al ; out 0x3D4, 0x09
-	mov dx, 0x3D5
-	mov al, 0x0F
-	out dx, al ; out 0x3D5, 0x0F
-	mov dx, 0x3D4
-	mov al, 0x0B
-	out dx, al ; out 0x3D4, 0x0B
-	mov dx, 0x3D5
-	mov al, 0x0F
-	out dx, al ; out 0x3D5, 0x0F
-	mov dx, 0x3D4
-	mov al, 0x0A
-	out dx, al ; out 0x3D4, 0x0A
-	mov dx, 0x3D5
-	mov al, 0x0E
-	out dx, al ; out 0x3D5, 0x0E
+	outb 0x3D4, 0x09
+	outb 0x3D5, 0x0F
+	outb 0x3D4, 0x0B
+	outb 0x3D5, 0x0F
+	outb 0x3D4, 0x0A
+	outb 0x3D5, 0x0E
 
 	; Sets the cursor position to 0,1
-	mov dx, 0x3D4
-	mov al, 0x0F
-	out dx, al ; out 0x3D4, 0x0F
-	mov dx, 0x3D5
-	mov al, 80 ; Set cursor position to (row * 80) + col = (1 * 80) + 0 = 80
-	out dx, al ; out 0x3D5, 80
-	mov dx, 0x3D4
-	mov al, 0x0E
-	out dx, al ; out 0x3D4, 0x0E
-	mov dx, 0x3D5
-	mov al, 0x00
-	out dx, al ; out 0x3D5, 0x00
+	outb 0x3D4, 0x0F
+	; Set cursor position to (row * 80) + col = (1 * 80) + 0 = 80
+	outb 0x3D5, 80
+	outb 0x3D4, 0x0E
+	outb 0x3D5, 0x00
 
 	; Check if CPUID is supported
 	pushfd
@@ -326,19 +306,19 @@ _start:
 	; Enable paging
 	; Set P4 address in CR3
 	mov eax, p4_table
-        mov cr3, eax
-        ; Enable PAE flag
-        mov eax, cr4
-        or eax, 1 << 5
-        mov cr4, eax
-        ; Set long mode, NXE bit
-        mov ecx, 0xC0000080
-        rdmsr
-        or eax, (1 << 8) | (1 << 11)
-        wrmsr
-        ; Enable paging, enable write protect mode
-        mov eax, cr0
-        or eax, (1 << 31) | (1 << 16)
+	mov cr3, eax
+	; Enable PAE flag
+	mov eax, cr4
+	or eax, 1 << 5
+	mov cr4, eax
+	; Set long mode, NXE bit
+	mov ecx, 0xC0000080
+	rdmsr
+	or eax, (1 << 8) | (1 << 11)
+	wrmsr
+	; Enable paging, enable write protect mode
+	mov eax, cr0
+	or eax, (1 << 31) | (1 << 16)
 	mov cr0, eax
 
 	sub esp, 10

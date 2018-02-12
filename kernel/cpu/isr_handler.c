@@ -75,7 +75,7 @@ void isr_handler(struct interrupt_frame *frame)
 	else if (frame->int_no < 48) {
 		irq_handler(frame);
 	} else if (frame->int_no == 0x40) {
-		syscall_handler(frame);	
+		syscall_handler(frame);
 	} else {
 		kprintf("Hit interrupt %zu: %p\n", frame->int_no, (void *)frame->rip);
 	}

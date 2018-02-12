@@ -12,7 +12,7 @@ static virtaddr_t task_get_p4(bool kernel)
 	if (kernel)
 		return kernel_p4;
 	struct page *p = pmm_alloc_order(0, 0);
-	virtaddr_t p4_virt = page_to_virt(p);	
+	virtaddr_t p4_virt = page_to_virt(p);
 	memcpy(p4_virt, kernel_p4, PAGE_SIZE); // Copy the mappings
 	return p4_virt;
 }
@@ -66,7 +66,7 @@ static void task_two(void)
 
 void schedule(struct context *ctx)
 {
-	memcpy(&running->ctx, ctx, sizeof *ctx);
+	memcpy(&running->ctx, ctx, sizeof(struct context));
 	struct task *tmp = idle;
 	idle = running;
 	running = tmp;

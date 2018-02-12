@@ -12,7 +12,7 @@
  * This is a simple K&R style first-fit linked list allocator for general
  * purpose kernel allocations. One list is maintained for small allocations
  * and another is used for large allocations (roughly greater than a page).
- * 
+ *
  * Inspired by Linux's SLOB allocator. */
 
 struct slob_large_alloc {

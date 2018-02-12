@@ -38,12 +38,6 @@ global load_idt
 load_idt:
 	jmp .isr_install
 .isr_post_install:
-; outb(port, val)
-%macro outb 2
-	mov al, %2
-	out %1, al
-%endmacro
-
 	; Remap the PIC
 	outb 0x20, 0x11
 	outb 0xA0, 0x11
