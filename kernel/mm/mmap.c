@@ -159,8 +159,9 @@ struct mmap *mmap_init(struct multiboot_info *mboot)
 				continue;
 			} else
 				target = &mem_map.available;
-		} else
+		} else {
 			target = &mem_map.reserved;
+		}
 		mmap_insert_region(target, mmap->addr, mmap->len, MMAP_NONE);
 	}
 

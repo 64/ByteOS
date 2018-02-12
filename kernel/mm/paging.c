@@ -39,7 +39,6 @@ void paging_map_all(struct mmap *mmap)
 			mmap->highest_mapped = MAX(j, mmap->highest_mapped);
 		}
 	}
-	// Map all regions marked "reserved", updating highest_mapped
 }
 
 static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgtab, uint16_t index)
@@ -50,7 +49,6 @@ static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgta
 	return phys_to_virt((entry & PTE_ADDR_MASK));
 }
 
-// TODO: More flexability with flags (e.g 'global' flag)
 static inline pte_t alloc_pgtab(unsigned int alloc_flags)
 {
 	uint64_t flags = PAGE_PRESENT | PAGE_WRITABLE | (alloc_flags & (PAGE_GLOBAL | PAGE_USER_ACCESSIBLE));

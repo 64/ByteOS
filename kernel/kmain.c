@@ -5,6 +5,7 @@
 #include "types.h"
 #include "cpu.h"
 #include "drivers/apic.h"
+#include "drivers/acpi.h"
 
 void kmain(void *mboot_info_physical);
 
@@ -17,10 +18,11 @@ void kmain(void *mboot_info_physical)
 	mmap_dump_info();
 	pmm_init(mem_map);
 	cpu_local_init();
-	lapic_init();
+	acpi_init();
+	apic_init();
 
 	// At this point, we have physical and virtual memory allocation
-	run_tasks();
+	//run_tasks();
 	
 	// Shouldn't ever get here
 }

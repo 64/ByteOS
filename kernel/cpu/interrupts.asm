@@ -24,6 +24,9 @@ load_idt:
 	outb 0xA1, 0x01
 	outb 0x21, 0x00
 	outb 0xA1, 0x00
+	; Disable the PIC (mask all interrupts)
+	outb 0xA1, 0xFF
+	outb 0x21, 0xFF
 
 	mov rax, idt64.pointer ; Is this needed?
 	lidt [rax]
