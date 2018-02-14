@@ -99,7 +99,7 @@ void pmm_init(struct mmap *mmap)
 	}
 
 	slist_foreach(zone, list, zone_list) {
-		kprintf("Zone: %p physical, %zu pages\n", (void *)virt_to_phys(zone), zone->len / PAGE_SIZE);
+		kprintf("pmm: Zone: %p physical, %zu pages\n", (void *)virt_to_phys(zone), zone->len / PAGE_SIZE);
 	}
 }
 

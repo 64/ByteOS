@@ -3,9 +3,8 @@
 section .text
 global long_mode_start
 long_mode_start:
-	mov ax, GDT_USER_DATA
-	mov ss, ax
 	mov ax, 0
+	mov ss, ax
 	mov ds, ax
 	mov es, ax
 	mov fs, ax

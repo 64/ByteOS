@@ -7,13 +7,13 @@
 #include "drivers/apic.h"
 #include "drivers/acpi.h"
 
-void kmain(void *mboot_info_physical);
+void kmain(physaddr_t);
 
-void kmain(void *mboot_info_physical)
+void kmain(physaddr_t mboot_info_phys)
 {
 	paging_init();
-	struct multiboot_info *mboot_info_virtual = phys_to_kern((physaddr_t)mboot_info_physical);
-	struct mmap *mem_map = mmap_init(mboot_info_virtual);
+	struct multiboot_info *mboot_info_virt = phys_to_kern(mboot_info_phys);
+	struct mmap *mem_map = mmap_init(mboot_info_virt);
 	paging_map_all(mem_map);
 	mmap_dump_info();
 	pmm_init(mem_map);

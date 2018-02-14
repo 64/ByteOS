@@ -1,6 +1,7 @@
 #include "drivers/apic.h"
 
-void ioapic_init(struct acpi_madt *madt)
+void ioapic_enable(virtaddr_t ioapic_base, struct ioapic_info *ioapic)
 {
-	(void)madt;
+	(void)ioapic_base;
+	(void)ioapic;
 }

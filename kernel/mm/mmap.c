@@ -79,11 +79,11 @@ static void mmap_insert_region(struct mmap_type *type, uintptr_t addr, size_t le
 
 void mmap_dump_info(void)
 {
-	kprintf("Highest mapped physical page: %p\n", (void *)mem_map.highest_mapped);
-	kprintf("Available:\n");
+	kprintf("mmap: Highest mapped physical page: %p\n", (void *)mem_map.highest_mapped);
+	kprintf("mmap: Available:\n");
 	for (size_t i = 0; i < mem_map.available.count; i++)
 		kprintf("\tRegion base %p, len %zu\n", (void *)mem_map.available.regions[i].base, mem_map.available.regions[i].len);
-	kprintf("Reserved:\n");
+	kprintf("mmap: Reserved:\n");
 	for (size_t i = 0; i < mem_map.reserved.count; i++)
 		kprintf("\tRegion base %p, len %zu\n", (void *)mem_map.reserved.regions[i].base, mem_map.reserved.regions[i].len);
 }
