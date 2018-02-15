@@ -57,6 +57,8 @@ void __ubsan_handle_negate_overflow(struct overflow_data *data, uintptr_t old_va
 void __ubsan_handle_divrem_overflow(struct overflow_data *data, uintptr_t lhs, uintptr_t rhs);
 void __ubsan_handle_out_of_bounds(struct out_of_bounds_data *data, uintptr_t index);
 void __ubsan_handle_builtin_unreachable(struct unreachable_data *data);
+void __ubsan_handle_mul_overflow(struct overflow_data *data, uintptr_t lhs, uintptr_t rhs);
+void __ubsan_handle_shift_out_of_bounds(struct out_of_bounds_data *data, uintptr_t lhs, uintptr_t rhs);
 
 void __ubsan_handle_type_mismatch(struct type_mismatch_info *type_mismatch, uintptr_t pointer)
 {
@@ -100,3 +102,12 @@ void __ubsan_handle_builtin_unreachable(struct unreachable_data *data)
 	ubsan_abort(&data->location, "reached builtin_unreachable");
 }
 
+void __ubsan_handle_mul_overflow(struct overflow_data *data, uintptr_t UNUSED(lhs), uintptr_t UNUSED(rhs))
+{
+	ubsan_abort(&data->location, "multiplication overflow");
+}
+
+void __ubsan_handle_shift_out_of_bounds(struct out_of_bounds_data *data, uintptr_t UNUSED(lhs), uintptr_t UNUSED(rhs))
+{
+	ubsan_abort(&data->location, "shift out of bounds");
+}

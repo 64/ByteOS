@@ -3,6 +3,7 @@
 #include "types.h"
 #include "cpu.h"
 #include "io.h"
+#include "drivers/apic.h"
 
 #define INT_PAGE_FAULT 14
 #define INT_PIT 32
@@ -45,18 +46,11 @@ void exception_handler(struct interrupt_frame *frame)
 	}
 }
 
-static inline void irq_ack(int int_no)
-{
-	if (int_no >= 40)
-		outb(0xA0, 0x20);
-	outb(0x20, 0x20);
-}
-
 void irq_handler(struct interrupt_frame *frame)
 {
 	if (frame->int_no != INT_PIT)
 		kprintf("Hit interrupt %zu: %p\n", frame->int_no, (void *)frame->rip);
-	irq_ack(frame->int_no);
+	lapic_send_eoi();
 }
 
 static const char *const exception_messages[32] = {

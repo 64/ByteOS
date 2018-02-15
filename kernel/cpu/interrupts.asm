@@ -401,26 +401,26 @@ interrupt_service_routines:
 	isr_err 30
 	isr_noerr 31
 
-	; IRQs 0-15
-	isr_fn 32, irq_handler
-	isr_fn 33, irq_handler
-	isr_fn 34, irq_handler
-	isr_fn 35, irq_handler
-	isr_fn 36, irq_handler
-	isr_fn 37, irq_handler
-	isr_fn 38, irq_handler
-	isr_fn 39, irq_handler
-	isr_fn 40, irq_handler
-	isr_fn 41, irq_handler
-	isr_fn 42, irq_handler
-	isr_fn 43, irq_handler
-	isr_fn 44, irq_handler
-	isr_fn 45, irq_handler
-	isr_fn 46, irq_handler
-	isr_fn 47, irq_handler
+	; PIC IRQs 0-15 (unused)
+	isr_noop 32
+	isr_noop 33
+	isr_noop 34
+	isr_noop 35
+	isr_noop 36
+	isr_noop 37
+	isr_noop 38
+	isr_noop 39
+	isr_noop 40
+	isr_noop 41
+	isr_noop 42
+	isr_noop 43
+	isr_noop 44
+	isr_noop 45
+	isr_noop 46
+	isr_noop 47
 	
 	; Extra stuff
-	isr_noop 48
+	isr_fn 48, irq_handler
 	isr_noop 49
 	isr_noop 50
 	isr_noop 51
