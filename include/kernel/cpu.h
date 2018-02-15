@@ -2,9 +2,10 @@
 
 #include <stdint.h>
 
+#include "types.h"
+
 struct interrupt_frame {
-	uint64_t int_no, err_code;
-	uint64_t rip, cs, rflags, rsp, ss, __salign;
+	uint64_t err_code, rip, cs, rflags, rsp, ss, __salign;
 };
 
 struct percpu {
@@ -18,6 +19,8 @@ void cpu_local_set_task(struct task *);
 
 void irq_handler(struct interrupt_frame *);
 void exception_handler(struct interrupt_frame *);
+
+void idt_set_isr(uint8_t index, virtaddr_t entry, uint8_t ist, uint8_t type_attr);
 
 static inline uint64_t msr_read(uint64_t msr)
 {

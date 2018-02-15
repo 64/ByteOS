@@ -6,6 +6,12 @@
 #define COM1_PORT 0x3F8
 #define COM2_PORT 0x2F8
 
+#ifdef SERIAL_DISABLE
+#include "util.h"
+void serial_init(void) {}
+void serial_write_com(int UNUSED(com), unsigned char UNUSED(data)) {}
+#else
+
 void serial_init(void)
 {
 	// Init COM1 and COM2
@@ -56,3 +62,5 @@ void serial_write_com(int com, unsigned char data)
 
 	outb(port, data);
 }
+
+#endif

@@ -20,11 +20,23 @@ static inline void kprintf_write_str(char *s)
 		kprintf_write_char(*s++);
 }
 
-static int atoi_print(uint64_t num, bool sign)
+static inline char digit_to_char(unsigned int digit)
+{
+	if (digit < 10)
+		return digit + '0';
+	return digit + 'A' - 10;
+}
+
+static int atoi_print(uint64_t num, bool sign, unsigned int base)
 {
 	char buf[ATOI_BUFLEN], *p_buf = buf + sizeof buf - 2;
 	int nwritten = 0;
 	buf[ATOI_BUFLEN - 1] = '\0';
+
+	if (base == 16) {
+		kprintf_write_char('0');
+		kprintf_write_char('x');
+	}
 
 	if (num == 0) {
 		kprintf_write_char('0');
@@ -37,15 +49,15 @@ static int atoi_print(uint64_t num, bool sign)
 			n = -n;
 		}
 		while (n != 0) {
-			*p_buf-- = (n % 10) + '0';
-			n /= 10;
+			*p_buf-- = digit_to_char(n % base);
+			n /= base;
 			nwritten++;
 		}
 	} else {
 		uint64_t n = num;
 		while (n != 0) {
-			*p_buf-- = (n % 10) + '0';
-			n /= 10;
+			*p_buf-- = digit_to_char(n % base);
+			n /= base;
 			nwritten++;
 		}
 	}
@@ -98,17 +110,22 @@ int kprintf(const char *fmt, ...)
 					__attribute__((fallthrough));
 				case 'z':
 					if (pfmt[2] == 'd' || pfmt[2] == 'i')
-						nwritten += atoi_print(va_arg(params, long), true);
+						nwritten += atoi_print(va_arg(params, long), true, 10);
 					else if (pfmt[2] == 'u')
-						nwritten += atoi_print(va_arg(params, unsigned long), false);
+						nwritten += atoi_print(va_arg(params, unsigned long), false, 10);
+					else if (pfmt[2] == 'x')
+						nwritten += atoi_print(va_arg(params, unsigned long), false, 16);
 					pfmt++;
 					break;
 				case 'i':
 				case 'd':
-					nwritten += atoi_print(va_arg(params, int), true);
+					nwritten += atoi_print(va_arg(params, int), true, 10);
 					break;
 				case 'u':
-					nwritten += atoi_print(va_arg(params, unsigned int), false);
+					nwritten += atoi_print(va_arg(params, unsigned int), false, 10);
+					break;
+				case 'x':
+					nwritten += atoi_print(va_arg(params, unsigned int), false, 16);
 					break;
 				default:
 					panic("kprintf: unknown format string character '%c'", pfmt[1]);

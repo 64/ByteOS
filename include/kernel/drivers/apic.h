@@ -11,7 +11,7 @@
 
 #define IRQ_APIC_SPURIOUS 0xFF
 #define IRQ_APIC_BASE 0x30
-#define IRQ_NMI_BASE (IRQ_APIC_SPURIOUS - 1 - (2 * MAX_LAPICS))
+#define IRQ_NMI_BASE (IRQ_APIC_SPURIOUS - MAX_NMIS)
 
 struct lapic_info {
 	uint8_t id;

@@ -17,8 +17,8 @@ GDB		:= gdb
 CFLAGS		?= -Og -g
 CFLAGS		+= -ffreestanding -mno-red-zone -mcmodel=kernel -Iinclude -Iinclude/kernel -std=gnu11
 CFLAGS		+= -Wall -Werror -Wextra -Wparentheses -Wmissing-declarations -Wunreachable-code -Wunused 
-CFLAGS		+= -Wmissing-field-initializers -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wpedantic
-CFLAGS		+= -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wswitch-enum -Wuninitialized
+CFLAGS		+= -Wmissing-field-initializers -Wmissing-prototypes -Wpointer-arith -Wpedantic -Wswitch-enum
+CFLAGS		+= -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wuninitialized
 CFLAGS		+= -mno-sse -mno-mmx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-sse4a
 ASFLAGS		:= -f elf64 -F dwarf -g -w+all -Werror -i$(shell pwd)/include/
 EMUFLAGS	:= -net none -serial stdio -cdrom $(ISO)
@@ -74,7 +74,7 @@ debug: $(ISO)
 	@$(GDB)
 	@pkill qemu
 
-disassemble: $(KERNEL)
+disassemble: build/ $(KERNEL)
 	@$(OBJDUMP) --no-show-raw-insn -d -Mintel $(KERNEL) | source-highlight -s asm -f esc256 | less -eRiMX
 
 update-modules:
