@@ -21,7 +21,6 @@ void vga_tmode_init(void)
 	serial_init();
 	vga_tmode_puts("\x1B[=1;30;47m                                     ByteOS");
 	vga_tmode_puts("                                     \x1B[0m");
-	kprintf("vga_tmode: Initialized\n");
 }
 
 static void vga_tmode_newline(void)

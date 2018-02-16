@@ -4,6 +4,7 @@
 #include "proc.h"
 #include "types.h"
 #include "cpu.h"
+#include "util.h"
 #include "drivers/apic.h"
 #include "drivers/acpi.h"
 

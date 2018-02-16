@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include "libk.h"
 #include "types.h"
+#include "util.h"
 #include "mm.h"
 #include "drivers/apic.h"
 
@@ -23,7 +24,7 @@ static void add_lapic(struct madt_entry_lapic *entry)
 	lapic_list[lapic_list_size].id = entry->apic_id;
 	lapic_list[lapic_list_size].acpi_id = entry->acpi_id;
 	lapic_list_size++;
-	kprintf("apic: Detected local APIC, id %d\n", entry->apic_id);
+	klog("apic", "Detected local APIC, id %d\n", entry->apic_id);
 }
 
 static void add_ioapic(struct madt_entry_ioapic *entry)
@@ -33,7 +34,7 @@ static void add_ioapic(struct madt_entry_ioapic *entry)
 	// Map the I/O APIC base so we can access it
 	paging_map_page(kernel_p4, entry->phys_addr, phys_to_virt(entry->phys_addr), PAGING_ALLOC_MMAP | PAGE_DISABLE_CACHE | PAGE_WRITABLE);
 	ioapic_list[ioapic_list_size++] = entry;
-	kprintf("apic: Detected I/O APIC, id %d\n", entry->apic_id);
+	klog("apic", "Detected I/O APIC, id %d\n", entry->apic_id);
 }
 
 static void add_override(struct madt_entry_override *entry)
@@ -41,7 +42,7 @@ static void add_override(struct madt_entry_override *entry)
 	if (override_list_size >= MAX_OVERRIDES)
 		return;
 	override_list[override_list_size++] = entry;
-	kprintf("apic: GSI %d override\n", entry->gsi);
+	klog("apic", "GSI %d override\n", entry->gsi);
 }
 
 static void add_nmi(struct madt_entry_nmi *entry)
@@ -50,9 +51,9 @@ static void add_nmi(struct madt_entry_nmi *entry)
 		return;
 	nmi_list[nmi_list_size++] = entry;
 	if (entry->acpi_id == 0xFF)
-		kprintf("apic: NMI for all CPUs, LINT%d\n", entry->lint_num);
+		klog("apic", "NMI for all CPUs, LINT%d\n", entry->lint_num);
 	else
-		kprintf("apic: NMI for CPU %d, LINT%d\n", entry->acpi_id, entry->lint_num);
+		klog("apic", "NMI for CPU %d, LINT%d\n", entry->acpi_id, entry->lint_num);
 
 }
 

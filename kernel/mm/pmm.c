@@ -99,7 +99,7 @@ void pmm_init(struct mmap *mmap)
 	}
 
 	slist_foreach(zone, list, zone_list) {
-		kprintf("pmm: Zone: %p physical, %zu pages\n", (void *)virt_to_phys(zone), zone->len / PAGE_SIZE);
+		klog("pmm", "Zone: %p physical, %zu pages\n", (void *)virt_to_phys(zone), zone->len / PAGE_SIZE);
 	}
 }
 
@@ -187,7 +187,7 @@ void pmm_free_order(struct page *page, unsigned int order)
 		if (next != NULL)
 			dlist_set_prev(next, list, prev);
 		// Insert first into list order + 1
-		kprintf("Merging blocks of order %u\n", order);
+		klog("pmm", "Merging blocks of order %u\n", order);
 		pmm_free_order(first, order + 1);
 
 	} else {

@@ -37,7 +37,7 @@ static void morecore(void)
 	hd->units = (PAGE_SIZE - UNIT) / UNIT;
 	slist_set_next(hd, list, head);
 	head = hd;
-	kprintf("slob: morecore allocated a page\n");
+	klog("slob", "morecore allocated a page\n");
 }
 
 // TODO: Worry about alignment

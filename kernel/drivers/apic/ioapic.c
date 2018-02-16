@@ -31,7 +31,7 @@ static inline struct madt_entry_ioapic *gsi_to_ioapic(uint32_t gsi)
 		if (ioapic_list[i]->gsi_base <= gsi && ioapic_list[i]->gsi_base + max_redirs > gsi)
 			return ioapic_list[i];
 	}
-	panic("apic: I/O APIC not found for GSI %u", gsi);
+	panic("I/O APIC not found for GSI %u", gsi);
 }
 
 void ioapic_redirect(struct madt_entry_override *override, uint8_t target_apic)

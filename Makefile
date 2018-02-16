@@ -17,7 +17,7 @@ GDB		:= gdb
 CFLAGS		?= -Og -g
 CFLAGS		+= -ffreestanding -mno-red-zone -mcmodel=kernel -Iinclude -Iinclude/kernel -std=gnu11
 CFLAGS		+= -Wall -Werror -Wextra -Wparentheses -Wmissing-declarations -Wunreachable-code -Wunused 
-CFLAGS		+= -Wmissing-field-initializers -Wmissing-prototypes -Wpointer-arith -Wpedantic -Wswitch-enum
+CFLAGS		+= -Wmissing-field-initializers -Wmissing-prototypes -Wpointer-arith -Wswitch-enum
 CFLAGS		+= -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wuninitialized
 CFLAGS		+= -mno-sse -mno-mmx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-sse4a
 ASFLAGS		:= -f elf64 -F dwarf -g -w+all -Werror -i$(shell pwd)/include/

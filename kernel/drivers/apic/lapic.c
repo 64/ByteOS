@@ -73,7 +73,7 @@ void lapic_enable(void)
 {
 	// TODO: Fallback to PIC
 	if (!has_lapic())
-		panic("apic: no local APIC found for current CPU"); 
+		panic("No local APIC found for current CPU"); 
 
 	uint8_t id = lapic_id();
 	struct lapic_info *lapic = find_lapic(id);
@@ -87,6 +87,6 @@ void lapic_enable(void)
 	
 	// Clear any pending interrupts
 	lapic_write(APIC_REG_EOI, 0);
-	kprintf("apic: Enabled local APIC for CPU %u\n", id);
+	klog("apic", "Enabled local APIC for CPU %u\n", id);
 }
 
