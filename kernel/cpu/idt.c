@@ -32,6 +32,7 @@ void idt_init(void);
 // ISR entry points
 void isr_noop(void);
 void isr_irq(void);
+void isr_irq_noop(void);
 
 void idt_set_isr(uint8_t index, virtaddr_t entry, uint8_t ist, uint8_t type_attr)
 {
@@ -94,8 +95,8 @@ void idt_init(void)
 
 	// Ignore all the rest (they are NMI entries or spurious interrupt entries
 	for (size_t i = IRQ_NMI_BASE; i < 256; i++)
-		idt_set_isr((uint8_t)i, isr_noop, IST_NONE, FLAGS_NONE);
+		idt_set_isr((uint8_t)i, isr_irq_noop, IST_NONE, FLAGS_NONE);
 
 	// Ignore the PIT, for now
-	idt_set_isr(IRQ_APIC_BASE, isr_noop, IST_NONE, FLAGS_NONE);
+	idt_set_isr(IRQ_APIC_BASE, isr_irq_noop, IST_NONE, FLAGS_NONE);
 }

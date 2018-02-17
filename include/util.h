@@ -28,5 +28,3 @@
 	(_val & (_align - 1)) == 0; })
 
 #define UNUSED(x) x __attribute__((unused))
-
-#define klog(mod, msg, ...) kprintf("[%u] " mod ": " msg, 0, ##__VA_ARGS__)

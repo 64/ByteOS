@@ -34,6 +34,14 @@ __attribute__((noreturn)) void abort(void);
 			panic("kassert condition failed: %s\n", #condition); \
 	} while(0)
 
+#define klog(mod, msg, ...) ({ \
+		uint64_t time = 0; \
+		if (time != 0) \
+			kprintf("[%lu] ", time); \
+		kprintf(mod ": " msg, ##__VA_ARGS__); })
+
+#define klog_warn(mod, msg, ...) klog(mod, "\e[33m**WARN**\e[0m " msg, ##__VA_ARGS__)
+
 #ifdef NDEBUG
 	#define kassert_dbg(x)
 #else

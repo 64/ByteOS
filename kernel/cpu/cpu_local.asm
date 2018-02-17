@@ -1,10 +1,19 @@
 %include "include.asm"
 
+struc percpu
+	.task: resq 1
+	.rsp_scratch: resq 1
+	.id: resb 1
+	resb 3
+	resd 1 ; Padding
+	.size:
+endstruc
+
 section .text
 ; Initialises the per-CPU data area (GS register)
 global cpu_local_init
 cpu_local_init:
-	mov rdi, SIZEOF_STRUCT_PERCPU
+	mov rdi, percpu.size
 	mov rsi, 0
 	extern kmalloc
 	call kmalloc
@@ -18,9 +27,12 @@ cpu_local_init:
 	wrmsr
 	pop rdi
 
-	mov qword [rdi], 0      ; task
-	mov qword [rdi + 8], 0  ; rsp_scratch
-	mov dword [rdi + 16], 0 ; id
+	extern lapic_id
+	call lapic_id
+
+	mov qword [rdi + percpu.task], 0
+	mov qword [rdi + percpu.rsp_scratch], 0
+	mov byte [rdi + percpu.id], al
 
 	ret
 

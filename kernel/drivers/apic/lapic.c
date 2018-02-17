@@ -25,7 +25,7 @@ static bool has_lapic(void)
 	return (edx & APIC_CPUID_BIT) != 0;
 }
 
-static uint8_t lapic_id(void)
+uint8_t lapic_id(void)
 {
 	uint32_t eax, ebx, ecx, edx = 0;
 	__get_cpuid(1, &eax, &ebx, &ecx, &edx);
@@ -87,6 +87,6 @@ void lapic_enable(void)
 	
 	// Clear any pending interrupts
 	lapic_write(APIC_REG_EOI, 0);
-	klog("apic", "Enabled local APIC for CPU %u\n", id);
+	klog("apic", "CPU %u online\n", id);
 }
 

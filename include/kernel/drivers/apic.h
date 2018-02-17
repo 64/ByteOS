@@ -22,7 +22,8 @@ struct lapic_info {
 void apic_init(void);
 void lapic_enable(void);
 void lapic_send_eoi(void);
-void ioapic_redirect(struct madt_entry_override *override, uint8_t target_apic);
+uint8_t lapic_id(void);
+void ioapic_redirect(uint32_t gsi, uint8_t source, uint16_t flags, uint8_t target_apic);
 
 extern struct lapic_info lapic_list[MAX_LAPICS];
 extern struct madt_entry_ioapic *ioapic_list[MAX_IOAPICS];

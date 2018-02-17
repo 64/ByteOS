@@ -34,19 +34,19 @@ static inline struct madt_entry_ioapic *gsi_to_ioapic(uint32_t gsi)
 	panic("I/O APIC not found for GSI %u", gsi);
 }
 
-void ioapic_redirect(struct madt_entry_override *override, uint8_t target_apic)
+void ioapic_redirect(uint32_t gsi, uint8_t source, uint16_t flags, uint8_t target_apic)
 {
-	struct madt_entry_ioapic *ioapic = gsi_to_ioapic(override->gsi);
+	struct madt_entry_ioapic *ioapic = gsi_to_ioapic(gsi);
 	virtaddr_t ioapic_base = phys_to_virt(ioapic->phys_addr);
 	
-	uint64_t redirection = override->source + IRQ_APIC_BASE;
-	if (override->flags & 2)
+	uint64_t redirection = source + IRQ_APIC_BASE;
+	if (flags & 2)
 		redirection |= (1 << 13);
-	if (override->flags & 8)
+	if (flags & 8)
 		redirection |= (1 << 15);
 	redirection |= ((uint64_t)target_apic) << 56;
 
-	uint32_t ioredtbl = (override->gsi - ioapic->gsi_base) * 2 + APIC_REG_REDTBL;
+	uint32_t ioredtbl = (gsi - ioapic->gsi_base) * 2 + APIC_REG_REDTBL;
 	ioapic_write(ioapic_base, ioredtbl + 0, (uint32_t)redirection);
 	ioapic_write(ioapic_base, ioredtbl + 1, (uint32_t)(redirection >> 32));
 }

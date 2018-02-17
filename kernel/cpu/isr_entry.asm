@@ -71,6 +71,13 @@ isr_irq:
 	push qword 0
 	isr_call_fn irq_handler
 
+global isr_irq_noop
+isr_irq_noop:
+	nop
+	extern lapic_base
+	mov dword [lapic_base + 0xB0], 0
+	iretq
+
 exception_routine:
 	isr_call_fn exception_handler
 
