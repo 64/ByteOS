@@ -392,6 +392,6 @@ higher_half:
 	mov rax, cr3
 	mov cr3, rax
 
-	extern long_mode_start
-	mov rax, long_mode_start
+	extern long_mode_entry
+	mov rax, long_mode_entry
 	jmp rax

@@ -3,7 +3,6 @@
 #include <cpuid.h>
 #include "libk.h"
 #include "types.h"
-#include "cpu.h"
 #include "mm.h"
 #include "util.h"
 #include "drivers/acpi.h"
@@ -11,8 +10,9 @@
 
 #define APIC_CPUID_BIT (1 << 9)
 
-#define APIC_REG_SPURIOUS 0xF0U
+#define APIC_REG_ID 0x20
 #define APIC_REG_EOI 0xB0
+#define APIC_REG_SPURIOUS 0xF0U
 #define APIC_REG_LINT0 0x350U
 #define APIC_REG_LINT1 0x360U
 
@@ -23,13 +23,6 @@ static bool has_lapic(void)
 	uint32_t eax, ebx, ecx, edx = 0;
 	__get_cpuid(1, &eax, &ebx, &ecx, &edx);
 	return (edx & APIC_CPUID_BIT) != 0;
-}
-
-uint8_t lapic_id(void)
-{
-	uint32_t eax, ebx, ecx, edx = 0;
-	__get_cpuid(1, &eax, &ebx, &ecx, &edx);
-	return (edx & 0xFF) >> 24;
 }
 
 static inline void lapic_write(uint32_t reg_offset, uint32_t data)
@@ -64,6 +57,11 @@ static inline void lapic_set_nmi(uint8_t vec, struct madt_entry_nmi *nmi_info)
 		lapic_write(APIC_REG_LINT1, nmi);
 }
 
+uint8_t lapic_id(void)
+{
+	return lapic_read(APIC_REG_ID) >> 24;
+}
+
 void lapic_send_eoi(void)
 {
 	lapic_write(APIC_REG_EOI, 0);
@@ -80,7 +78,7 @@ void lapic_enable(void)
 
 	for (size_t i = 0; i < nmi_list_size; i++)
 		if (nmi_list[i]->acpi_id == lapic->acpi_id || nmi_list[i]->acpi_id == 0xFF)
-			lapic_set_nmi(i + IRQ_NMI_BASE, nmi_list[i]);
+			lapic_set_nmi(IRQ_NMI_BASE + nmi_list[i]->lint_num, nmi_list[i]);
 
 	// Enable the LAPIC via the spurious interrupt register
 	lapic_write(APIC_REG_SPURIOUS, lapic_read(APIC_REG_SPURIOUS) | (1 << 8) | IRQ_APIC_SPURIOUS);

@@ -61,13 +61,21 @@ syscall_entry:
 	; Switch to kernel stack
 	mov [gs:0x8], rsp
 	mov rsp, [gs:0x0]
-	mov rsp, [rsp + SIZEOF_STRUCT_CONTEXT]
-	push qword [gs:0x8] ; Push old RSP to the stack
+	mov rsp, [0] ; TODO: Load kernel's stack pointer
+
+	; Setup simulated IRQ frame
+	push qword (GDT_USER_DATA | 0x3)
+	push qword [gs:0x8] ; Old RSP
+	pushfq ; rflags
+	push qword (GDT_USER_CODE | 0x3)
+	push rcx ; rip
 
 	; Interrupts will be safely handled on the kernel stack
 	sti
 
-	; Execute syscall code
+	push rax ; info
+
+	; Was the syscall out of range?
 	cmp rax, NUM_SYSCALLS
 	jae .bad_syscall
 
@@ -75,33 +83,52 @@ syscall_entry:
 	mov rax, [syscall_table + rax * 8]
 
 	; Save registers
-	push rcx
+	push rdi
+	push rsi
+	push rdx
+	push qword 0 ; rcx
+	push qword ENOSYS ; rax
+	push r8
+	push r9
+	push r10
+	push qword 0 ; r11
 	push rbx
 	push rbp
-	push r11
 	push r12
 	push r13
 	push r14
 	push r15
-	call rax ; Execute the syscall
-	; Restore registers
+	call rax
 	pop r15
 	pop r14
 	pop r13
 	pop r12
-	pop r11
 	pop rbp
 	pop rbx
-	pop rcx
+	add rsp, 8 ; r11
+	pop r10
+	pop r9
+	pop r8
+	add rsp, 16 ; rax, rcx
+	pop rdx
+	pop rsi
+	pop rdi
+
 	jmp .done
 .bad_syscall:
-	mov rax, SYSCALL_ERROR
+	mov rax, ENOSYS
 .done:
+	add rsp, 8 ; info
+	pop rcx ; rip
+	add rsp, 8 ; cs
+	pop r11 ; rflags
+
 	; Disable interrupts (don't want interrupts using a ring 3 stack)
 	cli
 
 	; Switch to user stack again
-	pop rsp
+	pop rsp ; rsp
+	add rsp, 8 ; ss
 
 	; rip is in rcx
 	; rflags is in r11

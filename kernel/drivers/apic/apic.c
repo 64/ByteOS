@@ -42,7 +42,7 @@ static void add_override(struct madt_entry_override *entry)
 	if (override_list_size >= MAX_OVERRIDES)
 		return;
 	override_list[override_list_size++] = entry;
-	klog("apic", "GSI %d overrides IRQ %u\n", entry->gsi, entry->source);
+	klog("apic", "GSI %d overrides IRQ %u, flags %x\n", entry->gsi, entry->source, entry->flags);
 }
 
 static void add_nmi(struct madt_entry_nmi *entry)
@@ -105,12 +105,9 @@ void apic_init(void)
 	// Enable the LAPIC for the BSP
 	lapic_enable();
 
-	// Initialised the (assumed) wirings for the legacy PIC IRQs
-	// Send all IRQs to the BSP for simplicity
-	for (uint8_t i = 0; i < 16; i++)
-		ioapic_redirect(i, i, 0, lapic_id());
+	// Boot all the cores
 
-	// Setup the actual overrides
-	for (size_t i = 0; i < override_list_size; i++)
-		ioapic_redirect(override_list[i]->gsi, override_list[i]->source, override_list[i]->flags, lapic_id());
+	// Initialise all I/O APICs
+	ioapic_init();
+
 }

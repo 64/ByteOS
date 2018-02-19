@@ -1,8 +1,8 @@
 %include "include.asm"
 
 section .text
-global long_mode_start
-long_mode_start:
+global long_mode_entry
+long_mode_entry:
 	mov ax, 0
 	mov ss, ax
 	mov ds, ax
@@ -12,8 +12,8 @@ long_mode_start:
 
 	push rbx ; Multiboot structure (physical address)
 
-	; Enable SSE3+, AVX
-	call enable_simd
+	; Initialises SIMD (AVX, AVX-512)
+	call simd_init
 
 	; Call global constructors
 	extern _init
@@ -24,8 +24,8 @@ long_mode_start:
 	call vga_tmode_init
 
 	; Load interrupt descriptor table
-	extern load_idt
-	call load_idt
+	extern interrupts_init
+	call interrupts_init
 
 	; Load TSS
 	mov ax, GDT_TSS
@@ -49,9 +49,9 @@ long_mode_start:
 	hlt
 	jmp .end
 
-; Enables AVX and AVX-512 if available
+; Initialises AVX and AVX-512 if available
 ; TODO: Test this
-enable_simd:
+simd_init:
 	push rax
 	push rbx
 	push rcx

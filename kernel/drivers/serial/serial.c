@@ -1,7 +1,7 @@
 #include <stdint.h>
 
 #include "drivers/serial.h"
-#include "io.h"
+#include "asm.h"
 
 #define COM1_PORT 0x3F8
 #define COM2_PORT 0x2F8

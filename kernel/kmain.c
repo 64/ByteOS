@@ -1,10 +1,9 @@
 #include "libk.h"
 #include "multiboot2.h"
 #include "mm.h"
-#include "proc.h"
 #include "types.h"
-#include "cpu.h"
 #include "util.h"
+#include "percpu.h"
 #include "drivers/apic.h"
 #include "drivers/acpi.h"
 
@@ -20,7 +19,7 @@ void kmain(physaddr_t mboot_info_phys)
 	acpi_init();
 	apic_init();
 	pmm_init(mem_map);
-	cpu_local_init();
+	percpu_init();
 
 	// At this point, we have physical and virtual memory allocation
 	//run_tasks();

@@ -11,8 +11,8 @@ endstruc
 
 section .text
 ; Initialises the per-CPU data area (GS register)
-global cpu_local_init
-cpu_local_init:
+global percpu_init
+percpu_init:
 	mov rdi, percpu.size
 	mov rsi, 0
 	extern kmalloc
@@ -34,13 +34,4 @@ cpu_local_init:
 	mov qword [rdi + percpu.rsp_scratch], 0
 	mov byte [rdi + percpu.id], al
 
-	ret
-
-global cpu_local_set_task
-; rdi: Pointer to task struct
-cpu_local_set_task:
-	mov [gs:0x0], rdi
-	extern tss64
-	mov rdi, [rdi + SIZEOF_STRUCT_CONTEXT]
-	mov [tss64 + 4], rdi ; RSP0
 	ret

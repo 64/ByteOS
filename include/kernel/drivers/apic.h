@@ -11,7 +11,8 @@
 
 #define IRQ_APIC_SPURIOUS 0xFF
 #define IRQ_APIC_BASE 0x30
-#define IRQ_NMI_BASE (IRQ_APIC_SPURIOUS - MAX_NMIS)
+// One for each LINT pin. Each CPU needs to have a different handler in its own IDT for this
+#define IRQ_NMI_BASE (IRQ_APIC_SPURIOUS - 2) 
 
 struct lapic_info {
 	uint8_t id;
@@ -20,6 +21,7 @@ struct lapic_info {
 };
 
 void apic_init(void);
+void ioapic_init(void);
 void lapic_enable(void);
 void lapic_send_eoi(void);
 uint8_t lapic_id(void);

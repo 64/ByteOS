@@ -1,5 +1,4 @@
 #include "libk.h"
-#include "proc.h"
 #include "syscall.h"
 
 #define NAME(name) syscall_ ## name
@@ -13,7 +12,7 @@ static uint64_t NAME(write)(uint64_t arg)
 
 static uint64_t NAME(yield)(void)
 {
-	task_switch_fn();
+	//task_switch_fn();
 	return 0;
 }
 

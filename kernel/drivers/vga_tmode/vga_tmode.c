@@ -3,7 +3,7 @@
 #include "drivers/vga_tmode.h"
 #include "drivers/cansid.h"
 #include "drivers/serial.h"
-#include "io.h"
+#include "asm.h"
 #include "libk.h"
 
 const size_t VGAWIDTH = 80;
