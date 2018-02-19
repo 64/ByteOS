@@ -15,7 +15,7 @@ OBJCOPY		:= x86_64-elf-objcopy
 GDB		:= gdb
 
 CFLAGS		?= -Og -g
-CFLAGS		+= -ffreestanding -mno-red-zone -mcmodel=kernel -Iinclude -Iinclude/kernel -std=gnu11
+CFLAGS		+= -ffreestanding -mno-red-zone -mcmodel=kernel -Iinclude -std=gnu11
 CFLAGS		+= -Wall -Werror -Wextra -Wparentheses -Wmissing-declarations -Wunreachable-code -Wunused 
 CFLAGS		+= -Wmissing-field-initializers -Wmissing-prototypes -Wpointer-arith -Wswitch-enum
 CFLAGS		+= -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wuninitialized

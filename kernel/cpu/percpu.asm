@@ -25,11 +25,11 @@ percpu_init:
 	shr rdi, 32
 	mov edx, edi
 	wrmsr
-	pop rdi
 
 	extern lapic_id
 	call lapic_id
 
+	pop rdi
 	mov qword [rdi + percpu.task], 0
 	mov qword [rdi + percpu.rsp_scratch], 0
 	mov byte [rdi + percpu.id], al
