@@ -2,6 +2,7 @@
 #include "drivers/apic.h"
 #include "libk.h"
 #include "asm.h"
+#include "util.h"
 
 void irq_init(void)
 {
@@ -22,13 +23,31 @@ void irq_init(void)
 	outb(0x21, 0xFF);
 }
 
-static inline void irq_ack(void)
+void irq_mask(uint8_t vec)
 {
-	lapic_send_eoi();
+	kassert_dbg(vec >= IRQ_APIC_BASE);
+	ioapic_mask(vec - IRQ_APIC_BASE);
+}
+
+void irq_unmask(uint8_t vec)
+{
+	kassert_dbg(vec >= IRQ_APIC_BASE);
+	ioapic_unmask(vec - IRQ_APIC_BASE);
+}
+
+void irq_eoi(uint8_t vec)
+{
+	lapic_eoi(vec);
 }
 
 void irq_handler(struct stack_regs *regs)
 {
-	irq_ack();
-	kprintf("Unhandled IRQ at %p\n", (void *)regs->rip);
+	uint8_t int_no = regs->info & 0xFF;
+	irq_mask(int_no);
+	if (int_no < (IRQ_APIC_BASE + 16))
+		kprintf("Unhandled ISA IRQ %u at %p\n", ioapic_gsi_to_isa(int_no - IRQ_APIC_BASE), (void *)regs->rip);
+	else
+		kprintf("Unhandled IRQ %u at %p\n", int_no, (void *)regs->rip);
+	irq_eoi(int_no);
+	irq_unmask(int_no);
 }

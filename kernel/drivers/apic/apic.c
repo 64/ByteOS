@@ -101,13 +101,4 @@ void apic_init(void)
 		panic("no MADT found in ACPI tables");
 
 	parse_madt(madt);
-
-	// Enable the LAPIC for the BSP
-	lapic_enable();
-
-	// Boot all the cores
-
-	// Initialise all I/O APICs
-	ioapic_init();
-
 }

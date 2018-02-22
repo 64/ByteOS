@@ -72,7 +72,9 @@ isr_stub_%1:
 %macro isr_stub_noerr 1
 global isr_stub_%1
 isr_stub_%1:
-	push qword %1
+	; For consistency with the err variant
+	push qword 0
+	mov dword [rsp + 4], %1
 	jmp isr_common_exception
 %endmacro
 

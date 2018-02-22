@@ -26,8 +26,8 @@ percpu_init:
 	mov edx, edi
 	wrmsr
 
-	extern lapic_id
-	call lapic_id
+	extern smp_cpu_id
+	call smp_cpu_id
 
 	pop rdi
 	mov qword [rdi + percpu.task], 0

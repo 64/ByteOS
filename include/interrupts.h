@@ -58,3 +58,6 @@ void load_idt(void);
 
 void irq_init(void);
 void irq_handler(struct stack_regs *);
+void irq_eoi(uint8_t);
+void irq_mask(uint8_t);
+void irq_unmask(uint8_t);

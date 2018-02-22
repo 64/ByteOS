@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "libk.h"
 #include "mm.h"
+#include "asm.h"
 #include "util.h"
 
 #define P4_ADDR_SHIFT 39
@@ -170,6 +171,7 @@ void paging_map_page(struct page_table *p4, physaddr_t phys, virtaddr_t virt, un
 
 	flags &= ~PAGING_ALLOC_MMAP; // Don't care about this flag anymore
 	p1_table->pages[p1_index] = (phys & PTE_ADDR_MASK) | PAGE_PRESENT | flags;
+	invlpg((uintptr_t)virt);
 }
 
 physaddr_t paging_get_phys_addr(struct page_table *p4, void *virt)

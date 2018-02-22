@@ -21,11 +21,17 @@ struct lapic_info {
 };
 
 void apic_init(void);
-void ioapic_init(void);
+
 void lapic_enable(void);
-void lapic_send_eoi(void);
+void lapic_eoi(uint8_t);
 uint8_t lapic_id(void);
+
+void ioapic_init(void);
 void ioapic_redirect(uint32_t gsi, uint8_t source, uint16_t flags, uint8_t target_apic);
+void ioapic_mask(uint32_t gsi);
+void ioapic_unmask(uint32_t gsi);
+uint8_t ioapic_isa_to_gsi(uint8_t isa);
+uint8_t ioapic_gsi_to_isa(uint8_t gsi);
 
 extern struct lapic_info lapic_list[MAX_LAPICS];
 extern struct madt_entry_ioapic *ioapic_list[MAX_IOAPICS];

@@ -62,9 +62,11 @@ uint8_t lapic_id(void)
 	return lapic_read(APIC_REG_ID) >> 24;
 }
 
-void lapic_send_eoi(void)
+void lapic_eoi(uint8_t vec)
 {
-	lapic_write(APIC_REG_EOI, 0);
+	// TODO: Check the corresponding bit in the LAPIC's ISR
+	if (vec != IRQ_NMI_BASE && vec != IRQ_NMI_BASE + 1)
+		lapic_write(APIC_REG_EOI, 0);
 }
 
 void lapic_enable(void)

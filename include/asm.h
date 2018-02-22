@@ -4,13 +4,13 @@
 
 static inline uint64_t msr_read(uint64_t msr)
 {
-	uint64_t rv_low, rv_high;
+	uint64_t rv;
 	asm volatile (
 		"rdmsr"
-		: "=d"(rv_high), "=a"(rv_low)
+		: "=A"(rv)
 		: "c"(msr)
 	);
-	return rv_low | ((rv_high << 32) & 0xFFFFFFFF00000000);
+	return rv;
 }
 
 static inline void msr_write(uint64_t msr, uint64_t value)
@@ -18,7 +18,17 @@ static inline void msr_write(uint64_t msr, uint64_t value)
 	asm volatile (
 		"wrmsr"
 		:
-		: "c"(msr), "a"(value & 0xFFFFFFFF), "d"((value >> 32) & 0xFFFFFFFF)
+		: "c"(msr), "A"(value)
+	);
+}
+
+static inline void invlpg(uint64_t addr)
+{
+	asm volatile (
+		"invlpg (%0)"
+		:
+		: "b"(addr)
+		: "memory"
 	);
 }
 

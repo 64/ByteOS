@@ -53,13 +53,14 @@ static void page_fault(uint8_t int_no, struct stack_regs *regs)
 		(void *)faulting_address,
 		(void *)regs->rip, (void *)regs->rsp,
 		int_no, (regs->info & 0xFFFFFFFF),
-		(unsigned int)regs->info & 0x1F
+		(unsigned int)(regs->info & 0x1F)
 	);
 }
 
 void exception_handler(struct stack_regs *regs)
 {
 	uint8_t int_no = (uint8_t)(regs->info >> 32);
+	kprintf("%lx\n", regs->info);
 	switch (int_no) {
 		case INT_PAGE_FAULT:
 			page_fault(int_no, regs);
@@ -71,7 +72,7 @@ void exception_handler(struct stack_regs *regs)
 				"\tint_no: %u, err_code: %lu\n",
 				exception_messages[int_no],
 				(void *)regs->rip, (void *)regs->rsp,
-				int_no, (regs->info & 0xFFFFFFFF)
+				int_no, (regs->info >> 32)
 			);
 	}
 }
