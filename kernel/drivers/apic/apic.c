@@ -2,6 +2,7 @@
 #include "libk.h"
 #include "types.h"
 #include "util.h"
+#include "interrupts.h"
 #include "mm.h"
 #include "drivers/apic.h"
 

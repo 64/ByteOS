@@ -9,11 +9,6 @@
 #define MAX_NMIS (2 * MAX_LAPICS)
 #define MAX_OVERRIDES 48
 
-#define IRQ_APIC_SPURIOUS 0xFF
-#define IRQ_APIC_BASE 0x30
-// One for each LINT pin. Each CPU needs to have a different handler in its own IDT for this
-#define IRQ_NMI_BASE (IRQ_APIC_SPURIOUS - 2) 
-
 struct lapic_info {
 	uint8_t id;
 	uint8_t acpi_id;

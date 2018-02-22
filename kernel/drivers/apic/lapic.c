@@ -5,6 +5,7 @@
 #include "types.h"
 #include "mm.h"
 #include "util.h"
+#include "interrupts.h"
 #include "drivers/acpi.h"
 #include "drivers/apic.h"
 

@@ -7,6 +7,12 @@
 #define IST_NMI 1
 #define IST_DOUBLE_FAULT 2
 
+#define IRQ_APIC_SPURIOUS 0xFF
+#define IRQ_APIC_BASE 0x30
+#define IRQ_NMI_BASE (IRQ_APIC_SPURIOUS - 2) // One for each LINT pin.
+
+#define ISA_TO_INTERRUPT(x) (ioapic_isa_to_gsi(x) + IRQ_APIC_BASE)
+
 struct stack_regs {
 	// These registers are not generally saved by the caller
 	uint64_t r15;
@@ -37,6 +43,8 @@ struct stack_regs {
 	uint64_t ss;
 };
 
+typedef void (*irq_handler_t)(struct stack_regs *);
+
 struct idt_entry {
 	uint16_t offset_low;
 	uint16_t selector;
@@ -61,3 +69,14 @@ void irq_handler(struct stack_regs *);
 void irq_eoi(uint8_t);
 void irq_mask(uint8_t);
 void irq_unmask(uint8_t);
+void irq_register_handler(uint8_t vec, irq_handler_t irq);
+
+static inline void irq_enable(void)
+{
+	asm volatile ("sti");
+}
+
+static inline void irq_disable(void)
+{
+	asm volatile ("cli");
+}

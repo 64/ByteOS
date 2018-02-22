@@ -4,6 +4,8 @@
 #include "asm.h"
 #include "util.h"
 
+static irq_handler_t irq_handlers[256];
+
 void irq_init(void)
 {
 	// Remap the PIC to interrupts 0x20-0x2F
@@ -21,6 +23,13 @@ void irq_init(void)
 	// Disable the PIC by masking all interrupts
 	outb(0xA1, 0xFF);
 	outb(0x21, 0xFF);
+
+	memset(irq_handlers, 0, sizeof irq_handlers);
+}
+
+void irq_register_handler(uint8_t vec, irq_handler_t irq)
+{
+	irq_handlers[vec] = irq;
 }
 
 void irq_mask(uint8_t vec)
@@ -44,10 +53,12 @@ void irq_handler(struct stack_regs *regs)
 {
 	uint8_t int_no = regs->info & 0xFF;
 	irq_mask(int_no);
-	if (int_no < (IRQ_APIC_BASE + 16))
-		kprintf("Unhandled ISA IRQ %u at %p\n", ioapic_gsi_to_isa(int_no - IRQ_APIC_BASE), (void *)regs->rip);
-	else
+	irq_handler_t handler = irq_handlers[int_no];
+	if (handler != NULL)
+		handler(regs);
+	else {
 		kprintf("Unhandled IRQ %u at %p\n", int_no, (void *)regs->rip);
+	}
 	irq_eoi(int_no);
 	irq_unmask(int_no);
 }

@@ -1,6 +1,7 @@
 #include "mm.h"
 #include "libk.h"
 #include "util.h"
+#include "interrupts.h"
 #include "drivers/acpi.h"
 #include "drivers/apic.h"
 
