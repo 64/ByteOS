@@ -1,6 +1,7 @@
 #include "mm.h"
 #include "libk.h"
 #include "util.h"
+#include "spin.h"
 
 #define UNIT sizeof(struct slob_header)
 
@@ -14,6 +15,8 @@
  * and another is used for large allocations (roughly greater than a page).
  *
  * Inspired by Linux's SLOB allocator. */
+
+static spinlock_t slob_lock;
 
 struct slob_large_alloc {
 	struct slist_entry list;
@@ -35,8 +38,10 @@ static void morecore(void)
 	virtaddr_t p = page_to_virt(pmm_alloc_order(0, GFP_NONE)); // TODO: Check for fail
 	struct slob_header *hd = (struct slob_header *)p;
 	hd->units = (PAGE_SIZE - UNIT) / UNIT;
+
 	slist_set_next(hd, list, head);
 	head = hd;
+
 	klog("slob", "morecore allocated a page\n");
 }
 
@@ -49,6 +54,7 @@ static virtaddr_t slob_alloc(size_t bytes, unsigned int alloc_flags)
 		// This should only loop at most once since our allocation is guaranteed to succeed
 		// if morecore() is called. This is only true because morecore allocates at least
 		// BIGALLOC bytes, and also no other allocations can occur inbetween.
+		spin_lock(&slob_lock);
 		while (1) {
 			struct slob_header *prev = NULL;
 			slist_foreach(block, list, head) {
@@ -58,6 +64,7 @@ static virtaddr_t slob_alloc(size_t bytes, unsigned int alloc_flags)
 						head = block;
 					else
 						slist_set_next(prev, list, slist_get_next(block, list));
+					spin_unlock(&slob_lock);
 					return (virtaddr_t)(block + 1);
 				} else if (block->units > units) {
 					// Split a block
@@ -70,6 +77,7 @@ static virtaddr_t slob_alloc(size_t bytes, unsigned int alloc_flags)
 						head = new_block;
 					else
 						slist_set_next(prev, list, new_block);
+					spin_unlock(&slob_lock);
 					return (virtaddr_t)(block + 1);
 				}
 				prev = block;
@@ -90,8 +98,10 @@ static void slob_free(virtaddr_t p)
 		panic("unimplemented");
 	} else {
 		struct slob_header *header = (struct slob_header *)p - 1;
+		spin_lock(&slob_lock);
 		slist_set_next(header, list, head);
 		head = header;
+		spin_unlock(&slob_lock);
 	}
 }
 

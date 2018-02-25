@@ -2,6 +2,7 @@
 
 ; Interrupt descriptor table
 section .data
+align 16
 global idt64
 idt64:
 	times 256 dq 0, 0

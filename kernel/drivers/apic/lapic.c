@@ -16,6 +16,8 @@
 #define APIC_REG_SPURIOUS 0xF0U
 #define APIC_REG_LINT0 0x350U
 #define APIC_REG_LINT1 0x360U
+#define APIC_REG_ICR0 0x300U
+#define APIC_REG_ICR1 0x310U
 
 virtaddr_t lapic_base; // Shared by all CPUs
 
@@ -70,6 +72,12 @@ void lapic_eoi(uint8_t vec)
 		lapic_write(APIC_REG_EOI, 0);
 }
 
+void lapic_send_ipi(uint8_t target, uint32_t flags)
+{
+	lapic_write(APIC_REG_ICR1, (uint32_t)target << 24);
+	lapic_write(APIC_REG_ICR0, flags);
+}
+
 void lapic_enable(void)
 {
 	// TODO: Fallback to PIC
@@ -88,6 +96,5 @@ void lapic_enable(void)
 	
 	// Clear any pending interrupts
 	lapic_write(APIC_REG_EOI, 0);
-	klog("apic", "CPU %u online\n", id);
 }
 

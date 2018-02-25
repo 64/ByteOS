@@ -11,6 +11,7 @@ CC		?= cc
 TEST_CC		:= $(CC)
 CC		:= x86_64-elf-gcc
 OBJDUMP		:= x86_64-elf-objdump
+READELF		:= x86_64-elf-readelf
 OBJCOPY		:= x86_64-elf-objcopy
 GDB		:= gdb
 
@@ -21,7 +22,7 @@ CFLAGS		+= -Wmissing-field-initializers -Wmissing-prototypes -Wpointer-arith -Ws
 CFLAGS		+= -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wuninitialized
 CFLAGS		+= -mno-sse -mno-mmx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-sse4a
 ASFLAGS		:= -f elf64 -F dwarf -g -w+all -Werror -i$(shell pwd)/include/
-EMUFLAGS	:= -net none -smp 2 -serial stdio -cdrom $(ISO)
+EMUFLAGS	:= -net none -smp sockets=1,cores=4,threads=1 -serial stdio -cdrom $(ISO)
 ASTYLEFLAGS	:= --style=linux -z2 -k3 -H -xg -p -T8 -S
 BOCHSFLAGS      := -f .bochsrc -q
 
@@ -76,6 +77,9 @@ debug: $(ISO)
 
 disassemble: build/ $(KERNEL)
 	@$(OBJDUMP) --no-show-raw-insn -d -Mintel $(KERNEL) | source-highlight -s asm -f esc256 | less -eRiMX
+
+symbols: build/ $(KERNEL)
+	@$(READELF) build/byteos.sym -s | less
 
 update-modules:
 	git submodule update --init --recursive --remote

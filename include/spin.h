@@ -1,17 +1,24 @@
 #pragma once
 
-typedef int spinlock_t;
+#include <stdbool.h>
 
-static inline void spin_lock(spinlock_t *lock)
-{
-	while (!__sync_bool_compare_and_swap(lock, 0, 1))
-		;
-	__sync_synchronize();
-}
+#include "asm.h"
 
-static inline void spin_unlock(spinlock_t *lock)
+typedef uint64_t spinlock_t;
+
+void spin_lock(spinlock_t * volatile lock);
+void spin_unlock(spinlock_t * volatile lock);
+
+#define spin_lock_irqsave(lock, rflags) ({ \
+	rflags = read_rflags(); \
+	cli(); \
+	spin_lock(lock); })
+
+#define spin_unlock_irqsave(lock, rflags) ({ \
+	spin_unlock(lock); \
+	write_rflags(rflags); })
+
+static inline void spin_init(spinlock_t * volatile lock)
 {
-	__sync_synchronize();
 	*lock = 0;
 }
-

@@ -25,6 +25,8 @@ void irq_init(void)
 	outb(0x21, 0xFF);
 
 	memset(irq_handlers, 0, sizeof irq_handlers);
+
+	irq_disable();
 }
 
 void irq_register_handler(uint8_t vec, irq_handler_t irq)

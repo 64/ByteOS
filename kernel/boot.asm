@@ -72,6 +72,7 @@ ist_stack_2:
 %endmacro
 
 section .data
+align 16
 global tss64
 global interrupt_stack_table
 tss64:
@@ -91,6 +92,7 @@ interrupt_stack_table:
 	dw 0 ; I/O Map Base Address
 tss_size equ $ - tss64 - 1
 
+align 16
 global gdt64
 gdt64:                               ; Global Descriptor Table (64-bit)
 	.null equ $ - gdt64          ; The null descriptor
@@ -144,6 +146,7 @@ gdt64:                               ; Global Descriptor Table (64-bit)
 	db 0                         ; Base (byte 4)
 	dd 0                         ; Base (bytes 5-8)
 	dd 0                         ; Zero / reserved
+global gdt_size
 gdt_size equ $ - gdt64 - 1
 
 section .text
@@ -307,9 +310,9 @@ _start:
 	; Set P4 address in CR3
 	mov eax, p4_table
 	mov cr3, eax
-	; Enable PAE flag
+	; Enable PAE flag, global flag
 	mov eax, cr4
-	or eax, 1 << 5
+	or eax, (1 << 5) | (1 << 7)
 	mov cr4, eax
 	; Set long mode, NXE bit
 	mov ecx, 0xC0000080

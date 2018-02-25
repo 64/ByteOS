@@ -38,6 +38,11 @@ struct unreachable_data {
 	struct source_location location;
 };
 
+struct invalid_value_data {
+	struct source_location location;
+	struct type_descriptor *type;
+};
+
 struct source_location unknown_location = {
 	"<unknown file>", 0, 0
 };
@@ -59,6 +64,7 @@ void __ubsan_handle_out_of_bounds(struct out_of_bounds_data *data, uintptr_t ind
 void __ubsan_handle_builtin_unreachable(struct unreachable_data *data);
 void __ubsan_handle_mul_overflow(struct overflow_data *data, uintptr_t lhs, uintptr_t rhs);
 void __ubsan_handle_shift_out_of_bounds(struct out_of_bounds_data *data, uintptr_t lhs, uintptr_t rhs);
+void __ubsan_handle_load_invalid_value(struct invalid_value_data *data, uintptr_t value);
 
 void __ubsan_handle_type_mismatch(struct type_mismatch_info *type_mismatch, uintptr_t pointer)
 {
@@ -66,7 +72,8 @@ void __ubsan_handle_type_mismatch(struct type_mismatch_info *type_mismatch, uint
 	if (pointer == 0)
 		message = "null pointer access";
 	else if (type_mismatch->alignment != 0 && (pointer & (type_mismatch->alignment - 1)))
-		message = "unaligned memory access";
+		//message = "unaligned memory access";
+		return;
 	else
 		message = "type mismatch";
 	ubsan_abort(&type_mismatch->location, message);
@@ -110,4 +117,9 @@ void __ubsan_handle_mul_overflow(struct overflow_data *data, uintptr_t UNUSED(lh
 void __ubsan_handle_shift_out_of_bounds(struct out_of_bounds_data *data, uintptr_t UNUSED(lhs), uintptr_t UNUSED(rhs))
 {
 	ubsan_abort(&data->location, "shift out of bounds");
+}
+
+void __ubsan_handle_load_invalid_value(struct invalid_value_data *data, uintptr_t UNUSED(value))
+{
+	ubsan_abort(&data->location, "invalid value load");
 }

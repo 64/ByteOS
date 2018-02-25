@@ -69,10 +69,10 @@ void exception_handler(struct stack_regs *regs)
 			panic(
 				"%s:\n"
 				"\trip: %p, rsp: %p\n"
-				"\tint_no: %u, err_code: %lu\n",
+				"\tint_no: %u, err_code: %u\n",
 				exception_messages[int_no],
 				(void *)regs->rip, (void *)regs->rsp,
-				int_no, (regs->info >> 32)
+				int_no, (regs->info && 0xFFFFFFFF)
 			);
 	}
 }

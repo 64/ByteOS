@@ -20,6 +20,7 @@ void apic_init(void);
 void lapic_enable(void);
 void lapic_eoi(uint8_t);
 uint8_t lapic_id(void);
+void lapic_send_ipi(uint8_t target, uint32_t flags);
 
 void ioapic_init(void);
 void ioapic_redirect(uint32_t gsi, uint8_t source, uint16_t flags, uint8_t target_apic);

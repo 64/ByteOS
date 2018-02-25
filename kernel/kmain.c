@@ -3,6 +3,7 @@
 #include "mm.h"
 #include "types.h"
 #include "smp.h"
+#include "spin.h"
 #include "interrupts.h"
 #include "util.h"
 #include "percpu.h"

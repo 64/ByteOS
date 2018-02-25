@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "multiboot2.h"
 #include "types.h"
+#include "spin.h"
 #include "ds/linked.h"
 
 #define KERNEL_TEXT_BASE 0xFFFFFFFF80000000

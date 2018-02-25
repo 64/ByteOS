@@ -140,7 +140,7 @@ void paging_map_page(struct page_table *p4, physaddr_t phys, virtaddr_t virt, un
 	const uint16_t p2_index = (va & P2_ADDR_MASK) >> P2_ADDR_SHIFT;
 	const uint16_t p1_index = (va & P1_ADDR_MASK) >> P1_ADDR_SHIFT;
 
-	if ((uintptr_t)virt < 0xFFFF000000000000)
+	if ((uintptr_t)virt < 0xFFFF000000000000 && (flags & PAGE_GLOBAL) == 0)
 		flags |= PAGE_USER_ACCESSIBLE;
 	else
 		flags |= PAGE_GLOBAL;

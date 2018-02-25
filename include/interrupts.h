@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include "types.h"
+#include "asm.h"
 
 #define IST_NONE 0
 #define IST_NMI 1
@@ -73,10 +74,10 @@ void irq_register_handler(uint8_t vec, irq_handler_t irq);
 
 static inline void irq_enable(void)
 {
-	asm volatile ("sti");
+	sti();
 }
 
 static inline void irq_disable(void)
 {
-	asm volatile ("cli");
+	cli();
 }

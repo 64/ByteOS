@@ -4,6 +4,7 @@
 #include "util.h"
 
 struct zone *zone_list;
+spinlock_t zone_list_lock;
 
 struct page *const page_data = (struct page *)KERNEL_PAGE_DATA;
 
@@ -88,6 +89,7 @@ static struct zone *init_zone(struct mmap_region *rg)
 void pmm_init(struct mmap *mmap)
 {
 	struct zone *tail = NULL;
+	spin_init(&zone_list_lock);
 	reserve_page_data(mmap);
 	for (size_t i = 0; i < mmap->available.count; i++) {
 		struct zone *tmp = init_zone(&mmap->available.regions[i]);
@@ -149,12 +151,16 @@ static struct page *zone_alloc_order(struct zone *zone, unsigned int order, unsi
 struct page *pmm_alloc_order(unsigned int order, unsigned int alloc_flags)
 {
 	kassert(order < MAX_ORDER);
+	spin_lock(&zone_list_lock);
 	slist_foreach(zone, list, zone_list) {
 		// TODO: Early check zone with page count before alloc
 		struct page *rv = zone_alloc_order(zone, order, alloc_flags);
-		if (rv != NULL)
+		if (rv != NULL) {
+			spin_unlock(&zone_list_lock);
 			return rv;
+		}
 	}
+	spin_unlock(&zone_list_lock);
 	return NULL;
 }
 
@@ -169,13 +175,10 @@ static struct zone *page_to_zone(struct page *page)
 	return NULL;
 }
 
-void pmm_free_order(struct page *page, unsigned int order)
+static void __pmm_free_order(struct page *page, unsigned int order, struct zone *zone)
 {
-	kassert(page != NULL);
-	kassert(order < MAX_ORDER);
 	struct page *buddy = page_buddy(page, order);
 	struct page *first = (void *)MIN((uintptr_t)buddy, (uintptr_t)page);
-	struct zone *zone = page_to_zone(page);
 	// If buddy is free, merge
 	// If buddy is not free, insert page back into list
 	if (buddy->count == 0 && buddy->order == (int8_t)order && order < (MAX_ORDER - 1)) {
@@ -188,13 +191,22 @@ void pmm_free_order(struct page *page, unsigned int order)
 			dlist_set_prev(next, list, prev);
 		// Insert first into list order + 1
 		klog("pmm", "Merging blocks of order %u\n", order);
-		pmm_free_order(first, order + 1);
-
+		__pmm_free_order(first, order + 1, zone);
 	} else {
 		dlist_set_next(page, list, zone->free_lists[order]);
 		zone->free_lists[order] = page;
 		page->order = order;
 	}
+}
+
+void pmm_free_order(struct page *page, unsigned int order)
+{
+	kassert(page != NULL);
+	kassert(order < MAX_ORDER);
+	struct zone *zone = page_to_zone(page);
+	spin_lock(&zone_list_lock);
+	__pmm_free_order(page, order, zone);
+	spin_unlock(&zone_list_lock);
 }
 
 

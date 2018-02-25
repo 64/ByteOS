@@ -4,6 +4,7 @@
 #include "drivers/cansid.h"
 #include "drivers/serial.h"
 #include "asm.h"
+#include "spin.h"
 #include "libk.h"
 
 const size_t VGAWIDTH = 80;
@@ -13,12 +14,15 @@ static uint16_t *const VGABUF = (uint16_t *)0xFFFFFFFF800B8000;
 static size_t x_pos, y_pos;
 static struct cansid_state cansid_state;
 
+static spinlock_t vga_tmode_lock;
+
 void vga_tmode_init(void);
 
 void vga_tmode_init(void)
 {
 	cansid_state = cansid_init();
 	serial_init();
+	spin_init(&vga_tmode_lock);
 	vga_tmode_puts("\x1B[=1;30;47m                                     ByteOS");
 	vga_tmode_puts("                                     \x1B[0m");
 }

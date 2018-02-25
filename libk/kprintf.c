@@ -2,11 +2,14 @@
 #include <stdbool.h>
 
 #include "libk.h"
+#include "spin.h"
 #include "drivers/vga_tmode.h"
 #include "drivers/serial.h"
 
 #define to_hex_char(x) ((x) < 10 ? (x) + '0' : (x) - 10 + 'A')
 #define ATOI_BUFLEN 256
+
+static spinlock_t kprintf_lock;
 
 static inline void kprintf_write_char(char c)
 {
@@ -73,6 +76,8 @@ int kprintf(const char *fmt, ...)
 
 	va_start(params, fmt);
 
+	uint64_t rflags;
+	spin_lock_irqsave(&kprintf_lock, rflags);
 	while (*pfmt) {
 		if (*pfmt == '%') {
 			switch (pfmt[1]) {
@@ -138,6 +143,7 @@ int kprintf(const char *fmt, ...)
 		pfmt++;
 	}
 
+	spin_unlock_irqsave(&kprintf_lock, rflags);
 	va_end(params);
 	return nwritten;
 }
