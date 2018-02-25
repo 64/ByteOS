@@ -3,7 +3,7 @@ set disassembly-flavor intel
 set pagination off
 symbol-file build/byteos.sym
 target remote localhost:1234
-hbreak long_mode_start
+hbreak long_mode_entry
 continue
 define hook-stop
 list *$pc

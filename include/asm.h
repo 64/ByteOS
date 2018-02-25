@@ -4,22 +4,23 @@
 
 static inline uint64_t msr_read(uint64_t msr)
 {
-	uint64_t rv;
+	uint32_t low, high;
 	asm volatile (
 		"rdmsr"
-		: "=A"(rv)
+		: "=a"(low), "=d"(high)
 		: "c"(msr)
-		: "rdx"
 	);
-	return rv;
+	return ((uint64_t)high << 32) | low;
 }
 
 static inline void msr_write(uint64_t msr, uint64_t value)
 {
+	uint32_t low = value & 0xFFFFFFFF;
+	uint32_t high = value >> 32;
 	asm volatile (
 		"wrmsr"
 		:
-		: "c"(msr), "A"(value)
+		: "c"(msr), "a"(low), "d"(high)
 	);
 }
 
