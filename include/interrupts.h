@@ -10,7 +10,11 @@
 
 #define IRQ_APIC_SPURIOUS 0xFF
 #define IRQ_APIC_BASE 0x30
-#define IRQ_NMI_BASE (IRQ_APIC_SPURIOUS - 2) // One for each LINT pin.
+#define IRQ_LINT_BASE (IRQ_APIC_SPURIOUS - 2) // One for each LINT pin.
+
+#define IRQ_NUM_IPIS 1
+#define IRQ_IPI_BASE (IRQ_LINT_BASE - IRQ_NUM_IPIS)
+#define IRQ_IPI_ABORT (IRQ_IPI_BASE + 0)
 
 #define ISA_TO_INTERRUPT(x) (ioapic_isa_to_gsi(x) + IRQ_APIC_BASE)
 

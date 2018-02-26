@@ -15,12 +15,13 @@ READELF		:= x86_64-elf-readelf
 OBJCOPY		:= x86_64-elf-objcopy
 GDB		:= gdb
 
-CFLAGS		?= -Og -g
 CFLAGS		+= -ffreestanding -mno-red-zone -mcmodel=kernel -Iinclude -std=gnu11
 CFLAGS		+= -Wall -Werror -Wextra -Wparentheses -Wmissing-declarations -Wunreachable-code -Wunused 
 CFLAGS		+= -Wmissing-field-initializers -Wmissing-prototypes -Wpointer-arith -Wswitch-enum
 CFLAGS		+= -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wuninitialized
 CFLAGS		+= -mno-sse -mno-mmx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-sse4a
+DEBUG_CFLAGS    := -fsanitize=undefined -Og -g
+RELEASE_CFLAGS  := -O3
 ASFLAGS		:= -f elf64 -F dwarf -g -w+all -Werror -i$(shell pwd)/include/
 EMUFLAGS	:= -net none -smp sockets=1,cores=4,threads=1 -serial stdio -cdrom $(ISO)
 ASTYLEFLAGS	:= --style=linux -z2 -k3 -H -xg -p -T8 -S
@@ -50,7 +51,13 @@ ifeq ($(OS),Linux)
 	EMUFLAGS += -M accel=kvm:tcg
 endif
 
-.PHONY: all clean run debug bochs disassemble update-modules copy-all copy-snow copy-ds copy-cansid loc tidy test
+ifeq ($(DEBUG),0)
+	CFLAGS += $(RELEASE_CFLAGS)
+else
+	CFLAGS += $(DEBUG_CFLAGS)
+endif
+
+.PHONY: all clean run bochs gdb disassemble update-modules copy-all copy-snow copy-ds copy-cansid loc tidy test
 .SUFFIXES: .o .c .asm
 
 all: $(ISO)
@@ -68,8 +75,7 @@ clean:
 	@$(RM) $(KERNEL_OBJ_ALL) $(LIBK_OBJ)
 	@$(RM) $(DEPFILES)
 
-debug: CFLAGS += -fsanitize=undefined
-debug: $(ISO)
+gdb: $(ISO)
 	@$(EMU) $(EMUFLAGS) -no-reboot -s -S &
 	@sleep 0.5
 	@$(GDB)

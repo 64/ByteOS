@@ -37,7 +37,6 @@ static void smp_boot_ap(size_t index)
 		// Identity map for simplicity
 		paging_map_page(kernel_p4, trampoline_start + i, (virtaddr_t)(trampoline_start + i), PAGE_WRITABLE | PAGE_GLOBAL | PAGE_EXECUTABLE);
 		memcpy((virtaddr_t)(trampoline_start + i), (virtaddr_t)(vstart + i), PAGE_SIZE);
-		// TODO: Unmap
 	}
 
 	if (smp_ap_stack == NULL) {
@@ -50,17 +49,17 @@ static void smp_boot_ap(size_t index)
 
 	// Adapted from https://nemez.net/osdev/lapic.txt
 	// Send the INIT IPI
-	lapic_send_ipi(lapic->id, 0x4500);
+	lapic_send_ipi(lapic->id, IPI_INIT);
 	pit_sleep_ms(10);
 
 	// Send the SIPI (first attempt)
-	lapic_send_ipi(lapic->id, 0x4600 | ((uint32_t)trampoline_start / PAGE_SIZE));
+	lapic_send_ipi(lapic->id, IPI_START_UP | ((uint32_t)trampoline_start / PAGE_SIZE));
 	pit_sleep_ms(1);
 
 	if (!smp_ap_started_flag) {
 		// Send SIPI again (second attempt)
-		//lapic_send_ipi(lapic->id, 0x4600 | ((uint32_t)trampoline_start / PAGE_SIZE));
-		//pit_sleep_ms(1000);
+		lapic_send_ipi(lapic->id, IPI_START_UP | ((uint32_t)trampoline_start / PAGE_SIZE));
+		pit_sleep_ms(1000);
 		if (!smp_ap_started_flag) {
 			klog("smp", "CPU %zu failed to boot\n", index);
 			lapic->present = 0;
@@ -80,6 +79,8 @@ void smp_init(void)
 	klog("smp", "CPU 0 online\n");
 	for (size_t i = 1; i < lapic_list_size; i++)
 		smp_boot_ap(i);
+
+	// TODO: Unmap trampoline code from memory
 
 	// Free any unused stacks if there were any
 	if (smp_ap_stack != NULL) {

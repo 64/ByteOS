@@ -25,9 +25,8 @@ static inline void kprintf_write_str(char *s)
 
 static inline char digit_to_char(unsigned int digit)
 {
-	if (digit < 10)
-		return digit + '0';
-	return digit + 'A' - 10;
+	kassert_dbg(digit < 16);
+	return "0123456789ABCDEF"[digit];
 }
 
 static int atoi_print(uint64_t num, bool sign, unsigned int base)
@@ -68,16 +67,12 @@ static int atoi_print(uint64_t num, bool sign, unsigned int base)
 	return nwritten;
 }
 
-int kprintf(const char *fmt, ...)
+// Doesn't use locks. Calls must be serialised.
+static int __kvprintf(const char *fmt, va_list params)
 {
-	va_list params;
 	size_t nwritten = 0;
 	const char *pfmt = fmt;
 
-	va_start(params, fmt);
-
-	uint64_t rflags;
-	spin_lock_irqsave(&kprintf_lock, rflags);
 	while (*pfmt) {
 		if (*pfmt == '%') {
 			switch (pfmt[1]) {
@@ -143,6 +138,26 @@ int kprintf(const char *fmt, ...)
 		pfmt++;
 	}
 
+	return nwritten;
+}
+
+int kprintf_nolock(const char *fmt, ...)
+{
+	va_list params;
+	va_start(params, fmt);
+	int nwritten = __kvprintf(fmt, params);
+	va_end(params);
+	return nwritten;
+}
+
+// Make sure not to call this from an NMI handler
+int kprintf(const char *fmt, ...)
+{
+	va_list params;
+	uint64_t rflags;
+	va_start(params, fmt);
+	spin_lock_irqsave(&kprintf_lock, rflags);
+	int nwritten = __kvprintf(fmt, params);
 	spin_unlock_irqsave(&kprintf_lock, rflags);
 	va_end(params);
 	return nwritten;

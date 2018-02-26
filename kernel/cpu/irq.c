@@ -59,7 +59,11 @@ void irq_handler(struct stack_regs *regs)
 	if (handler != NULL)
 		handler(regs);
 	else {
-		kprintf("Unhandled IRQ %u at %p\n", int_no, (void *)regs->rip);
+		// Could be NMI
+		if (int_no == IRQ_LINT_BASE || int_no == IRQ_LINT_BASE + 1)
+			kprintf_nolock("Unhandled IRQ %u at %p\n", int_no, (void *)regs->rip);
+		else
+			kprintf("Unhandled IRQ %u at %p\n", int_no, (void *)regs->rip);
 	}
 	irq_eoi(int_no);
 	irq_unmask(int_no);

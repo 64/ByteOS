@@ -55,6 +55,4 @@ void kmain(physaddr_t mboot_info_phys)
 	percpu_init();
 
 	// At this point, we have physical and virtual memory allocation
-	
-	// Shouldn't ever get here
 }

@@ -68,6 +68,10 @@ smp_trampoline_64:
 	dd LABEL_OFFSET(.fix_cs)
 	dw 0x08
 .fix_cs:
+	; Not entirely sure why 'jmp .fix_rip' does't work
+	mov rax, .fix_rip
+	jmp rax
+.fix_rip:
 
 	extern smp_ap_stack
 	mov rsp, [smp_ap_stack]
@@ -76,12 +80,10 @@ smp_trampoline_64:
 	mov byte [smp_ap_started_flag], 1
 
 	extern load_idt
-	mov rax, load_idt
-	call rax
+	call load_idt
 
 	extern smp_ap_kmain
-	mov rax, smp_ap_kmain
-	call rax
+	call smp_ap_kmain
 
 	sti
 .end:

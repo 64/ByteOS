@@ -18,6 +18,7 @@
 #define APIC_REG_LINT1 0x360U
 #define APIC_REG_ICR0 0x300U
 #define APIC_REG_ICR1 0x310U
+#define APIC_REG_ISR_BASE 0x100U
 
 virtaddr_t lapic_base; // Shared by all CPUs
 
@@ -48,7 +49,7 @@ static inline struct lapic_info *find_lapic(uint8_t id)
 
 static inline void lapic_set_nmi(uint8_t vec, struct madt_entry_nmi *nmi_info)
 {
-	kassert_dbg(vec >= IRQ_NMI_BASE && vec < IRQ_APIC_SPURIOUS);
+	kassert_dbg(vec >= IRQ_LINT_BASE && vec < IRQ_APIC_SPURIOUS);
 	uint32_t nmi = 800 | vec;
 	if (nmi_info->flags & 2)
 		nmi |= (1 << 13);
@@ -67,14 +68,17 @@ uint8_t lapic_id(void)
 
 void lapic_eoi(uint8_t vec)
 {
-	// TODO: Check the corresponding bit in the LAPIC's ISR
-	if (vec != IRQ_NMI_BASE && vec != IRQ_NMI_BASE + 1)
+	// Check the corresponding bit in the LAPIC's ISR
+	kassert_dbg(vec >= IRQ_APIC_BASE);
+	uint32_t reg = APIC_REG_ISR_BASE + 0x10 * (vec / 32);
+	if (lapic_read(reg) & (1 << (vec % 32)))
 		lapic_write(APIC_REG_EOI, 0);
 }
 
 void lapic_send_ipi(uint8_t target, uint32_t flags)
 {
-	lapic_write(APIC_REG_ICR1, (uint32_t)target << 24);
+	if (!(flags & IPI_BROADCAST))
+		lapic_write(APIC_REG_ICR1, (uint32_t)target << 24);
 	lapic_write(APIC_REG_ICR0, flags);
 }
 
@@ -89,7 +93,7 @@ void lapic_enable(void)
 
 	for (size_t i = 0; i < nmi_list_size; i++)
 		if (nmi_list[i]->acpi_id == lapic->acpi_id || nmi_list[i]->acpi_id == 0xFF)
-			lapic_set_nmi(IRQ_NMI_BASE + nmi_list[i]->lint_num, nmi_list[i]);
+			lapic_set_nmi(IRQ_LINT_BASE + nmi_list[i]->lint_num, nmi_list[i]);
 
 	// Enable the LAPIC via the spurious interrupt register
 	lapic_write(APIC_REG_SPURIOUS, lapic_read(APIC_REG_SPURIOUS) | (1 << 8) | IRQ_APIC_SPURIOUS);

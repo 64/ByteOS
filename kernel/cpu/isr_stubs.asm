@@ -92,6 +92,14 @@ isr_stub_%1:
 	iretq
 %endmacro
 
+%macro isr_stub_ipi 2
+global isr_stub_%1
+isr_stub_%1:
+	push qword %1
+	isr_common_fn ipi_%2
+	iretq
+%endmacro
+
 ; Exceptions
 isr_stub_noerr 0
 isr_stub_noerr 1
@@ -349,7 +357,7 @@ isr_stub_irq 248
 isr_stub_irq 249
 isr_stub_irq 250
 isr_stub_irq 251
-isr_stub_irq 252
-isr_stub_irq 253
-isr_stub_irq 254
+isr_stub_ipi 252, abort ; Must match interrupts.h
+isr_stub_irq 253 ; LINT0
+isr_stub_irq 254 ; LINT1
 isr_stub_nop 255 ; APIC Spurious interrupt vector

@@ -9,6 +9,12 @@
 #define MAX_NMIS (2 * MAX_LAPICS)
 #define MAX_OVERRIDES 48
 
+#define IPI_INIT     0x4500
+#define IPI_START_UP 0x4600
+#define IPI_FIXED    0x4000
+
+#define IPI_BROADCAST (0b11 << 18)
+
 struct lapic_info {
 	uint8_t id;
 	uint8_t acpi_id;

@@ -16,11 +16,13 @@ void *LIBK_FN(memchr)(const void *, int, size_t);
 size_t LIBK_FN(strlen)(const char *);
 
 __attribute__((format (printf, 1, 2))) int kprintf(const char *, ...);
+__attribute__((format (printf, 1, 2))) int kprintf_nolock(const char *, ...);
 
-__attribute__((noreturn)) void abort(void);
+__attribute__((noreturn)) void abort(void); // Sends an IPI to abort all other CPUs
+__attribute__((noreturn)) void abort_self(void);
 
 #define panic(...) do { \
-		kprintf( \
+		kprintf_nolock( \
 			"\n\x1B[0m--------------------------------------------------------------------------------\x1B[0m" \
 			"\x1B[1;41;37mpanic at %s:%s:%u\x1B[0m\n", \
 			__FILE__, __func__, __LINE__ \
