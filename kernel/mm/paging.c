@@ -59,7 +59,7 @@ static inline pte_t alloc_pgtab(unsigned int alloc_flags)
 		kassert_dbg((pgtab_phys & 0xFFF) == 0); // Must be aligned
 		return (pgtab_phys & PTE_ADDR_MASK) | flags;
 	} else {
-		physaddr_t pgtab_phys = page_to_phys(pmm_alloc_order(0, 0));
+		physaddr_t pgtab_phys = page_to_phys(pmm_alloc_order(0, GFP_NONE));
 		return (pgtab_phys & PTE_ADDR_MASK) | flags;
 	}
 }

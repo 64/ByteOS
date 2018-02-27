@@ -11,4 +11,5 @@ void percpu_init(void)
 	cpu->id = smp_cpu_id();
 	cpu->task = NULL;
 	cpu->rsp_scratch = NULL;
+	cpu->need_reschedule = false;
 }

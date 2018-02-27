@@ -80,12 +80,14 @@ static void mmap_insert_region(struct mmap_type *type, uintptr_t addr, size_t le
 void mmap_dump_info(void)
 {
 	klog("mmap", "Highest mapped physical page: %p\n", (void *)mem_map.highest_mapped);
+#ifdef VERBOSE
 	klog("mmap", "Available:\n");
 	for (size_t i = 0; i < mem_map.available.count; i++)
 		klog("mmap", "  Region base %p, len %zu\n", (void *)mem_map.available.regions[i].base, mem_map.available.regions[i].len);
 	klog("mmap", "Reserved:\n");
 	for (size_t i = 0; i < mem_map.reserved.count; i++)
 		klog("mmap", "  Region base %p, len %zu\n", (void *)mem_map.reserved.regions[i].base, mem_map.reserved.regions[i].len);
+#endif
 }
 
 struct mmap_region mmap_alloc_low(size_t n, unsigned int alloc_flags)

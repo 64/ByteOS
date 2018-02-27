@@ -3,7 +3,7 @@
 #include "interrupts.h"
 #include "smp.h"
 
-void ipi_abort(struct stack_regs *UNUSED(regs))
+void ipi_abort(struct isr_context *UNUSED(regs))
 {
 	abort_self();
 }

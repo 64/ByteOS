@@ -40,7 +40,7 @@ static const char *const exception_messages[32] = {
 	"(reserved exception 31)"
 };
 
-static void page_fault(uint8_t int_no, struct stack_regs *regs)
+static void page_fault(uint8_t int_no, struct isr_context *regs)
 {
 	uintptr_t faulting_address;
 	asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
@@ -57,7 +57,7 @@ static void page_fault(uint8_t int_no, struct stack_regs *regs)
 	);
 }
 
-void exception_handler(struct stack_regs *regs)
+void exception_handler(struct isr_context *regs)
 {
 	uint8_t int_no = (uint8_t)(regs->info >> 32);
 	switch (int_no) {

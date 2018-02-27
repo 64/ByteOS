@@ -42,7 +42,6 @@ void kmain(physaddr_t mboot_info_phys)
 	
 	// Initialise all I/O APICs
 	ioapic_init();
-
 	irq_enable();
 
 	// Initialise the PIT

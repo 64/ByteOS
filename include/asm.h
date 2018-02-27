@@ -74,6 +74,16 @@ static inline void sti(void)
 	);
 }
 
+static inline void irq_enable(void)
+{
+	sti();
+}
+
+static inline void irq_disable(void)
+{
+	cli();
+}
+
 static inline void barrier(void)
 {
 	asm volatile (

@@ -61,7 +61,7 @@ static void add_nmi(struct madt_entry_nmi *entry)
 static void parse_madt(struct acpi_madt *madt)
 {
 	// Default LAPIC address (might be overridden by entry type 5)
-	lapic_base = phys_to_virt(madt->lapic_address);
+	virtaddr_t tmp_lapic_base = phys_to_virt(madt->lapic_address);
 
 	// Parse all the other entries
 	struct madt_entry_header *hd = (struct madt_entry_header *)&madt->entries;
@@ -82,7 +82,7 @@ static void parse_madt(struct acpi_madt *madt)
 				add_nmi((struct madt_entry_nmi *)hd);
 				break;
 			case MADT_LAPIC_ADDR:
-				lapic_base = phys_to_virt(((struct madt_entry_lapic_addr *)hd)->lapic_addr);
+				tmp_lapic_base = phys_to_virt(((struct madt_entry_lapic_addr *)hd)->lapic_addr);
 				break;
 			default:
 				kprintf("apic[warn]: Unrecognised entry type %d in MADT\n", hd->type);
@@ -90,6 +90,8 @@ static void parse_madt(struct acpi_madt *madt)
 		}
 		hd = (struct madt_entry_header *)((uintptr_t)hd + hd->length);
 	}
+
+	lapic_base = tmp_lapic_base;
 
 	// Map the APIC base so we can access it
 	paging_map_page(kernel_p4, virt_to_phys(lapic_base), lapic_base, PAGING_ALLOC_MMAP | PAGE_DISABLE_CACHE | PAGE_WRITABLE);

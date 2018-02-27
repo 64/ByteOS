@@ -12,13 +12,6 @@ long_mode_entry:
 
 	push rbx ; Multiboot structure (physical address)
 
-	; Initialises SIMD (AVX, AVX-512)
-	call simd_init
-
-	; Call global constructors
-	extern _init
-	call _init
-
 	; Initialise VGA textmode driver
 	extern vga_tmode_init
 	call vga_tmode_init
@@ -31,9 +24,16 @@ long_mode_entry:
 	mov ax, GDT_TSS
 	ltr ax
 
+	; Enable SSE, AVX, AVX-512
+	call simd_init
+
 	; Enable syscall/sysret instruction
 	extern syscall_enable
 	call syscall_enable
+
+	; Call global constructors
+	extern _init
+	call _init
 
 	; Pass multiboot information to kmain
 	pop rdi

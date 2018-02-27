@@ -40,7 +40,7 @@ static void smp_boot_ap(size_t index)
 	}
 
 	if (smp_ap_stack == NULL) {
-		uintptr_t stack_top = (uintptr_t)page_to_virt(pmm_alloc_order(2, 0));
+		uintptr_t stack_top = (uintptr_t)page_to_virt(pmm_alloc_order(2, GFP_NONE));
 		smp_ap_stack = (virtaddr_t)(stack_top + (4 * PAGE_SIZE));
 	}
 
@@ -94,5 +94,6 @@ void smp_init(void)
 void smp_ap_kmain(void)
 {
 	lapic_enable();
+	irq_enable();
 	percpu_init();
 }

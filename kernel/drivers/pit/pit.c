@@ -7,7 +7,7 @@
 
 void pit_init(void)
 {
-	irq_mask(ISA_TO_INTERRUPT(0)); // Mask ourselves because we're annoying
+	irq_mask(ISA_TO_INTERRUPT(0)); // Mask ourselves because we don't use PIT interrupts (TODO: maybe we should?)
 }
 
 void pit_sleep_ms(uint64_t ms)

@@ -5,6 +5,7 @@
 #ifdef LIBK_TEST
 #define LIBK_FN(name) __libk_ ## name
 #else
+#include "asm.h"
 #define LIBK_FN(name) name
 #endif
 
@@ -22,6 +23,7 @@ __attribute__((noreturn)) void abort(void); // Sends an IPI to abort all other C
 __attribute__((noreturn)) void abort_self(void);
 
 #define panic(...) do { \
+		irq_disable(); \
 		kprintf_nolock( \
 			"\n\x1B[0m--------------------------------------------------------------------------------\x1B[0m" \
 			"\x1B[1;41;37mpanic at %s:%s:%u\x1B[0m\n", \
@@ -33,7 +35,7 @@ __attribute__((noreturn)) void abort_self(void);
 
 #define kassert(condition) do { \
 		if (!(condition)) \
-			panic("kassert condition failed: %s\n", #condition); \
+			panic("kassert condition failed at %s:%u: %s\n", __FILE__, __LINE__, #condition); \
 	} while(0)
 
 #define klog(mod, msg, ...) ({ \
@@ -44,8 +46,8 @@ __attribute__((noreturn)) void abort_self(void);
 
 #define klog_warn(mod, msg, ...) klog(mod, "\e[33m**WARN**\e[0m " msg, ##__VA_ARGS__)
 
-#ifdef NDEBUG
-	#define kassert_dbg(x)
-#else
+#ifdef DEBUG
 	#define kassert_dbg(x) kassert(x)
+#else
+	#define kassert_dbg(x)
 #endif

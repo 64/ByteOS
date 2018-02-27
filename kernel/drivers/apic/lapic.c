@@ -77,6 +77,9 @@ void lapic_eoi(uint8_t vec)
 
 void lapic_send_ipi(uint8_t target, uint32_t flags)
 {
+	// LAPIC hasn't been initialised yet
+	if (lapic_base == NULL)
+		return;
 	if (!(flags & IPI_BROADCAST))
 		lapic_write(APIC_REG_ICR1, (uint32_t)target << 24);
 	lapic_write(APIC_REG_ICR0, flags);

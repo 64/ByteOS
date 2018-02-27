@@ -92,19 +92,7 @@ syscall_entry:
 	push r9
 	push r10
 	push qword 0 ; r11
-	push rbx
-	push rbp
-	push r12
-	push r13
-	push r14
-	push r15
 	call rax
-	pop r15
-	pop r14
-	pop r13
-	pop r12
-	pop rbp
-	pop rbx
 	add rsp, 8 ; r11
 	pop r10
 	pop r9

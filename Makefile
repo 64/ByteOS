@@ -20,7 +20,7 @@ CFLAGS		+= -Wall -Werror -Wextra -Wparentheses -Wmissing-declarations -Wunreacha
 CFLAGS		+= -Wmissing-field-initializers -Wmissing-prototypes -Wpointer-arith -Wswitch-enum
 CFLAGS		+= -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wuninitialized
 CFLAGS		+= -mno-sse -mno-mmx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-sse4a
-DEBUG_CFLAGS    := -fsanitize=undefined -Og -g
+DEBUG_CFLAGS    := -fsanitize=undefined -Og -g -DDEBUG
 RELEASE_CFLAGS  := -O3
 ASFLAGS		:= -f elf64 -F dwarf -g -w+all -Werror -i$(shell pwd)/include/
 EMUFLAGS	:= -net none -smp sockets=1,cores=4,threads=1 -serial stdio -cdrom $(ISO)

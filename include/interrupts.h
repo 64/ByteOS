@@ -18,15 +18,7 @@
 
 #define ISA_TO_INTERRUPT(x) (ioapic_isa_to_gsi(x) + IRQ_APIC_BASE)
 
-struct stack_regs {
-	// These registers are not generally saved by the caller
-	uint64_t r15;
-	uint64_t r14;
-	uint64_t r13;
-	uint64_t r12;
-	uint64_t rbp;
-	uint64_t rbx;
-	// These registers are always saved when entering C code
+struct isr_context {
 	uint64_t r11;
 	uint64_t r10;
 	uint64_t r9;
@@ -48,7 +40,7 @@ struct stack_regs {
 	uint64_t ss;
 };
 
-typedef void (*irq_handler_t)(struct stack_regs *);
+typedef void (*irq_handler_t)(struct isr_context *);
 
 struct idt_entry {
 	uint16_t offset_low;
@@ -62,7 +54,7 @@ struct idt_entry {
 
 extern struct idt_entry idt64[256];
 
-void exception_handler(struct stack_regs *);
+void exception_handler(struct isr_context *);
 
 void idt_init(void);
 void idt_set_isr(uint8_t index, virtaddr_t entry, uint8_t ist, uint8_t type_attr);
@@ -70,18 +62,8 @@ void idt_set_isr(uint8_t index, virtaddr_t entry, uint8_t ist, uint8_t type_attr
 void load_idt(void);
 
 void irq_init(void);
-void irq_handler(struct stack_regs *);
+void irq_handler(struct isr_context *);
 void irq_eoi(uint8_t);
 void irq_mask(uint8_t);
 void irq_unmask(uint8_t);
 void irq_register_handler(uint8_t vec, irq_handler_t irq);
-
-static inline void irq_enable(void)
-{
-	sti();
-}
-
-static inline void irq_disable(void)
-{
-	cli();
-}
