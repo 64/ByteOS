@@ -3,6 +3,8 @@
 section .text
 global long_mode_entry
 long_mode_entry:
+	; Long mode doesn't care about most segments.
+	; GS and FS base addresses can be set with MSRs.
 	mov ax, 0
 	mov ss, ax
 	mov ds, ax
@@ -10,7 +12,8 @@ long_mode_entry:
 	mov fs, ax
 	mov gs, ax
 
-	push rbx ; Multiboot structure (physical address)
+	; Multiboot structure (physical address)
+	push rbx
 
 	; Initialise VGA textmode driver
 	extern vga_tmode_init
@@ -25,6 +28,7 @@ long_mode_entry:
 	ltr ax
 
 	; Enable SSE, AVX, AVX-512
+	extern simd_init
 	call simd_init
 
 	; Enable syscall/sysret instruction
@@ -40,59 +44,9 @@ long_mode_entry:
 	extern kmain
 	call kmain
 
-	; Call global destructors
-	extern _fini
-	call _fini
-
+	; Don't call global destructors - we should never get here
 	sti
 .end:
 	hlt
 	jmp .end
 
-; Initialises AVX and AVX-512 if available
-; TODO: Test this
-simd_init:
-	push rax
-	push rbx
-	push rcx
-	push rdx
-
-	; AVX
-	mov eax, 1
-	xor rcx, rcx
-	cpuid
-	and ecx, (1 << 26) ; Detect XSAVE
-	test ecx, ecx
-	jz .done
-	mov eax, 1
-	xor rcx, rcx
-	cpuid
-	and ecx, (1 << 28) ; Detect AVX
-	test ecx, ecx
-	jz .done
-	
-	; Enable it
-	xor ecx, ecx
-	xgetbv
-	or eax, 7
-	xsetbv
-
-	; AVX-512
-	mov eax, 0x0D
-	xor rcx, rcx
-	cpuid
-	and ecx, 0xE0 ; Detect AVX-512
-	cmp ecx, 0xE0
-	jne .done
-	
-	; Enable it
-	xor ecx, ecx
-	xgetbv
-	or eax, 0xE0
-	xsetbv
-.done:
-	pop rdx
-	pop rcx
-	pop rbx
-	pop rax
-	ret

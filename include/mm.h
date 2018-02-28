@@ -91,6 +91,7 @@ physaddr_t paging_get_phys_addr(struct page_table *, void *);
 bool paging_has_flags(struct page_table *, void *, uint64_t flags);
 pte_t paging_get_pte(struct page_table *, void *);
 void paging_map_page(struct page_table *, physaddr_t, virtaddr_t, unsigned long);
+void paging_dump_tables(void);
 
 struct mmap *mmap_init(struct multiboot_info *);
 void mmap_dump_info(void);

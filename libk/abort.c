@@ -18,6 +18,6 @@ __attribute__((noreturn)) void abort_self(void)
 __attribute__((noreturn)) void abort(void)
 {
 	lapic_send_ipi(0, IPI_BROADCAST | IPI_FIXED | IRQ_IPI_ABORT);
-	abort_self();	
+	abort_self();
 }
 

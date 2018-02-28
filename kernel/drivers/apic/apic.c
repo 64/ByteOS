@@ -85,13 +85,14 @@ static void parse_madt(struct acpi_madt *madt)
 				tmp_lapic_base = phys_to_virt(((struct madt_entry_lapic_addr *)hd)->lapic_addr);
 				break;
 			default:
-				kprintf("apic[warn]: Unrecognised entry type %d in MADT\n", hd->type);
+				klog_warn("apic", "Unrecognised entry type %d in MADT\n", hd->type);
 				break;
 		}
 		hd = (struct madt_entry_header *)((uintptr_t)hd + hd->length);
 	}
 
 	lapic_base = tmp_lapic_base;
+	klog("apic", "Local APIC base at %p\n", lapic_base);
 
 	// Map the APIC base so we can access it
 	paging_map_page(kernel_p4, virt_to_phys(lapic_base), lapic_base, PAGING_ALLOC_MMAP | PAGE_DISABLE_CACHE | PAGE_WRITABLE);

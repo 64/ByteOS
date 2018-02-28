@@ -8,6 +8,7 @@
 #include "util.h"
 #include "percpu.h"
 #include "drivers/apic.h"
+#include "drivers/ps2.h"
 #include "drivers/pit.h"
 #include "drivers/acpi.h"
 
@@ -39,19 +40,22 @@ void kmain(physaddr_t mboot_info_phys)
 
 	// Enable the LAPIC for the BSP
 	lapic_enable();
-	
+
 	// Initialise all I/O APICs
 	ioapic_init();
 	irq_enable();
 
+	// Initialise mouse and keyboard
+	ps2_init();
+
 	// Initialise the PIT
 	pit_init();
 
-	// Boot all the cores
-	smp_init();
-
 	// Initialise per-CPU data structures
 	percpu_init();
+
+	// Boot all the cores
+	smp_init();
 
 	// At this point, we have physical and virtual memory allocation
 }

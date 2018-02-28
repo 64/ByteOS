@@ -63,14 +63,20 @@ static struct rsdp *find_rsdp(void)
 static void map_table(struct acpi_header *hd)
 {
 	// Map the first two pages for safety, then map the rest of the table
+	// The header could cross a page boundary and generate a page fault.
 	paging_map_page(kernel_p4, virt_to_phys(hd), hd, PAGING_NONE);
 	paging_map_page(kernel_p4, virt_to_phys(hd) + sizeof(struct acpi_header),
 			(virtaddr_t)((uintptr_t)hd + sizeof(struct acpi_header)), PAGING_NONE);
 
 	// Safe to dereference header now
 
-	// TODO: Map the rest of the table
-	
+	// Map the rest of the table
+	for (size_t i = sizeof(struct acpi_header) + PAGE_SIZE; i < hd->length; i += PAGE_SIZE) {
+		virtaddr_t virt = (virtaddr_t)((uintptr_t)hd + i);
+		physaddr_t phys = virt_to_phys(virt);
+		paging_map_page(kernel_p4, phys, virt, PAGING_NONE);
+	}
+
 	// Safe to access the whole table now
 }
 
@@ -82,13 +88,13 @@ static inline bool table_checksum(struct acpi_header *hd)
 static inline void print_table(struct acpi_header *hd)
 {
 	klog("acpi", "%c%c%c%c at %p, OEM %c%c%c%c%c%c\n",
-		hd->signature[0], hd->signature[1], hd->signature[2], hd->signature[3], (virtaddr_t)virt_to_phys(hd),
-		hd->oem_id[0], hd->oem_id[1], hd->oem_id[2], hd->oem_id[3], hd->oem_id[4], hd->oem_id[5]);
+	     hd->signature[0], hd->signature[1], hd->signature[2], hd->signature[3], (virtaddr_t)virt_to_phys(hd),
+	     hd->oem_id[0], hd->oem_id[1], hd->oem_id[2], hd->oem_id[3], hd->oem_id[4], hd->oem_id[5]);
 #ifdef VERBOSE
 	klog("acpi", "  Length: %u\n", hd->length);
 	klog("acpi", "  Revision: %u\n", hd->revision);
 	klog("acpi", "  OEM Table ID: %c%c%c%c%c%c%c%c\n", hd->oem_table_id[0], hd->oem_table_id[1], hd->oem_table_id[2],
-			hd->oem_table_id[3], hd->oem_table_id[4], hd->oem_table_id[5], hd->oem_table_id[6], hd->oem_table_id[7]);
+	     hd->oem_table_id[3], hd->oem_table_id[4], hd->oem_table_id[5], hd->oem_table_id[6], hd->oem_table_id[7]);
 	klog("acpi", "  OEM Revision: %u\n", hd->oem_revision);
 	klog("acpi", "  Creator ID: %c%c%c%c\n", hd->creator_id[0], hd->creator_id[1], hd->creator_id[2], hd->creator_id[3]);
 	klog("acpi", "  Creator Revision: %u\n", hd->creator_revision);

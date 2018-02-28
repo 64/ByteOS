@@ -54,7 +54,6 @@ void irq_eoi(uint8_t vec)
 void irq_handler(struct isr_context *regs)
 {
 	uint8_t int_no = regs->info & 0xFF;
-	irq_mask(int_no);
 	irq_handler_t handler = irq_handlers[int_no];
 	if (handler != NULL)
 		handler(regs);
@@ -66,5 +65,4 @@ void irq_handler(struct isr_context *regs)
 			kprintf("Unhandled IRQ %u at %p\n", int_no, (void *)regs->rip);
 	}
 	irq_eoi(int_no);
-	irq_unmask(int_no);
 }

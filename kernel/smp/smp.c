@@ -68,7 +68,7 @@ static void smp_boot_ap(size_t index)
 	}
 
 	smp_ap_stack = NULL;
-	
+
 	// Check flag is set
 	klog("smp", "CPU %zu online\n", index);
 }

@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "types.h"
 #include "asm.h"
+#include "drivers/apic.h"
 
 #define IST_NONE 0
 #define IST_NMI 1

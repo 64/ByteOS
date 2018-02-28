@@ -57,7 +57,7 @@ void ioapic_redirect(uint32_t gsi, uint8_t UNUSED(source), uint16_t flags, uint8
 	uint8_t target_apic_id = lapic_list[target_apic].id;
 	struct madt_entry_ioapic *ioapic = gsi_to_ioapic(gsi);
 	virtaddr_t ioapic_base = phys_to_virt(ioapic->phys_addr);
-	
+
 	uint64_t redirection = gsi + IRQ_APIC_BASE;
 	if (flags & 2)
 		redirection |= (1 << 13);
@@ -92,7 +92,7 @@ uint8_t ioapic_isa_to_gsi(uint8_t isa)
 	for (size_t i = 0; i < override_list_size; i++)
 		if (override_list[i]->source == isa)
 			return override_list[i]->gsi;
-	return IRQ_APIC_BASE + isa;
+	return isa;
 }
 
 uint8_t ioapic_gsi_to_isa(uint8_t gsi)
@@ -107,10 +107,14 @@ void ioapic_init(void)
 {
 	// Initialised the (assumed) wirings for the legacy PIC IRQs
 	// Send all IRQs to the BSP for simplicity
-	for (uint8_t i = 0; i < 16; i++)
+	for (uint8_t i = 0; i < 16; i++) {
 		ioapic_redirect(i, i, 0, 0);
+		ioapic_mask(i);
+	}
 
 	// Setup the actual overrides
-	for (size_t i = 0; i < override_list_size; i++)
+	for (size_t i = 0; i < override_list_size; i++) {
 		ioapic_redirect(override_list[i]->gsi, override_list[i]->source, override_list[i]->flags, 0);
+		ioapic_mask(override_list[i]->gsi);
+	}
 }

@@ -32,6 +32,7 @@ static void reserve_page_data_range(physaddr_t start, size_t num_pages)
 			paging_map_page(kernel_p4, (physaddr_t)rg.base, array_addr, PAGE_WRITABLE);
 		}
 	}
+	klog("mmap", "Reserving %p\n", page_data + pfn_start);
 	memset(page_data + pfn_start, 0, (pfn_end - pfn_start) * sizeof(struct page));
 }
 

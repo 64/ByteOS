@@ -5,7 +5,7 @@
 
 void percpu_init(void)
 {
-	struct percpu *cpu = kmalloc(sizeof *cpu, KM_NONE);
+	struct percpu *cpu = kmalloc(sizeof * cpu, KM_NONE);
 	msr_write(0xC0000101, (uint64_t)cpu);
 
 	cpu->id = smp_cpu_id();

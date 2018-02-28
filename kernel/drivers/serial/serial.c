@@ -58,7 +58,7 @@ void serial_write_com(int com, unsigned char data)
 	}
 
 	while (serial_transmit_empty(port) == 0)
-		;
+		pause();
 
 	outb(port, data);
 }

@@ -57,7 +57,11 @@ else
 	CFLAGS += $(DEBUG_CFLAGS)
 endif
 
-.PHONY: all clean run bochs gdb disassemble update-modules copy-all copy-snow copy-ds copy-cansid loc tidy test
+ifeq ($(VERBOSE),1)
+	CFLAGS += -DVERBOSE
+endif
+
+.PHONY: all clean run vbox bochs gdb disassemble update-modules copy-all copy-snow copy-ds copy-cansid loc tidy test
 .SUFFIXES: .o .c .asm
 
 all: $(ISO)
@@ -67,6 +71,9 @@ run: $(ISO)
 
 bochs: $(ISO)
 	@$(BOCHS) $(BOCHSFLAGS)
+
+vbox: $(ISO)
+	@virtualbox --startvm "ByteOS" --dbg
 
 clean:
 	@$(RM) -r build
@@ -108,7 +115,7 @@ copy-cansid: $(MOD_CANSID)
 	@mv temp.c ./kernel/drivers/vga_tmode/cansid.c
 
 loc:
-	cloc --vcs=git
+	@cloc --vcs=git --force-lang="C",h --exclude-lang="Markdown"
 
 tidy:
 	@astyle $(filter-out libk/tests/snow.h,$(shell find kernel libk -name "*.[ch]")) $(ASTYLEFLAGS)

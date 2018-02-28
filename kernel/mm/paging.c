@@ -3,6 +3,7 @@
 #include "mm.h"
 #include "asm.h"
 #include "util.h"
+#include "drivers/pit.h"
 
 #define P4_ADDR_SHIFT 39
 #define P3_ADDR_SHIFT 30
@@ -13,11 +14,11 @@
 #define P3_ADDR_MASK (0x1FFUL << P3_ADDR_SHIFT)
 #define P2_ADDR_MASK (0x1FFUL << P2_ADDR_SHIFT)
 #define PAGE_OFFSET_MASK 0xFFFF
-#define PTE_ADDR_MASK (~(0xFFF00000000001FF))
+#define PTE_ADDR_MASK (~(0xFFF00000000001FFUL))
 
-static void dump_page_tables(void);
 static void dump_page_tables_p2(struct page_table *, uintptr_t);
 static void dump_page_tables_p1(struct page_table *, uintptr_t);
+static void dump_page_tables_p0(struct page_table *, uintptr_t);
 
 extern struct page_table p4_table; // Initial kernel p4 table
 
@@ -26,7 +27,8 @@ struct page_table *kernel_p4;
 void paging_init(void)
 {
 	kernel_p4 = phys_to_kern((physaddr_t)&p4_table);
-//	dump_page_tables();
+	klog("paging", "Kernel P4 at %p\n", kernel_p4);
+//	paging_dump_tables();
 }
 
 void paging_map_all(struct mmap *mmap)
@@ -52,7 +54,7 @@ static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgta
 
 static inline pte_t alloc_pgtab(unsigned int alloc_flags)
 {
-	uint64_t flags = PAGE_PRESENT | PAGE_WRITABLE | (alloc_flags & (PAGE_GLOBAL | PAGE_USER_ACCESSIBLE));
+	uint64_t flags = PAGE_PRESENT | PAGE_WRITABLE | (alloc_flags & (PAGE_USER_ACCESSIBLE));
 	if (alloc_flags & PAGING_ALLOC_MMAP) {
 		// Mmap low allocs are guaranteed to be mapped
 		physaddr_t pgtab_phys = mmap_alloc_low(PAGE_SIZE, MMAP_ALLOC_PA).base;
@@ -64,16 +66,13 @@ static inline pte_t alloc_pgtab(unsigned int alloc_flags)
 	}
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
-
-static void dump_page_tables(void)
+void paging_dump_tables(void)
 {
 	for (size_t i = 0; i < 512; i++) {
 		struct page_table *pgtab = pgtab_extract_virt_addr(kernel_p4, i);
 		if (pgtab == NULL)
 			continue;
-		kprintf("P3:\n");
+		kprintf("P3: %lx\n", kernel_p4->pages[i] & ~PTE_ADDR_MASK);
 		dump_page_tables_p2(pgtab, 0xFFFF000000000000 | (i << 39));
 	}
 }
@@ -84,7 +83,7 @@ static void dump_page_tables_p2(struct page_table *p3, uintptr_t addr_bits)
 		struct page_table *pgtab = pgtab_extract_virt_addr(p3, i);
 		if (pgtab == NULL)
 			continue;
-		kprintf("\tP2:\n");
+		kprintf("\tP2: %lx\n", p3->pages[i] & ~PTE_ADDR_MASK);
 		dump_page_tables_p1(pgtab, addr_bits | (i << 30));
 	}
 }
@@ -97,11 +96,24 @@ static void dump_page_tables_p1(struct page_table *p2, uintptr_t addr_bits)
 			continue;
 		virtaddr_t first_virt = (virtaddr_t)(addr_bits | (i << 21));
 		physaddr_t first_phys = pgtab->pages[0] & PTE_ADDR_MASK;
-		kprintf("\t\tP1: %p -> %p\n", first_virt, (void *)first_phys);
+		kprintf("\t\tP1: %p -> %p, %lx\n", first_virt, (void *)first_phys, p2->pages[i] & ~PTE_ADDR_MASK);
+		//dump_page_tables_p0(pgtab, addr_bits | (i << 21));
+		//pit_sleep_ms(300);
 	}
 }
 
-#pragma GCC diagnostic pop
+static void __attribute__((unused)) dump_page_tables_p0(struct page_table *p0, uintptr_t addr_bits)
+{
+	for (size_t i = 0; i < 512; i++) {
+		physaddr_t addr = p0->pages[i] & PTE_ADDR_MASK;
+		if (addr == 0)
+			continue;
+		kprintf("\t\t\tPage: %p -> %p, %lx\n",
+				(virtaddr_t)(addr_bits | (i << 12)),
+				(void *)(p0->pages[i] & PTE_ADDR_MASK),
+				p0->pages[i] & ~PTE_ADDR_MASK);
+	}	
+}
 
 pte_t paging_get_pte(struct page_table *p4, void *addr)
 {
@@ -152,6 +164,7 @@ void paging_map_page(struct page_table *p4, physaddr_t phys, virtaddr_t virt, un
 	if (p3_table == NULL) {
 		p4->pages[p4_index] = alloc_pgtab(flags);
 		p3_table = pgtab_extract_virt_addr(p4, p4_index);
+		kassert_dbg(p3_table != NULL);
 		memset(p3_table, 0, sizeof(struct page_table));
 	}
 
@@ -159,6 +172,7 @@ void paging_map_page(struct page_table *p4, physaddr_t phys, virtaddr_t virt, un
 	if (p2_table == NULL) {
 		p3_table->pages[p3_index] = alloc_pgtab(flags);
 		p2_table = pgtab_extract_virt_addr(p3_table, p3_index);
+		kassert_dbg(p2_table != NULL);
 		memset(p2_table, 0, sizeof(struct page_table));
 	}
 
@@ -166,6 +180,7 @@ void paging_map_page(struct page_table *p4, physaddr_t phys, virtaddr_t virt, un
 	if (p1_table == NULL) {
 		p2_table->pages[p2_index] = alloc_pgtab(flags);
 		p1_table = pgtab_extract_virt_addr(p2_table, p2_index);
+		kassert_dbg(p1_table != NULL);
 		memset(p1_table, 0, sizeof(struct page_table));
 	}
 

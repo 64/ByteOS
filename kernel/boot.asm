@@ -229,7 +229,7 @@ _start:
 	; Pop multiboot information
 	pop ebx
 
-	; Enable SSE
+	; Enable SSE (TODO: Do this in cpu/simd.asm)
 	mov eax, cr0
 	and eax, 0xFFFB
 	or ax, 2
