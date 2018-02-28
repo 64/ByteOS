@@ -110,7 +110,7 @@ copy-ds: $(MOD_DS)
 
 copy-cansid: $(MOD_CANSID)
 	@cp $(MOD_CANSID)/cansid.c ./kernel/drivers/vga_tmode
-	@cp $(MOD_CANSID)/cansid.h ./include/kernel/drivers/
+	@cp $(MOD_CANSID)/cansid.h ./include/drivers/
 	@cat ./kernel/drivers/vga_tmode/cansid.c | sed 's/cansid.h/drivers\/cansid.h/g' > temp.c
 	@mv temp.c ./kernel/drivers/vga_tmode/cansid.c
 
