@@ -52,9 +52,9 @@ static struct zone *init_zone(struct mmap_region *rg)
 		return NULL;
 
 	zone->len = avail_pages * PAGE_SIZE;
-	zone->pa_start = ALIGNUP(rg->base + sizeof(struct zone) + avail_pages * (sizeof(struct page)), PAGE_SIZE);
-	slist_set_next(zone, list, (struct zone *)NULL);
+	zone->pa_start = ALIGNUP(rg->base + sizeof(struct zone), PAGE_SIZE);
 	memset(zone->free_lists, 0, sizeof(zone->free_lists));
+	slist_set_next(zone, list, (struct zone *)NULL);
 
 	// Populate the free_lists
 	size_t pages_inserted = 0;
@@ -62,7 +62,7 @@ static struct zone *init_zone(struct mmap_region *rg)
 		size_t remaining = avail_pages - pages_inserted;
 		// TODO: Make this not give me eye cancer
 		size_t highest_order = MAX_ORDER - (__builtin_clz(MIN(remaining, 1LU << (MAX_ORDER - 1))) - __builtin_clz((1 << MAX_ORDER)));
-		kassert(highest_order < MAX_ORDER);
+		kassert_dbg(highest_order < MAX_ORDER);
 		struct page *inserted = &page_data[pages_inserted + (zone->pa_start / PAGE_SIZE)];
 		inserted->order = highest_order;
 		dlist_set_next(inserted, list, zone->free_lists[highest_order]);
@@ -72,11 +72,12 @@ static struct zone *init_zone(struct mmap_region *rg)
 	}
 	kassert(pages_inserted == avail_pages);
 
-	// TODO: Remove this
+#ifdef DEBUG
 	// Write a value at the last page to ensure we don't actually segfault
 	volatile uint64_t *dummy = (void *)((uintptr_t)zone + avail_pages * PAGE_SIZE + (PAGE_SIZE - sizeof(uint64_t)));
 	*dummy = 0x0123456789ABCDEF;
 	kassert(*dummy == 0x0123456789ABCDEF);
+#endif
 	return zone;
 }
 
@@ -149,7 +150,7 @@ static struct page *zone_alloc_order(struct zone *zone, unsigned int order, unsi
 	kassert(head->order == (int8_t)order);
 	kassert(head != NULL);
 	zone->free_lists[order] = dlist_get_next(head, list);
-	//klog("pmm", "Allocated order %u at %p\n", order, (virtaddr_t)page_to_phys(head));
+	//klog("pmm", "Allocated order %u at %p\n", order, page_to_virt(head));
 	// Not strictly necessary
 	dlist_set_next(head, list, (struct page *)NULL);
 	dlist_set_prev(head, list, (struct page *)NULL);

@@ -5,7 +5,7 @@
 
 static void ps2kbd_irq_handler(struct isr_context *);
 
-static uint8_t ps2kbd_cmd(uint8_t data)
+static __attribute__((unused)) uint8_t ps2kbd_cmd(uint8_t data)
 {
 	// TODO: Add a timeout
 	uint8_t response;
@@ -18,10 +18,17 @@ static uint8_t ps2kbd_cmd(uint8_t data)
 
 void ps2kbd_init(void)
 {
-	uint8_t self_test_status = ps2kbd_cmd(0xFF);
-	if (self_test_status == 0xFA)
-		self_test_status = ps2_read_data();
-	kassert(self_test_status == 0xAA);
+	/* TODO: Why does this not work?
+	* Bochs and VirtualBox seem to only respond with 0xAA (and then maybe 0xFA).
+	* QEMU seems to respond with 0xFA, then 0xAA.
+	* On my PC it doesn't respond at all to the command.
+	*/
+	/* uint8_t self_test_status = ps2kbd_cmd(0xFF);
+	klog("ps2", "Self-test and reset: %x\n", self_test_status);
+	kassert(self_test_status == 0xFA || self_test_status == 0xAA);
+	while ((ps2_read_status() & 1) == 1)
+		ps2_read_data();*/
+	
 #ifdef VERBOSE
 	klog("ps2", "Status byte is %x\n", ps2_read_status());
 	klog("ps2", "Configuration byte is %x\n", ps2_read_config());
