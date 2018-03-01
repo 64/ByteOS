@@ -14,6 +14,7 @@ static inline uint64_t calc_available_pages(struct mmap_region *available)
 	// TODO: Check we aren't losing any bytes here
 	physaddr_t effective_start = ALIGNUP(available->base + sizeof(struct zone), PAGE_SIZE);
 	size_t effective_len = available->len - (effective_start - (available->base + sizeof(struct zone)));
+	kassert_dbg(effective_len <= available->len);
 	return effective_len / PAGE_SIZE;
 }
 
@@ -32,22 +33,13 @@ static void reserve_page_data_range(physaddr_t start, size_t num_pages)
 			paging_map_page(kernel_p4, (physaddr_t)rg.base, array_addr, PAGE_WRITABLE);
 		}
 	}
-	klog("mmap", "Reserving %p\n", page_data + pfn_start);
 	memset(page_data + pfn_start, 0, (pfn_end - pfn_start) * sizeof(struct page));
 }
 
-static void reserve_page_data(struct mmap *mmap)
+static void reserve_page_data(struct mmap_type *available)
 {
-	// Copy into a new temporary array, since allocating might edit the array underneath us, so we need a separate copy
-	struct mmap_region temp_rgs[MMAP_MAX_REGIONS];
-	struct mmap_type temp_avail = {
-		.count = mmap->available.count,
-		.regions = temp_rgs
-	};
-	for (size_t i = 0; i < mmap->available.count; i++)
-		memcpy(temp_rgs + i, &mmap->available.regions[i], sizeof(struct mmap_region));
-	for (size_t i = 0; i < temp_avail.count; i++) {
-		struct mmap_region *rg = &temp_rgs[i];
+	for (size_t i = 0; i < available->count; i++) {
+		struct mmap_region *rg = &available->regions[i];
 		reserve_page_data_range(ALIGNUP(rg->base, PAGE_SIZE), calc_available_pages(rg));
 	}
 }
@@ -61,6 +53,7 @@ static struct zone *init_zone(struct mmap_region *rg)
 
 	zone->len = avail_pages * PAGE_SIZE;
 	zone->pa_start = ALIGNUP(rg->base + sizeof(struct zone) + avail_pages * (sizeof(struct page)), PAGE_SIZE);
+	slist_set_next(zone, list, (struct zone *)NULL);
 	memset(zone->free_lists, 0, sizeof(zone->free_lists));
 
 	// Populate the free_lists
@@ -74,6 +67,7 @@ static struct zone *init_zone(struct mmap_region *rg)
 		inserted->order = highest_order;
 		dlist_set_next(inserted, list, zone->free_lists[highest_order]);
 		zone->free_lists[highest_order] = inserted;
+		kassert_dbg(page_to_phys(inserted) + PAGE_SIZE * (1 << highest_order) <= zone->pa_start + zone->len);
 		pages_inserted += (1 << highest_order);
 	}
 	kassert(pages_inserted == avail_pages);
@@ -91,18 +85,31 @@ void pmm_init(struct mmap *mmap)
 {
 	struct zone *tail = NULL;
 	spin_init(&zone_list_lock);
-	reserve_page_data(mmap);
-	for (size_t i = 0; i < mmap->available.count; i++) {
-		struct zone *tmp = init_zone(&mmap->available.regions[i]);
-		if (tail == NULL)
+
+	// Copy into a new temporary array, since allocating might edit the array underneath us, so we need a separate copy
+	struct mmap_region temp_rgs[MMAP_MAX_REGIONS];
+	struct mmap_type temp_avail = {
+		.count = mmap->available.count,
+		.regions = temp_rgs
+	};
+	for (size_t i = 0; i < mmap->available.count; i++)
+		memcpy(temp_rgs + i, &mmap->available.regions[i], sizeof(struct mmap_region));
+
+	reserve_page_data(&temp_avail);
+	for (size_t i = 0; i < temp_avail.count; i++) {
+		struct zone *tmp = init_zone(&temp_rgs[i]);
+		if (tmp == NULL) // Not enough space to be usable
+			continue;
+		if (tail == NULL) {
 			zone_list = tmp;
-		else
+		} else
 			slist_set_next(tail, list, tmp);
 		tail = tmp;
 	}
 
 	slist_foreach(zone, list, zone_list) {
-		klog("pmm", "Zone: %p physical, %zu pages\n", (void *)virt_to_phys(zone), zone->len / PAGE_SIZE);
+		klog("pmm", "Zone: %p - %p physical, %zu pages\n", (void *)virt_to_phys(zone),
+			(void *)(virt_to_phys(zone) + zone->len), zone->len / PAGE_SIZE);
 	}
 }
 
@@ -142,7 +149,7 @@ static struct page *zone_alloc_order(struct zone *zone, unsigned int order, unsi
 	kassert(head->order == (int8_t)order);
 	kassert(head != NULL);
 	zone->free_lists[order] = dlist_get_next(head, list);
-	//kprintf("Allocated order %u at %p\n", order, (virtaddr_t)page_to_phys(head));
+	//klog("pmm", "Allocated order %u at %p\n", order, (virtaddr_t)page_to_phys(head));
 	// Not strictly necessary
 	dlist_set_next(head, list, (struct page *)NULL);
 	dlist_set_prev(head, list, (struct page *)NULL);
@@ -162,6 +169,7 @@ struct page *pmm_alloc_order(unsigned int order, unsigned int alloc_flags)
 		}
 	}
 	spin_unlock(&zone_list_lock);
+	kassert_dbg(false /* OOM */);
 	return NULL;
 }
 
@@ -204,8 +212,8 @@ void pmm_free_order(struct page *page, unsigned int order)
 {
 	kassert(page != NULL);
 	kassert(order < MAX_ORDER);
-	struct zone *zone = page_to_zone(page);
 	spin_lock(&zone_list_lock);
+	struct zone *zone = page_to_zone(page);
 	__pmm_free_order(page, order, zone);
 	spin_unlock(&zone_list_lock);
 }

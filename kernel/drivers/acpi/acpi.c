@@ -64,9 +64,9 @@ static void map_table(struct acpi_header *hd)
 {
 	// Map the first two pages for safety, then map the rest of the table
 	// The header could cross a page boundary and generate a page fault.
-	paging_map_page(kernel_p4, virt_to_phys(hd), hd, PAGING_NONE);
+	paging_map_page(kernel_p4, virt_to_phys(hd), hd, PAGING_ALLOC_MMAP);
 	paging_map_page(kernel_p4, virt_to_phys(hd) + sizeof(struct acpi_header),
-			(virtaddr_t)((uintptr_t)hd + sizeof(struct acpi_header)), PAGING_NONE);
+			(virtaddr_t)((uintptr_t)hd + sizeof(struct acpi_header)), PAGING_ALLOC_MMAP);
 
 	// Safe to dereference header now
 
@@ -74,7 +74,7 @@ static void map_table(struct acpi_header *hd)
 	for (size_t i = sizeof(struct acpi_header) + PAGE_SIZE; i < hd->length; i += PAGE_SIZE) {
 		virtaddr_t virt = (virtaddr_t)((uintptr_t)hd + i);
 		physaddr_t phys = virt_to_phys(virt);
-		paging_map_page(kernel_p4, phys, virt, PAGING_NONE);
+		paging_map_page(kernel_p4, phys, virt, PAGING_ALLOC_MMAP);
 	}
 
 	// Safe to access the whole table now
