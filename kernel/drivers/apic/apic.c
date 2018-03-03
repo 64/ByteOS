@@ -33,7 +33,7 @@ static void add_ioapic(struct madt_entry_ioapic *entry)
 	if (ioapic_list_size >= MAX_IOAPICS)
 		return;
 	// Map the I/O APIC base so we can access it
-	paging_map_page(kernel_p4, entry->phys_addr, phys_to_virt(entry->phys_addr), PAGING_ALLOC_MMAP | PAGE_DISABLE_CACHE | PAGE_WRITABLE);
+	vmm_map_page(kernel_p4, entry->phys_addr, phys_to_virt(entry->phys_addr), VMM_ALLOC_MMAP | PAGE_DISABLE_CACHE | PAGE_WRITABLE);
 	ioapic_list[ioapic_list_size++] = entry;
 	klog("apic", "Detected I/O APIC, id %d\n", entry->apic_id);
 }
@@ -95,7 +95,7 @@ static void parse_madt(struct acpi_madt *madt)
 	klog("apic", "Local APIC base at %p\n", lapic_base);
 
 	// Map the APIC base so we can access it
-	paging_map_page(kernel_p4, virt_to_phys(lapic_base), lapic_base, PAGING_ALLOC_MMAP | PAGE_DISABLE_CACHE | PAGE_WRITABLE);
+	vmm_map_page(kernel_p4, virt_to_phys(lapic_base), lapic_base, VMM_ALLOC_MMAP | PAGE_DISABLE_CACHE | PAGE_WRITABLE);
 }
 
 void apic_init(void)

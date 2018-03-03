@@ -6,8 +6,8 @@
 
 typedef uint64_t spinlock_t;
 
-void spin_lock(spinlock_t * volatile lock);
-void spin_unlock(spinlock_t * volatile lock);
+void spin_lock(volatile spinlock_t *lock);
+void spin_unlock(volatile spinlock_t *lock);
 
 #define spin_lock_irqsave(lock, rflags) ({ \
 	rflags = read_rflags(); \
@@ -18,7 +18,7 @@ void spin_unlock(spinlock_t * volatile lock);
 	spin_unlock(lock); \
 	write_rflags(rflags); })
 
-static inline void spin_init(spinlock_t * volatile lock)
+static inline void spin_init(volatile spinlock_t *lock)
 {
 	*lock = 0;
 }

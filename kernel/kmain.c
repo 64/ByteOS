@@ -20,13 +20,13 @@ void kmain(physaddr_t mboot_info_phys)
 	struct multiboot_info *mboot_info_virt = phys_to_kern(mboot_info_phys);
 
 	// Initialise paging
-	paging_init();
+	vmm_init();
 
 	// Create the bootstrapping memory allocator
 	struct mmap *mem_map = mmap_init(mboot_info_virt);
 
 	// Linearly map all physical memory
-	paging_map_all(mem_map);
+	vmm_map_all(mem_map);
 	mmap_dump_info();
 
 	// Find ACPI tables

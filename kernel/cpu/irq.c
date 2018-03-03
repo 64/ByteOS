@@ -51,7 +51,7 @@ void irq_eoi(uint8_t vec)
 	lapic_eoi(vec);
 }
 
-void irq_handler(struct isr_context *regs)
+void irq_handler(struct isr_ctx *regs)
 {
 	uint8_t int_no = regs->info & 0xFF;
 	irq_handler_t handler = irq_handlers[int_no];

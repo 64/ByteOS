@@ -27,8 +27,7 @@
 #define PAGE_SIZE 4096
 #define PAGE_SHIFT 12
 
-#define PAGING_ALLOC_MMAP (1 << 0)
-#define PAGING_NONE 0
+#define VMM_ALLOC_MMAP (1 << 0)
 
 #define MMAP_ALLOC_PA (1 << 0)
 #define MMAP_MAX_REGIONS 128
@@ -37,6 +36,7 @@
 #define MAX_ORDER 12
 
 #define GFP_NONE 0
+#define VMM_NONE 0
 #define KM_NONE 0
 
 typedef uint64_t pte_t;
@@ -85,13 +85,14 @@ extern struct page_table *kernel_p4;
 extern const uintptr_t _kernel_end_phys;
 extern struct page * const page_data;
 
-void paging_init(void);
-void paging_map_all(struct mmap *);
-physaddr_t paging_get_phys_addr(struct page_table *, void *);
-bool paging_has_flags(struct page_table *, void *, uint64_t flags);
-pte_t paging_get_pte(struct page_table *, void *);
-void paging_map_page(struct page_table *, physaddr_t, virtaddr_t, unsigned long);
-void paging_dump_tables(void);
+void vmm_init(void);
+void vmm_map_all(struct mmap *);
+physaddr_t vmm_get_phys_addr(struct page_table *, void *);
+bool vmm_has_flags(struct page_table *, void *, uint64_t flags);
+pte_t vmm_get_pte(struct page_table *, void *);
+void vmm_map_page(struct page_table *, physaddr_t, virtaddr_t, unsigned long);
+void vmm_dump_tables(void);
+void vmm_destroy_low_mappings(struct page_table *);
 
 struct mmap *mmap_init(struct multiboot_info *);
 void mmap_dump_info(void);

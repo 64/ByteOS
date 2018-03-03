@@ -8,4 +8,5 @@ uint8_t smp_cpu_id(void);
 void smp_init(void);
 void smp_ap_kmain(void);
 
-void ipi_abort(struct isr_context *regs);
+void ipi_abort(struct isr_ctx *regs);
+void ipi_tlb_shootdown(struct isr_ctx *regs);

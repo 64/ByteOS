@@ -3,7 +3,7 @@
 #include "util.h"
 #include "drivers/ps2.h"
 
-static void ps2kbd_irq_handler(struct isr_context *);
+static void ps2kbd_irq_handler(struct isr_ctx *);
 
 static __attribute__((unused)) uint8_t ps2kbd_cmd(uint8_t data)
 {
@@ -41,7 +41,7 @@ void ps2kbd_init(void)
 	klog("ps2kbd", "Initialised keyboard on IRQ %u\n", vec);
 }
 
-static void ps2kbd_irq_handler(struct isr_context *UNUSED(regs))
+static void ps2kbd_irq_handler(struct isr_ctx *UNUSED(regs))
 {
 	(void)ps2_read_data();
 	kprintf("Keyboard handler fired\n");

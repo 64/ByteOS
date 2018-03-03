@@ -25,12 +25,12 @@ static void reserve_page_data_range(physaddr_t start, size_t num_pages)
 	for (size_t pfn = pfn_start; pfn < pfn_end; pfn++) {
 		virtaddr_t array_addr = page_data + pfn;
 		// Probably won't happen, but in case this area isn't mapped, map it
-		if (!paging_has_flags(kernel_p4, array_addr, PAGE_PRESENT)) {
+		if (!vmm_has_flags(kernel_p4, array_addr, PAGE_PRESENT)) {
 			// Need to alloc + map
 			struct mmap_region rg = mmap_alloc_low(PAGE_SIZE, MMAP_ALLOC_PA);
 			kprintf("Allocated struct pages for pfn %zu\n", pfn);
 			kassert(rg.len == PAGE_SIZE);
-			paging_map_page(kernel_p4, (physaddr_t)rg.base, array_addr, PAGE_WRITABLE);
+			vmm_map_page(kernel_p4, (physaddr_t)rg.base, array_addr, PAGE_WRITABLE);
 		}
 	}
 	memset(page_data + pfn_start, 0, (pfn_end - pfn_start) * sizeof(struct page));
@@ -200,7 +200,7 @@ static void __pmm_free_order(struct page *page, unsigned int order, struct zone 
 		if (next != NULL)
 			dlist_set_prev(next, list, prev);
 		// Insert first into list order + 1
-		klog("pmm", "Merging blocks of order %u\n", order);
+		//klog("pmm", "Merging blocks of order %u\n", order);
 		__pmm_free_order(first, order + 1, zone);
 	} else {
 		dlist_set_next(page, list, zone->free_lists[order]);
@@ -215,6 +215,7 @@ void pmm_free_order(struct page *page, unsigned int order)
 	kassert(order < MAX_ORDER);
 	spin_lock(&zone_list_lock);
 	struct zone *zone = page_to_zone(page);
+	kassert(zone != NULL);
 	__pmm_free_order(page, order, zone);
 	spin_unlock(&zone_list_lock);
 }

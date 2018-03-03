@@ -77,7 +77,7 @@ smp_trampoline_64:
 	mov rsp, [smp_ap_stack]
 
 	extern smp_ap_started_flag
-	mov byte [smp_ap_started_flag], 1
+	lock inc byte [smp_ap_started_flag]
 
 	extern load_idt
 	call load_idt

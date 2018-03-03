@@ -35,7 +35,7 @@ static void smp_boot_ap(size_t index)
 	physaddr_t trampoline_end = trampoline_start + (vend - vstart);
 	for (size_t i = 0; i < (trampoline_end - trampoline_start); i += PAGE_SIZE) {
 		// Identity map for simplicity
-		paging_map_page(kernel_p4, trampoline_start + i, (virtaddr_t)(trampoline_start + i), PAGE_WRITABLE | PAGE_GLOBAL | PAGE_EXECUTABLE);
+		vmm_map_page(kernel_p4, trampoline_start + i, (virtaddr_t)(trampoline_start + i), PAGE_WRITABLE | PAGE_GLOBAL | PAGE_EXECUTABLE);
 		memcpy((virtaddr_t)(trampoline_start + i), (virtaddr_t)(vstart + i), PAGE_SIZE);
 	}
 
@@ -54,12 +54,12 @@ static void smp_boot_ap(size_t index)
 
 	// Send the SIPI (first attempt)
 	lapic_send_ipi(lapic->id, IPI_START_UP | ((uint32_t)trampoline_start / PAGE_SIZE));
-	pit_sleep_ms(1);
+	pit_sleep_ms(5);
 
 	if (!smp_ap_started_flag) {
 		// Send SIPI again (second attempt)
 		lapic_send_ipi(lapic->id, IPI_START_UP | ((uint32_t)trampoline_start / PAGE_SIZE));
-		pit_sleep_ms(1000);
+		pit_sleep_watch_flag(10, &smp_ap_started_flag, false);
 		if (!smp_ap_started_flag) {
 			klog("smp", "CPU %zu failed to boot\n", index);
 			lapic->present = 0;
@@ -80,7 +80,8 @@ void smp_init(void)
 	for (size_t i = 1; i < lapic_list_size; i++)
 		smp_boot_ap(i);
 
-	// TODO: Unmap trampoline code from memory
+	// Unmap trampoline code from memory
+	vmm_destroy_low_mappings(kernel_p4);
 
 	// Free any unused stacks if there were any
 	if (smp_ap_stack != NULL) {

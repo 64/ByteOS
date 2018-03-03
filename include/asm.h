@@ -99,6 +99,17 @@ static inline void pause(void)
 	__builtin_ia32_pause();
 }
 
+static inline void reload_cr3(void)
+{
+	asm volatile (
+		"mov %%cr3, %%rax\n"
+		"mov %%rax, %%cr3"
+		:
+		:
+		: "rax", "memory"
+	);
+}
+
 static inline uint64_t read_rflags(void)
 {
 	return __builtin_ia32_readeflags_u64();

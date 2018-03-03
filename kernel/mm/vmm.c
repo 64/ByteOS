@@ -24,21 +24,21 @@ extern struct page_table p4_table; // Initial kernel p4 table
 
 struct page_table *kernel_p4;
 
-void paging_init(void)
+void vmm_init(void)
 {
 	kernel_p4 = phys_to_kern((physaddr_t)&p4_table);
-	klog("paging", "Kernel P4 at %p\n", kernel_p4);
-//	paging_dump_tables();
+	klog("vmm", "Kernel P4 at %p\n", kernel_p4);
+//	vmm_dump_tables();
 }
 
-void paging_map_all(struct mmap *mmap)
+void vmm_map_all(struct mmap *mmap)
 {
 	// First map all regions marked "available", updating highest_mapped
 	for (size_t i = 0; i < mmap->available.count; i++) {
 		physaddr_t start = ALIGNUP(mmap->available.regions[i].base, PAGE_SIZE);
 		physaddr_t end = mmap->available.regions[i].base + mmap->available.regions[i].len;
 		for (physaddr_t j = start; j <= (end - PAGE_SIZE); j += PAGE_SIZE) {
-			paging_map_page(kernel_p4, j, phys_to_virt(j), PAGING_ALLOC_MMAP | PAGE_WRITABLE);
+			vmm_map_page(kernel_p4, j, phys_to_virt(j), VMM_ALLOC_MMAP | PAGE_WRITABLE);
 			mmap->highest_mapped = MAX(j, mmap->highest_mapped);
 		}
 	}
@@ -55,7 +55,7 @@ static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgta
 static inline pte_t alloc_pgtab(unsigned int alloc_flags)
 {
 	uint64_t flags = PAGE_PRESENT | PAGE_WRITABLE | (alloc_flags & (PAGE_USER_ACCESSIBLE));
-	if (alloc_flags & PAGING_ALLOC_MMAP) {
+	if (alloc_flags & VMM_ALLOC_MMAP) {
 		// Mmap low allocs are guaranteed to be mapped
 		physaddr_t pgtab_phys = mmap_alloc_low(PAGE_SIZE, MMAP_ALLOC_PA).base;
 		kassert_dbg((pgtab_phys & 0xFFF) == 0); // Must be aligned
@@ -68,7 +68,7 @@ static inline pte_t alloc_pgtab(unsigned int alloc_flags)
 	}
 }
 
-void paging_dump_tables(void)
+void vmm_dump_tables(void)
 {
 	for (size_t i = 0; i < 512; i++) {
 		struct page_table *pgtab = pgtab_extract_virt_addr(kernel_p4, i);
@@ -117,7 +117,7 @@ static void __attribute__((unused)) dump_page_tables_p0(struct page_table *p0, u
 	}	
 }
 
-pte_t paging_get_pte(struct page_table *p4, void *addr)
+pte_t vmm_get_pte(struct page_table *p4, void *addr)
 {
 	const uintptr_t va = (uintptr_t)addr;
 	const uint16_t p4_index = (va & P4_ADDR_MASK) >> P4_ADDR_SHIFT;
@@ -140,13 +140,13 @@ pte_t paging_get_pte(struct page_table *p4, void *addr)
 	return p1_table->pages[p1_index];
 }
 
-bool paging_has_flags(struct page_table *p4, void *addr, uint64_t flags)
+bool vmm_has_flags(struct page_table *p4, void *addr, uint64_t flags)
 {
 	kassert_dbg(addr != NULL);
-	return (paging_get_pte(p4, addr) & flags) != 0;
+	return (vmm_get_pte(p4, addr) & flags) != 0;
 }
 
-void paging_map_page(struct page_table *p4, physaddr_t phys, virtaddr_t virt, unsigned long flags)
+void vmm_map_page(struct page_table *p4, physaddr_t phys, virtaddr_t virt, unsigned long flags)
 {
 	const uintptr_t va = (uintptr_t)virt;
 	const uint16_t p4_index = (va & P4_ADDR_MASK) >> P4_ADDR_SHIFT;
@@ -186,15 +186,42 @@ void paging_map_page(struct page_table *p4, physaddr_t phys, virtaddr_t virt, un
 		memset(p1_table, 0, sizeof(struct page_table));
 	}
 
-	flags &= ~PAGING_ALLOC_MMAP; // Don't care about this flag anymore
+	flags &= ~VMM_ALLOC_MMAP; // Don't care about this flag anymore
 	p1_table->pages[p1_index] = (phys & PTE_ADDR_MASK) | PAGE_PRESENT | flags;
 	invlpg((uintptr_t)virt);
 }
 
-physaddr_t paging_get_phys_addr(struct page_table *p4, void *virt)
+void vmm_destroy_low_mappings(struct page_table *p4)
+{
+	// Only loop over the userspace mappings
+	for (size_t p4_index = 0; p4_index < (1 << 7); p4_index++) {
+		struct page_table *p3 = pgtab_extract_virt_addr(p4, p4_index);
+		if (p3 == NULL)
+			continue;
+		for (size_t p3_index = 0; p3_index < 512; p3_index++) {
+			struct page_table *p2 = pgtab_extract_virt_addr(p3, p3_index);
+			if (p2 == NULL)
+				continue;
+			for (size_t p2_index = 0; p2_index < 512; p2_index++) {
+				struct page_table *p1 = pgtab_extract_virt_addr(p2, p2_index);
+				if (p1 != NULL) {
+					pmm_free_order(virt_to_page(p1), 0);
+					p2->pages[p2_index] = 0;
+				}
+			}
+			pmm_free_order(virt_to_page(p2), 0);
+			p3->pages[p3_index] = 0;
+		}
+		pmm_free_order(virt_to_page(p3), 0);
+		p4->pages[p4_index] = 0;
+	}
+	reload_cr3();
+}
+
+physaddr_t vmm_get_phys_addr(struct page_table *p4, void *virt)
 {
 	kassert_dbg(virt >= (void *)0x1000); // Doesn't work below this address
 	uint16_t page_offset = (uintptr_t)virt & PAGE_OFFSET_MASK;
-	physaddr_t addr = (physaddr_t)(paging_get_pte(p4, virt) & PTE_ADDR_MASK);
+	physaddr_t addr = (physaddr_t)(vmm_get_pte(p4, virt) & PTE_ADDR_MASK);
 	return (addr == 0) ? 0 : addr + page_offset;
 }

@@ -19,7 +19,7 @@
 
 #define ISA_TO_INTERRUPT(x) (ioapic_isa_to_gsi(x) + IRQ_APIC_BASE)
 
-struct isr_context {
+struct isr_ctx {
 	uint64_t r11;
 	uint64_t r10;
 	uint64_t r9;
@@ -41,7 +41,7 @@ struct isr_context {
 	uint64_t ss;
 };
 
-typedef void (*irq_handler_t)(struct isr_context *);
+typedef void (*irq_handler_t)(struct isr_ctx *);
 
 struct idt_entry {
 	uint16_t offset_low;
@@ -55,7 +55,7 @@ struct idt_entry {
 
 extern struct idt_entry idt64[256];
 
-void exception_handler(struct isr_context *);
+void exception_handler(struct isr_ctx *);
 
 void idt_init(void);
 void idt_set_isr(uint8_t index, virtaddr_t entry, uint8_t ist, uint8_t type_attr);
@@ -63,7 +63,7 @@ void idt_set_isr(uint8_t index, virtaddr_t entry, uint8_t ist, uint8_t type_attr
 void load_idt(void);
 
 void irq_init(void);
-void irq_handler(struct isr_context *);
+void irq_handler(struct isr_ctx *);
 void irq_eoi(uint8_t);
 void irq_mask(uint8_t);
 void irq_unmask(uint8_t);
