@@ -36,6 +36,7 @@ void kmain(physaddr_t mboot_info_phys)
 	apic_init();
 
 	// Start the physical memory manager
+	// After this point, we have access to pmm_alloc_order and kmalloc
 	pmm_init(mem_map);
 
 	// Enable the LAPIC for the BSP
@@ -43,7 +44,6 @@ void kmain(physaddr_t mboot_info_phys)
 
 	// Initialise all I/O APICs
 	ioapic_init();
-	irq_enable();
 
 	// Initialise mouse and keyboard
 	ps2_init();
@@ -51,11 +51,12 @@ void kmain(physaddr_t mboot_info_phys)
 	// Initialise the PIT
 	pit_init();
 
+	// Turn on IRQs
+	irq_enable();
+
 	// Initialise per-CPU data structures
 	percpu_init();
 
 	// Boot all the cores
 	smp_init();
-
-	// At this point, we have physical and virtual memory allocation
 }

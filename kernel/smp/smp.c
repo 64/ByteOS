@@ -14,7 +14,10 @@ extern uintptr_t smp_trampoline_end;
 volatile bool smp_ap_started_flag;
 volatile virtaddr_t smp_ap_stack;
 
+volatile unsigned int smp_nr_cpus_ready = 1;
+
 #define TRAMPOLINE_START 0x1000
+// TODO: Add a define for the kernel stack size
 
 // This is slow, but we store the value in the per-CPU data structure, so use that instead
 uint8_t smp_cpu_id(void)
@@ -35,7 +38,7 @@ static void smp_boot_ap(size_t index)
 	physaddr_t trampoline_end = trampoline_start + (vend - vstart);
 	for (size_t i = 0; i < (trampoline_end - trampoline_start); i += PAGE_SIZE) {
 		// Identity map for simplicity
-		vmm_map_page(kernel_p4, trampoline_start + i, (virtaddr_t)(trampoline_start + i), PAGE_WRITABLE | PAGE_GLOBAL | PAGE_EXECUTABLE);
+		vmm_map_page(kernel_p4, trampoline_start + i, (virtaddr_t)(trampoline_start + i), PAGE_WRITABLE | PAGE_EXECUTABLE);
 		memcpy((virtaddr_t)(trampoline_start + i), (virtaddr_t)(vstart + i), PAGE_SIZE);
 	}
 
@@ -97,4 +100,6 @@ void smp_ap_kmain(void)
 	lapic_enable();
 	irq_enable();
 	percpu_init();
+
+	__atomic_add_fetch(&smp_nr_cpus_ready, 1, __ATOMIC_RELAXED);
 }

@@ -3,6 +3,7 @@
 #include "mm.h"
 #include "asm.h"
 #include "util.h"
+#include "smp.h"
 #include "drivers/pit.h"
 
 #define P4_ADDR_SHIFT 39
@@ -38,7 +39,7 @@ void vmm_map_all(struct mmap *mmap)
 		physaddr_t start = ALIGNUP(mmap->available.regions[i].base, PAGE_SIZE);
 		physaddr_t end = mmap->available.regions[i].base + mmap->available.regions[i].len;
 		for (physaddr_t j = start; j <= (end - PAGE_SIZE); j += PAGE_SIZE) {
-			vmm_map_page(kernel_p4, j, phys_to_virt(j), VMM_ALLOC_MMAP | PAGE_WRITABLE);
+			vmm_map_page(kernel_p4, j, phys_to_virt(j), VMM_ALLOC_MMAP | PAGE_GLOBAL | PAGE_WRITABLE);
 			mmap->highest_mapped = MAX(j, mmap->highest_mapped);
 		}
 	}
@@ -154,11 +155,6 @@ void vmm_map_page(struct page_table *p4, physaddr_t phys, virtaddr_t virt, unsig
 	const uint16_t p2_index = (va & P2_ADDR_MASK) >> P2_ADDR_SHIFT;
 	const uint16_t p1_index = (va & P1_ADDR_MASK) >> P1_ADDR_SHIFT;
 
-	if ((uintptr_t)virt < 0xFFFF000000000000 && (flags & PAGE_GLOBAL) == 0)
-		flags |= PAGE_USER_ACCESSIBLE;
-	else
-		flags |= PAGE_GLOBAL;
-
 	// When the bit is on, execution is disabled, so we need to toggle the bit
 	flags ^= PAGE_EXECUTABLE;
 
@@ -186,6 +182,14 @@ void vmm_map_page(struct page_table *p4, physaddr_t phys, virtaddr_t virt, unsig
 		memset(p1_table, 0, sizeof(struct page_table));
 	}
 
+#ifdef DEBUG
+	// We should really be doing a TLB shootdown in this case.
+	if (smp_nr_cpus() > 1) {
+		kassert((p1_table->pages[p1_index] & PAGE_GLOBAL) == 0);
+		kassert((flags & PAGE_GLOBAL) == 0);
+	}
+#endif
+
 	flags &= ~VMM_ALLOC_MMAP; // Don't care about this flag anymore
 	p1_table->pages[p1_index] = (phys & PTE_ADDR_MASK) | PAGE_PRESENT | flags;
 	invlpg((uintptr_t)virt);
@@ -205,6 +209,7 @@ void vmm_destroy_low_mappings(struct page_table *p4)
 			for (size_t p2_index = 0; p2_index < 512; p2_index++) {
 				struct page_table *p1 = pgtab_extract_virt_addr(p2, p2_index);
 				if (p1 != NULL) {
+					kassert_dbg((p2->pages[p2_index] & PAGE_GLOBAL) == 0);
 					pmm_free_order(virt_to_page(p1), 0);
 					p2->pages[p2_index] = 0;
 				}
@@ -216,6 +221,7 @@ void vmm_destroy_low_mappings(struct page_table *p4)
 		p4->pages[p4_index] = 0;
 	}
 	reload_cr3();
+	// TODO: Might need a TLB shootdown here.
 }
 
 physaddr_t vmm_get_phys_addr(struct page_table *p4, void *virt)
