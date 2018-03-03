@@ -38,7 +38,7 @@ static void smp_boot_ap(size_t index)
 	physaddr_t trampoline_end = trampoline_start + (vend - vstart);
 	for (size_t i = 0; i < (trampoline_end - trampoline_start); i += PAGE_SIZE) {
 		// Identity map for simplicity
-		vmm_map_page(kernel_p4, trampoline_start + i, (virtaddr_t)(trampoline_start + i), PAGE_WRITABLE | PAGE_EXECUTABLE);
+		vmm_map_page(&kernel_mmu, trampoline_start + i, (virtaddr_t)(trampoline_start + i), PAGE_WRITABLE | PAGE_EXECUTABLE);
 		memcpy((virtaddr_t)(trampoline_start + i), (virtaddr_t)(vstart + i), PAGE_SIZE);
 	}
 
@@ -84,7 +84,7 @@ void smp_init(void)
 		smp_boot_ap(i);
 
 	// Unmap trampoline code from memory
-	vmm_destroy_low_mappings(kernel_p4);
+	vmm_destroy_low_mappings(&kernel_mmu);
 
 	// Free any unused stacks if there were any
 	if (smp_ap_stack != NULL) {

@@ -25,12 +25,12 @@ static void reserve_page_data_range(physaddr_t start, size_t num_pages)
 	for (size_t pfn = pfn_start; pfn < pfn_end; pfn++) {
 		virtaddr_t array_addr = page_data + pfn;
 		// Probably won't happen, but in case this area isn't mapped, map it
-		if (!vmm_has_flags(kernel_p4, array_addr, PAGE_PRESENT)) {
+		if (!vmm_has_flags(&kernel_mmu, array_addr, PAGE_PRESENT)) {
 			// Need to alloc + map
 			struct mmap_region rg = mmap_alloc_low(PAGE_SIZE, MMAP_ALLOC_PA);
 			kprintf("Allocated struct pages for pfn %zu\n", pfn);
 			kassert(rg.len == PAGE_SIZE);
-			vmm_map_page(kernel_p4, (physaddr_t)rg.base, array_addr, PAGE_WRITABLE | PAGE_GLOBAL);
+			vmm_map_page(&kernel_mmu, (physaddr_t)rg.base, array_addr, PAGE_WRITABLE | PAGE_GLOBAL);
 		}
 	}
 	memset(page_data + pfn_start, 0, (pfn_end - pfn_start) * sizeof(struct page));

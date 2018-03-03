@@ -22,13 +22,12 @@ static void dump_page_tables_p1(struct page_table *, uintptr_t);
 static void dump_page_tables_p0(struct page_table *, uintptr_t);
 
 extern struct page_table p4_table; // Initial kernel p4 table
-
-struct page_table *kernel_p4;
+struct mmu_info kernel_mmu;
 
 void vmm_init(void)
 {
-	kernel_p4 = phys_to_kern((physaddr_t)&p4_table);
-	klog("vmm", "Kernel P4 at %p\n", kernel_p4);
+	kernel_mmu.p4 = phys_to_kern((physaddr_t)&p4_table);
+	klog("vmm", "Kernel P4 at %p\n", kernel_mmu.p4);
 //	vmm_dump_tables();
 }
 
@@ -39,7 +38,7 @@ void vmm_map_all(struct mmap *mmap)
 		physaddr_t start = ALIGNUP(mmap->available.regions[i].base, PAGE_SIZE);
 		physaddr_t end = mmap->available.regions[i].base + mmap->available.regions[i].len;
 		for (physaddr_t j = start; j <= (end - PAGE_SIZE); j += PAGE_SIZE) {
-			vmm_map_page(kernel_p4, j, phys_to_virt(j), VMM_ALLOC_MMAP | PAGE_GLOBAL | PAGE_WRITABLE);
+			vmm_map_page(&kernel_mmu, j, phys_to_virt(j), VMM_ALLOC_MMAP | PAGE_GLOBAL | PAGE_WRITABLE);
 			mmap->highest_mapped = MAX(j, mmap->highest_mapped);
 		}
 	}
@@ -72,10 +71,10 @@ static inline pte_t alloc_pgtab(unsigned int alloc_flags)
 void vmm_dump_tables(void)
 {
 	for (size_t i = 0; i < 512; i++) {
-		struct page_table *pgtab = pgtab_extract_virt_addr(kernel_p4, i);
+		struct page_table *pgtab = pgtab_extract_virt_addr(kernel_mmu.p4, i);
 		if (pgtab == NULL)
 			continue;
-		kprintf("P3: %lx\n", kernel_p4->pages[i] & ~PTE_ADDR_MASK);
+		kprintf("P3: %lx\n", kernel_mmu.p4->pages[i] & ~PTE_ADDR_MASK);
 		dump_page_tables_p2(pgtab, 0xFFFF000000000000 | (i << 39));
 	}
 }
@@ -118,7 +117,7 @@ static void __attribute__((unused)) dump_page_tables_p0(struct page_table *p0, u
 	}	
 }
 
-pte_t vmm_get_pte(struct page_table *p4, void *addr)
+pte_t vmm_get_pte(struct mmu_info *mmu, void *addr)
 {
 	const uintptr_t va = (uintptr_t)addr;
 	const uint16_t p4_index = (va & P4_ADDR_MASK) >> P4_ADDR_SHIFT;
@@ -126,7 +125,7 @@ pte_t vmm_get_pte(struct page_table *p4, void *addr)
 	const uint16_t p2_index = (va & P2_ADDR_MASK) >> P2_ADDR_SHIFT;
 	const uint16_t p1_index = (va & P1_ADDR_MASK) >> P1_ADDR_SHIFT;
 
-	struct page_table *p3_table = pgtab_extract_virt_addr(p4, p4_index);
+	struct page_table *p3_table = pgtab_extract_virt_addr(mmu->p4, p4_index);
 	if (p3_table == NULL)
 		return 0;
 
@@ -141,13 +140,13 @@ pte_t vmm_get_pte(struct page_table *p4, void *addr)
 	return p1_table->pages[p1_index];
 }
 
-bool vmm_has_flags(struct page_table *p4, void *addr, uint64_t flags)
+bool vmm_has_flags(struct mmu_info *mmu, void *addr, uint64_t flags)
 {
 	kassert_dbg(addr != NULL);
-	return (vmm_get_pte(p4, addr) & flags) != 0;
+	return (vmm_get_pte(mmu, addr) & flags) != 0;
 }
 
-void vmm_map_page(struct page_table *p4, physaddr_t phys, virtaddr_t virt, unsigned long flags)
+void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsigned long flags)
 {
 	const uintptr_t va = (uintptr_t)virt;
 	const uint16_t p4_index = (va & P4_ADDR_MASK) >> P4_ADDR_SHIFT;
@@ -158,10 +157,10 @@ void vmm_map_page(struct page_table *p4, physaddr_t phys, virtaddr_t virt, unsig
 	// When the bit is on, execution is disabled, so we need to toggle the bit
 	flags ^= PAGE_EXECUTABLE;
 
-	struct page_table *p3_table = pgtab_extract_virt_addr(p4, p4_index);
+	struct page_table *p3_table = pgtab_extract_virt_addr(mmu->p4, p4_index);
 	if (p3_table == NULL) {
-		p4->pages[p4_index] = alloc_pgtab(flags);
-		p3_table = pgtab_extract_virt_addr(p4, p4_index);
+		mmu->p4->pages[p4_index] = alloc_pgtab(flags);
+		p3_table = pgtab_extract_virt_addr(mmu->p4, p4_index);
 		kassert_dbg(p3_table != NULL);
 		memset(p3_table, 0, sizeof(struct page_table));
 	}
@@ -195,11 +194,11 @@ void vmm_map_page(struct page_table *p4, physaddr_t phys, virtaddr_t virt, unsig
 	invlpg((uintptr_t)virt);
 }
 
-void vmm_destroy_low_mappings(struct page_table *p4)
+void vmm_destroy_low_mappings(struct mmu_info *mmu)
 {
 	// Only loop over the userspace mappings
 	for (size_t p4_index = 0; p4_index < (1 << 7); p4_index++) {
-		struct page_table *p3 = pgtab_extract_virt_addr(p4, p4_index);
+		struct page_table *p3 = pgtab_extract_virt_addr(mmu->p4, p4_index);
 		if (p3 == NULL)
 			continue;
 		for (size_t p3_index = 0; p3_index < 512; p3_index++) {
@@ -218,16 +217,16 @@ void vmm_destroy_low_mappings(struct page_table *p4)
 			p3->pages[p3_index] = 0;
 		}
 		pmm_free_order(virt_to_page(p3), 0);
-		p4->pages[p4_index] = 0;
+		mmu->p4->pages[p4_index] = 0;
 	}
 	reload_cr3();
 	// TODO: Might need a TLB shootdown here.
 }
 
-physaddr_t vmm_get_phys_addr(struct page_table *p4, void *virt)
+physaddr_t vmm_get_phys_addr(struct mmu_info *mmu, void *virt)
 {
 	kassert_dbg(virt >= (void *)0x1000); // Doesn't work below this address
 	uint16_t page_offset = (uintptr_t)virt & PAGE_OFFSET_MASK;
-	physaddr_t addr = (physaddr_t)(vmm_get_pte(p4, virt) & PTE_ADDR_MASK);
+	physaddr_t addr = (physaddr_t)(vmm_get_pte(mmu, virt) & PTE_ADDR_MASK);
 	return (addr == 0) ? 0 : addr + page_offset;
 }
