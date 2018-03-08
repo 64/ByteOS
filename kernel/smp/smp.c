@@ -64,7 +64,7 @@ static void smp_boot_ap(size_t index)
 		lapic_send_ipi(lapic->id, IPI_START_UP | ((uint32_t)trampoline_start / PAGE_SIZE));
 		pit_sleep_watch_flag(10, &smp_ap_started_flag, false);
 		if (!smp_ap_started_flag) {
-			klog("smp", "CPU %zu failed to boot\n", index);
+			klog_warn("smp", "CPU %zu failed to boot\n", index);
 			lapic->present = 0;
 			return;
 		}
@@ -83,7 +83,9 @@ void smp_init(void)
 	for (size_t i = 1; i < lapic_list_size; i++)
 		smp_boot_ap(i);
 
-	// Unmap trampoline code from memory
+	// Unmap trampoline code from memory.
+	// We rely on the fact that no CPU is going to access their
+	// trampoline memory (before doing a cr3 reload to context switch).
 	vmm_destroy_low_mappings(&kernel_mmu);
 
 	// Free any unused stacks if there were any

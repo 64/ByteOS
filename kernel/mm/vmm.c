@@ -42,6 +42,7 @@ void vmm_map_all(struct mmap *mmap)
 			mmap->highest_mapped = MAX(j, mmap->highest_mapped);
 		}
 	}
+	kernel_mmu.p4 = phys_to_virt((physaddr_t)&p4_table);
 }
 
 static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgtab, uint16_t index)
@@ -148,7 +149,7 @@ bool vmm_has_flags(struct mmu_info *mmu, void *addr, uint64_t flags)
 
 void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsigned long flags)
 {
-	const uintptr_t va = (uintptr_t)virt;
+	const uintptr_t va = (uintptr_t)virt & ~(PAGE_SIZE - 1);
 	const uint16_t p4_index = (va & P4_ADDR_MASK) >> P4_ADDR_SHIFT;
 	const uint16_t p3_index = (va & P3_ADDR_MASK) >> P3_ADDR_SHIFT;
 	const uint16_t p2_index = (va & P2_ADDR_MASK) >> P2_ADDR_SHIFT;
@@ -208,7 +209,6 @@ void vmm_destroy_low_mappings(struct mmu_info *mmu)
 			for (size_t p2_index = 0; p2_index < 512; p2_index++) {
 				struct page_table *p1 = pgtab_extract_virt_addr(p2, p2_index);
 				if (p1 != NULL) {
-					kassert_dbg((p2->pages[p2_index] & PAGE_GLOBAL) == 0);
 					pmm_free_order(virt_to_page(p1), 0);
 					p2->pages[p2_index] = 0;
 				}

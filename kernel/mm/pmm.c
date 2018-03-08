@@ -148,12 +148,11 @@ static struct page *zone_alloc_order(struct zone *zone, unsigned int order, unsi
 	}
 	struct page *head = zone->free_lists[order];
 	kassert(head->order == (int8_t)order);
-	kassert(head != NULL);
 	zone->free_lists[order] = dlist_get_next(head, list);
 	//klog("pmm", "Allocated order %u at %p\n", order, page_to_virt(head));
-	// Not strictly necessary
 	dlist_set_next(head, list, (struct page *)NULL);
 	dlist_set_prev(head, list, (struct page *)NULL);
+	kassert_dbg(head != NULL);
 	return head;
 }
 
@@ -170,7 +169,8 @@ struct page *pmm_alloc_order(unsigned int order, unsigned int alloc_flags)
 		}
 	}
 	spin_unlock(&zone_list_lock);
-	kassert_dbg(false /* OOM */);
+	if (!(alloc_flags & GFP_CAN_FAIL))
+		panic("PMM out of memory");
 	return NULL;
 }
 
@@ -185,13 +185,23 @@ static struct zone *page_to_zone(struct page *page)
 	return NULL;
 }
 
+static bool is_page_free(struct page *page, struct zone *zone)
+{
+	if (dlist_get_next(page, list) == NULL && dlist_get_prev(page, list) == NULL)
+		return false;
+	for (size_t i = 0; i < MAX_ORDER; i++)
+		if (zone->free_lists[i] == page)
+			return false;
+	return true;
+}
+
 static void __pmm_free_order(struct page *page, unsigned int order, struct zone *zone)
 {
 	struct page *buddy = page_buddy(page, order);
 	struct page *first = (void *)MIN((uintptr_t)buddy, (uintptr_t)page);
 	// If buddy is free, merge
 	// If buddy is not free, insert page back into list
-	if (buddy->count == 0 && buddy->order == (int8_t)order && order < (MAX_ORDER - 1)) {
+	if (is_page_free(buddy, zone) && buddy->order == (int8_t)order) {
 		// Remove buddy from list order
 		struct page *prev = dlist_get_prev(buddy, list);
 		struct page *next = dlist_get_next(buddy, list);
@@ -211,8 +221,10 @@ static void __pmm_free_order(struct page *page, unsigned int order, struct zone 
 
 void pmm_free_order(struct page *page, unsigned int order)
 {
-	kassert(page != NULL);
-	kassert(order < MAX_ORDER);
+	kassert_dbg(page != NULL);
+	kassert_dbg(order < MAX_ORDER);
+	kassert_dbg(dlist_get_next(page, list) == NULL);
+	kassert_dbg(dlist_get_prev(page, list) == NULL);
 	spin_lock(&zone_list_lock);
 	struct zone *zone = page_to_zone(page);
 	kassert(zone != NULL);

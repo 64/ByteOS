@@ -8,3 +8,4 @@
 - [ ] Lazy TLB shootdown and IPIs (https://forum.osdev.org/viewtopic.php?f=15&t=23919, http://archive.is/KnVr6)
 - [ ] Num CPUs started counter
 - [ ] Refcount and syncronize page table accesses
+- [ ] Use init data section

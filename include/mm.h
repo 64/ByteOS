@@ -32,6 +32,8 @@
 #define MMAP_ALLOC_PA (1 << 0)
 #define MMAP_MAX_REGIONS 128
 
+#define GFP_CAN_FAIL (1 << 0)
+
 // This means that the largest allocation is 2^(MAX_ORDER - 1) * 4096 bytes
 #define MAX_ORDER 12
 
@@ -69,7 +71,6 @@ struct mmap {
 // This should be kept as small as possible
 struct page {
 	struct dlist_entry list; // Can be used for whatever purpose
-	uint32_t count; // If 0, page is free
 	int8_t order; // For buddy allocator system
 };
 

@@ -40,6 +40,7 @@ static const char *const exception_messages[32] = {
 	"(reserved exception 31)"
 };
 
+// TODO: Implement lazy TLB invalidation
 static void page_fault(uint8_t int_no, struct isr_ctx *regs)
 {
 	uintptr_t faulting_address;

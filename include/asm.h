@@ -110,6 +110,17 @@ static inline void reload_cr3(void)
 	);
 }
 
+static inline uint64_t read_cr3(void)
+{
+	uint64_t rv;
+	asm volatile (
+		"mov %%cr3, %0"
+		: "=a"(rv)
+		:
+	);
+	return rv;
+}
+
 static inline uint64_t read_rflags(void)
 {
 	return __builtin_ia32_readeflags_u64();

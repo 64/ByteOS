@@ -8,8 +8,9 @@
 struct percpu {
 	struct task *task; // Currently running task
 	virtaddr_t rsp_scratch;
-	uint32_t id;
 	bool need_reschedule;
+	virtaddr_t tss;
+	uint32_t id;
 };
 
 void percpu_init(void);

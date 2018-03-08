@@ -27,20 +27,14 @@ load_idt:
 	push r9
 	push r10
 	push r11
+
+	; Call the handler
 	mov rdi, rsp
 	extern %1
 	call %1
-	pop r11
-	pop r10
-	pop r9
-	pop r8
-	pop rax
-	pop rcx
-	pop rdx
-	pop rsi
-	pop rdi
-	add rsp, 8 ; Info field
-	iretq
+	
+	extern ret_from_interrupt
+	jmp ret_from_interrupt
 %endmacro
 
 isr_common_exception:
@@ -85,7 +79,6 @@ global isr_stub_%1
 isr_stub_%1:
 	push qword %1
 	isr_common_fn ipi_%2
-	iretq
 %endmacro
 
 ; Exceptions
@@ -344,7 +337,7 @@ isr_stub_irq 247
 isr_stub_irq 248
 isr_stub_irq 249
 isr_stub_irq 250
-isr_stub_irq 251
+isr_stub_ipi 251, tlb_shootdown
 isr_stub_ipi 252, abort ; Must match interrupts.h
 isr_stub_irq 253 ; LINT0
 isr_stub_irq 254 ; LINT1

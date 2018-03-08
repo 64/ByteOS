@@ -1,25 +1,24 @@
 #include "libk.h"
 #include "syscall.h"
+#include "proc.h"
+#include "asm.h"
 
 #define NAME(name) syscall_ ## name
 #define CAST(name) (syscall_t)NAME(name)
 
-static uint64_t NAME(write)(uint64_t arg)
+static uint64_t NAME(yield)(void)
 {
-	kprintf("%s", (char *)arg);
+	schedule();
 	return 0;
 }
 
-static uint64_t NAME(yield)(void)
+static uint64_t NAME(write)(uint64_t arg1)
 {
-	//task_switch_fn();
+	kprintf("%c", (int)arg1);
 	return 0;
 }
 
 syscall_t syscall_table[NUM_SYSCALLS] = {
-	CAST(write),
-	CAST(yield)
+	CAST(yield),
+	CAST(write)
 };
-
-
-

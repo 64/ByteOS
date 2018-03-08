@@ -3,6 +3,8 @@
 #include "smp.h"
 #include "percpu.h"
 
+extern uint64_t tss64[];
+
 void percpu_init(void)
 {
 	struct percpu *cpu = kmalloc(sizeof * cpu, KM_NONE);
@@ -12,4 +14,9 @@ void percpu_init(void)
 	cpu->task = NULL;
 	cpu->rsp_scratch = NULL;
 	cpu->need_reschedule = false;
+
+	if (cpu->id == 0)
+		cpu->tss = tss64;
+	else
+		cpu->tss = 0x0;
 }

@@ -5,6 +5,7 @@
 #include "smp.h"
 #include "spin.h"
 #include "interrupts.h"
+#include "proc.h"
 #include "util.h"
 #include "percpu.h"
 #include "drivers/apic.h"
@@ -59,4 +60,7 @@ void kmain(physaddr_t mboot_info_phys)
 
 	// Boot all the cores
 	smp_init();
+
+	// Run the scheduler
+	sched_run();
 }

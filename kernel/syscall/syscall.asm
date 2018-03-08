@@ -61,19 +61,17 @@ syscall_entry:
 	; Switch to kernel stack
 	mov [gs:0x8], rsp
 	mov rsp, [gs:0x0]
-	mov rsp, [0] ; TODO: Load kernel's stack pointer
+	mov rsp, [rsp + 0x18]
 
 	; Setup simulated IRQ frame
 	push qword (GDT_USER_DATA | 0x3)
 	push qword [gs:0x8] ; Old RSP
-	pushfq ; rflags
+	push r11
 	push qword (GDT_USER_CODE | 0x3)
 	push rcx ; rip
 
 	; Interrupts will be safely handled on the kernel stack
 	sti
-
-	push rax ; info
 
 	; Was the syscall out of range?
 	cmp rax, NUM_SYSCALLS
@@ -87,17 +85,16 @@ syscall_entry:
 	push rsi
 	push rdx
 	push qword 0 ; rcx
-	push qword ENOSYS ; rax
 	push r8
 	push r9
 	push r10
 	push qword 0 ; r11
 	call rax
-	add rsp, 8 ; r11
+	pop r11
 	pop r10
 	pop r9
 	pop r8
-	add rsp, 16 ; rax, rcx
+	pop rcx
 	pop rdx
 	pop rsi
 	pop rdi
@@ -106,18 +103,4 @@ syscall_entry:
 .bad_syscall:
 	mov rax, ENOSYS
 .done:
-	add rsp, 8 ; info
-	pop rcx ; rip
-	add rsp, 8 ; cs
-	pop r11 ; rflags
-
-	; Disable interrupts (don't want interrupts using a ring 3 stack)
-	cli
-
-	; Switch to user stack again
-	pop rsp ; rsp
-	add rsp, 8 ; ss
-
-	; rip is in rcx
-	; rflags is in r11
-	o64 sysret
+	iretq
