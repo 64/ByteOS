@@ -57,6 +57,7 @@ syscall_enable:
 syscall_entry:
 	; rip is in rcx
 	; rflags is in r11
+	; WARNING: Do not clobber any argument registers like rdi
 
 	; Switch to kernel stack
 	mov [gs:0x8], rsp
@@ -77,30 +78,37 @@ syscall_entry:
 	cmp rax, NUM_SYSCALLS
 	jae .bad_syscall
 
+	; Was it a fork? We need to save the callee-saved registers in that case.
+	cmp rax, SYSCALL_FORK
+	je .syscall_fork
+
+	; Call the syscall function
 	extern syscall_table
 	mov rax, [syscall_table + rax * 8]
-
-	; Save registers
-	push rdi
-	push rsi
-	push rdx
-	push qword 0 ; rcx
-	push r8
-	push r9
-	push r10
-	push qword 0 ; r11
 	call rax
-	pop r11
-	pop r10
-	pop r9
-	pop r8
-	pop rcx
-	pop rdx
-	pop rsi
-	pop rdi
 
 	jmp .done
 .bad_syscall:
 	mov rax, ENOSYS
 .done:
+	xor rcx, rcx
+	xor r11, r11
 	iretq
+.syscall_fork:
+	push r15
+	push r14
+	push r13
+	push r12
+	push rbx
+	push rbp
+	mov rsi, rsp ; Callee-saved registers
+	mov rdx, rcx ; Return address of child
+	mov rax, [syscall_table + rax * 8]
+	call rax
+	pop rbp
+	pop rbx
+	pop r12
+	pop r13
+	pop r14
+	pop r15
+	jmp .done

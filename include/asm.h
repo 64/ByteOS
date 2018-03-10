@@ -99,6 +99,18 @@ static inline void pause(void)
 	__builtin_ia32_pause();
 }
 
+struct task;
+static inline struct task *current(void)
+{
+	struct task *rv;
+	asm volatile (
+		"mov %%gs:0, %0"
+		: "=r"(rv)
+		:
+	);
+	return rv;
+}
+
 static inline void reload_cr3(void)
 {
 	asm volatile (

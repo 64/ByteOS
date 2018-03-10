@@ -26,13 +26,3 @@ ret_from_interrupt:
 	extern schedule
 	call schedule
 	jmp .done
-
-global ret_from_fork
-ret_from_fork:
-	mov rax, [gs:0x0]
-	mov rax, [rax + 16]
-	test rax, 1 ; kthread
-	jnz .kernel_thread
-	iretq
-.kernel_thread:
-	ret

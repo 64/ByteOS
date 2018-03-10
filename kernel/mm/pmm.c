@@ -44,6 +44,20 @@ static void reserve_page_data(struct mmap_type *available)
 	}
 }
 
+static size_t get_max_order(uintptr_t start, uintptr_t end)
+{
+	size_t start_pfn = start / PAGE_SIZE, end_pfn = end / PAGE_SIZE, rv;
+	// TODO: Calculate this analytically	
+	for (rv = MAX_ORDER - 1; rv > 0; rv--) {
+		if (start_pfn + (1 << rv) > end_pfn)
+			continue;
+		if (ISALIGN_POW2(start_pfn, (1 << rv)))
+			break;
+	}
+	kassert_dbg(rv < MAX_ORDER);
+	return rv;
+}
+
 static struct zone *init_zone(struct mmap_region *rg)
 {
 	struct zone *zone = phys_to_virt(rg->base);
@@ -59,11 +73,8 @@ static struct zone *init_zone(struct mmap_region *rg)
 	// Populate the free_lists
 	size_t pages_inserted = 0;
 	while (pages_inserted < avail_pages) {
-		size_t remaining = avail_pages - pages_inserted;
-		// TODO: Make this not give me eye cancer
-		size_t highest_order = MAX_ORDER - (__builtin_clz(MIN(remaining, 1LU << (MAX_ORDER - 1))) - __builtin_clz((1 << MAX_ORDER)));
-		kassert_dbg(highest_order < MAX_ORDER);
-		struct page *inserted = &page_data[pages_inserted + (zone->pa_start / PAGE_SIZE)];
+		size_t highest_order = get_max_order(zone->pa_start + pages_inserted * PAGE_SIZE, zone->pa_start + avail_pages * PAGE_SIZE);
+		struct page *inserted = virt_to_page(phys_to_virt(zone->pa_start + PAGE_SIZE * pages_inserted));
 		inserted->order = highest_order;
 		dlist_set_next(inserted, list, zone->free_lists[highest_order]);
 		zone->free_lists[highest_order] = inserted;
@@ -149,9 +160,9 @@ static struct page *zone_alloc_order(struct zone *zone, unsigned int order, unsi
 	struct page *head = zone->free_lists[order];
 	kassert(head->order == (int8_t)order);
 	zone->free_lists[order] = dlist_get_next(head, list);
-	//klog("pmm", "Allocated order %u at %p\n", order, page_to_virt(head));
 	dlist_set_next(head, list, (struct page *)NULL);
 	dlist_set_prev(head, list, (struct page *)NULL);
+	klog("pmm", "Allocated order %u at %p\n", order, page_to_virt(head));
 	kassert_dbg(head != NULL);
 	return head;
 }
@@ -216,6 +227,7 @@ static void __pmm_free_order(struct page *page, unsigned int order, struct zone 
 		dlist_set_next(page, list, zone->free_lists[order]);
 		zone->free_lists[order] = page;
 		page->order = order;
+		klog("pmm", "Freed order %u for page %p\n", order, page_to_virt(page));
 	}
 }
 

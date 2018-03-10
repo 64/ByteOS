@@ -15,7 +15,6 @@
 #define P3_ADDR_MASK (0x1FFUL << P3_ADDR_SHIFT)
 #define P2_ADDR_MASK (0x1FFUL << P2_ADDR_SHIFT)
 #define PAGE_OFFSET_MASK 0xFFFF
-#define PTE_ADDR_MASK (~(0xFFF00000000001FFUL))
 
 static void dump_page_tables_p2(struct page_table *, uintptr_t);
 static void dump_page_tables_p1(struct page_table *, uintptr_t);
@@ -27,6 +26,7 @@ struct mmu_info kernel_mmu;
 void vmm_init(void)
 {
 	kernel_mmu.p4 = phys_to_kern((physaddr_t)&p4_table);
+	kernel_mmu.areas = NULL;
 	klog("vmm", "Kernel P4 at %p\n", kernel_mmu.p4);
 //	vmm_dump_tables();
 }

@@ -26,6 +26,7 @@
 
 #define PAGE_SIZE 4096
 #define PAGE_SHIFT 12
+#define PTE_ADDR_MASK (~(0xFFF00000000001FFUL))
 
 #define VMM_ALLOC_MMAP (1 << 0)
 
@@ -69,9 +70,11 @@ struct mmap {
 };
 
 // This should be kept as small as possible
+// Initial entries are zeroed out by memset
 struct page {
 	struct dlist_entry list; // Can be used for whatever purpose
 	int8_t order; // For buddy allocator system
+	uint32_t count; // Reference count for copy-on-write mappings
 };
 
 // Describes a contiguous block of memory
@@ -82,8 +85,24 @@ struct zone {
 	struct page *free_lists[MAX_ORDER];
 };
 
+// Describes a region of virtual memory
+struct vm_area {
+	struct slist_entry list;
+	uintptr_t base;
+	size_t len;
+	uint32_t type;
+#define VM_AREA_OTHER 0
+#define VM_AREA_STACK 1
+#define VM_AREA_TEXT 2
+#define VM_AREA_BSS 3
+	uint32_t flags;
+#define VM_AREA_WRITABLE (1 << 0)
+#define VM_AREA_EXECUTABLE (1 << 1)
+};
+
 struct mmu_info {
 	struct page_table *p4;
+	struct vm_area *areas;
 };
 
 extern struct mmu_info kernel_mmu;

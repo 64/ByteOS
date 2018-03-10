@@ -11,8 +11,9 @@
 
 %define KERNEL_CPU_STACK_SIZE (PAGE_SIZE * 4)
 
-%define NUM_SYSCALLS 2
+%define NUM_SYSCALLS 3
 %define ENOSYS 0xFFFFFFFFFFFFFFFF
+%define SYSCALL_FORK 2
 
 ; outb(port, val)
 %macro outb 2
