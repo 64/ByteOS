@@ -23,7 +23,7 @@ static int64_t NAME(fork)(uint64_t flags, struct callee_regs *regs, virtaddr_t r
 	if (flags & TASK_KTHREAD)
 		return -1;
 	struct task *new = task_fork(current(), return_addr, flags, regs);
-	panic("fork");
+	bochs_magic();
 	switch_to(new);
 	return 0;
 }

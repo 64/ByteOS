@@ -122,15 +122,25 @@ static inline void reload_cr3(void)
 	);
 }
 
-static inline uint64_t read_cr3(void)
+static inline void change_cr3(uintptr_t cr3)
 {
-	uint64_t rv;
 	asm volatile (
-		"mov %%cr3, %0"
-		: "=a"(rv)
+		"mov %0, %%rax\n"
+		"mov %%rax, %%cr3"
 		:
+		: "r"(cr3)
+		: "rax", "memory"
 	);
-	return rv;
+}
+
+static inline void bochs_magic(void)
+{
+	asm volatile (
+		"xchg %%bx, %%bx"
+		:
+		:
+		: "rbx"
+	);
 }
 
 static inline uint64_t read_rflags(void)

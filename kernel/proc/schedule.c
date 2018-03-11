@@ -20,17 +20,16 @@ void schedule(void)
 static void __attribute__((unused)) utask_entry(void)
 {
 	if (execute_syscall(2, 0, 0, 0, 0) > 0)
-		execute_syscall(1, 'C', 0, 0, 0);
-	else
 		execute_syscall(1, 'P', 0, 0, 0);
+	else
+		execute_syscall(1, 'C', 0, 0, 0);
 	while (1)
 		;
 }
 
 static void ktask_entry(void)
 {
-	while (1)
-		kprintf("K");
+	task_execve(utask_entry, NULL, 0);
 }
 
 void sched_run(void)

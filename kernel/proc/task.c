@@ -5,58 +5,20 @@
 
 extern void ret_from_ufork(void);
 extern void ret_from_kfork(void);
+extern void __attribute__((noreturn)) ret_from_execve(virtaddr_t entry, uint64_t rsp);
 
 static const struct callee_regs default_regs = {
-	0, 0, 0, 0, 0, 0
+	0, 0, 0, 0, 0, 0, 0
 };
 
 #define TASK_KSTACK_ORDER 1
 #define TASK_KSTACK_PAGES (1 << TASK_KSTACK_ORDER)
 #define TASK_KSTACK_SIZE (TASK_KSTACK_PAGES * PAGE_SIZE)
 
-#if 0
-void task_init(struct task *task, virtaddr_t entry, uint64_t flags)
+static inline void copy_kernel_mappings(struct page_table *p4)
 {
-	if (flags & TASK_KTHREAD) {
-		task->mmu = NULL;	
-	} else {
-		task->mmu = kmalloc(sizeof(struct mmu_info), KM_NONE);	
-		task->mmu->p4 = page_to_virt(pmm_alloc_order(0, GFP_NONE));
-		memcpy(task->mmu->p4, kernel_mmu.p4, PAGE_SIZE);
-		vmm_map_page(task->mmu, kern_to_phys(entry), (virtaddr_t)0x1000, PAGE_EXECUTABLE | PAGE_USER_ACCESSIBLE);
-	}
-
-	uint64_t *stack = page_to_virt(pmm_alloc_order(1, GFP_NONE));
-	stack = (uint64_t *)((uintptr_t)stack + (1 << 1) * PAGE_SIZE);
-	task->rsp_original = stack;
-	if (flags & TASK_KTHREAD)
-		*--stack = (uint64_t)entry;
-	else {
-		for (size_t i = 0; i < 2; i++) {
-			size_t off = i * PAGE_SIZE;
-			uintptr_t page = (uintptr_t)page_to_virt(pmm_alloc_order(0, GFP_NONE));
-			vmm_map_page(task->mmu, virt_to_phys((virtaddr_t)(page + off)),
-					(virtaddr_t)(0x2000 + off), PAGE_WRITABLE | PAGE_USER_ACCESSIBLE);
-		}
-		// Set up iret frame
-		*--stack = 0x20 | 0x3; // ss
-		*--stack = 0x4000; // rsp
-		*--stack = read_rflags() | 0x200; // rflags with interrupts enabled
-		*--stack = 0x28 | 0x3; // cs
-		*--stack = 0x1000 + ((uintptr_t)entry & (PAGE_SIZE - 1)); // rip
-	}
-	// switch_to stuff
-	*--stack = (uint64_t)ret_from_fork; // Return rip
-	*--stack = 0; // rbx
-	*--stack = 0; // rbp
-	*--stack = 0; // r12
-	*--stack = 0; // r13
-	*--stack = 0; // r14
-	*--stack = 0; // r15
-	task->rsp_top = (virtaddr_t)stack;
-	task->flags = flags;
+	memcpy(p4, kernel_mmu.p4, PAGE_SIZE);
 }
-#endif
 
 static struct page_table *clone_pgtab(struct page_table *pgtab, size_t level)
 {
@@ -64,6 +26,7 @@ static struct page_table *clone_pgtab(struct page_table *pgtab, size_t level)
 		// We are copying a physical page, not a page table
 		virtaddr_t dest = page_to_virt(pmm_alloc_order(0, GFP_NONE));
 		virtaddr_t src = pgtab;
+		kprintf("Copying %p to %p\n", src, dest);
 		memcpy(dest, src, PAGE_SIZE);
 		return dest;
 	}
@@ -71,7 +34,7 @@ static struct page_table *clone_pgtab(struct page_table *pgtab, size_t level)
 	struct page_table *rv = page_to_virt(pmm_alloc_order(0, GFP_NONE));
 	size_t end_index = 512;
 	if (level == 4) {
-		memcpy(rv, kernel_mmu.p4, sizeof(struct page_table));
+		copy_kernel_mappings(rv);
 		end_index = (1 << 7);
 	}
 
@@ -79,6 +42,7 @@ static struct page_table *clone_pgtab(struct page_table *pgtab, size_t level)
 		if (pgtab->pages[i] & PAGE_PRESENT) {
 			physaddr_t pgtab_phys = (physaddr_t)(pgtab->pages[i] & PTE_ADDR_MASK);
 			virtaddr_t pgtab_virt = phys_to_virt(pgtab_phys);
+			kassert_dbg(ISALIGN_POW2((uintptr_t)pgtab_virt, PAGE_SIZE));
 			uint64_t flags = pgtab->pages[i] & ~PTE_ADDR_MASK;
 			rv->pages[i] = virt_to_phys(clone_pgtab(pgtab_virt, level - 1)) | flags;
 		}
@@ -121,7 +85,7 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t flags, co
 
 		// Set up simulated iret frame
 		*--stack = 0x20 | 0x3; // ss
-		*--stack = 0x4000; // rsp
+		*--stack = regs->rsp; // rsp
 		*--stack = read_rflags() | 0x200; // rflags with interrupts enabled
 		*--stack = 0x28 | 0x3; // cs
 		*--stack = (uint64_t)entry; // rip
@@ -136,4 +100,32 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t flags, co
 	*--stack = regs->r15;
 	t->rsp_top = (virtaddr_t)stack;
 	return t;
+}
+
+void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*argv[]), unsigned int UNUSED(flags))
+{
+	struct task *self = current();
+	if (self->mmu == NULL) {
+		self->mmu = kmalloc(sizeof(struct mmu_info), KM_NONE);
+		self->mmu->p4 = page_to_virt(pmm_alloc_order(0, GFP_NONE));
+		copy_kernel_mappings(self->mmu->p4);
+		change_cr3(virt_to_phys(self->mmu->p4));
+	} else {
+		// TODO: Free all process-used low memory
+		vmm_destroy_low_mappings(self->mmu);
+	}
+
+	// Set up the entry point
+	uintptr_t entry = 0x1000;
+	vmm_map_page(self->mmu, kern_to_phys(function), (virtaddr_t)entry, PAGE_EXECUTABLE | PAGE_USER_ACCESSIBLE);
+	entry += ((uintptr_t)function & 0xFFF);
+
+	for (size_t i = 0; i < 2; i++) {
+		size_t off = i * PAGE_SIZE;
+		uintptr_t page = (uintptr_t)page_to_virt(pmm_alloc_order(0, GFP_NONE));
+		vmm_map_page(self->mmu, virt_to_phys((virtaddr_t)(page + off)),
+				(virtaddr_t)(0x2000 + off), PAGE_WRITABLE | PAGE_USER_ACCESSIBLE);
+	}
+
+	ret_from_execve((virtaddr_t)entry, 0x4000);
 }

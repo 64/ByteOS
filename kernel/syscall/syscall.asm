@@ -95,16 +95,19 @@ syscall_entry:
 	xor r11, r11
 	iretq
 .syscall_fork:
+	mov rsi, [rsp + 24] ; Read user rsp off stack
 	push r15
 	push r14
 	push r13
 	push r12
 	push rbx
 	push rbp
+	push rsi ; rsp
 	mov rsi, rsp ; Callee-saved registers
 	mov rdx, rcx ; Return address of child
-	mov rax, [syscall_table + rax * 8]
+	mov rax, [syscall_table + SYSCALL_FORK * 8]
 	call rax
+	add rsp, 8
 	pop rbp
 	pop rbx
 	pop r12

@@ -162,7 +162,7 @@ static struct page *zone_alloc_order(struct zone *zone, unsigned int order, unsi
 	zone->free_lists[order] = dlist_get_next(head, list);
 	dlist_set_next(head, list, (struct page *)NULL);
 	dlist_set_prev(head, list, (struct page *)NULL);
-	klog("pmm", "Allocated order %u at %p\n", order, page_to_virt(head));
+	//klog("pmm", "Allocated order %u at %p\n", order, page_to_virt(head));
 	kassert_dbg(head != NULL);
 	return head;
 }
@@ -227,7 +227,7 @@ static void __pmm_free_order(struct page *page, unsigned int order, struct zone 
 		dlist_set_next(page, list, zone->free_lists[order]);
 		zone->free_lists[order] = page;
 		page->order = order;
-		klog("pmm", "Freed order %u for page %p\n", order, page_to_virt(page));
+		//klog("pmm", "Freed order %u for page %p\n", order, page_to_virt(page));
 	}
 }
 
