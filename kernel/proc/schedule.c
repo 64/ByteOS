@@ -1,30 +1,49 @@
 #include "syscall.h"
 #include "libk.h"
 #include "proc.h"
+#include "percpu.h"
 #include "mm.h"
 
 static struct task dummy;
-static struct task *current_task, *next_task;
 
 void schedule(void)
 {
-	if (next_task == NULL)
-		return;
-	struct task *tmp = current_task;
-	current_task = next_task;
-	next_task = tmp;
-	switch_to(current_task);
+	// TODO: Disable preemption
+	// TODO: Switch to child if forked
+	struct task *t = percpu_get(current);
+	struct task *next = dlist_get_next(t, list);
+	if (next == NULL)
+		next = percpu_get(run_queue);
+	//klog("sched", "Next = %p\n", next);
+	kassert_dbg(next->state == TASK_RUNNABLE);
+	//klog("sched", "Switching to %p\n", next);
+	next->state = TASK_RUNNING;
+	t->state = TASK_RUNNABLE;
+	switch_to(next);
 }
 
-
-static void __attribute__((unused)) utask_entry(void)
+void sched_add(struct task *t)
 {
-	if (execute_syscall(2, 0, 0, 0, 0) > 0)
-		execute_syscall(1, 'P', 0, 0, 0);
+	// TODO: Disable preemption
+	struct task *run_queue = percpu_get(run_queue);
+	if (run_queue == NULL) {
+		percpu_set(run_queue, t);
+		dlist_set_next(t, list, (struct task *)NULL);
+		dlist_set_next(percpu_get(current), list, t);
+		t->list.prev = NULL;
+	} else
+		dlist_append(run_queue, list, t);
+	klog("sched", "Added task at %p\n", t);
+}
+
+static void utask_entry(void)
+{
+	if (execute_syscall(2, 0, 0, 0, 0) > 0) // Fork
+		execute_syscall(1, 'P', 0, 0, 0); // Write
 	else
-		execute_syscall(1, 'C', 0, 0, 0);
+		execute_syscall(1, 'C', 0, 0, 0); // Write
 	while (1)
-		;
+		execute_syscall(0, 0, 0, 0, 0); // Yield
 }
 
 static void ktask_entry(void)
@@ -34,14 +53,10 @@ static void ktask_entry(void)
 
 void sched_run(void)
 {
-	asm volatile (
-		"movq %0, %%gs:0"
-		:
-		: "i"(&dummy)
-	);
-	current_task = task_fork(&dummy, ktask_entry, TASK_KTHREAD, NULL);
-	next_task = NULL;
 	klog("sched", "Starting scheduler...\n");
-	switch_to(current_task);
+	percpu_set(run_queue, NULL);
+	percpu_set(current, &dummy);
+	task_fork(&dummy, ktask_entry, TASK_KTHREAD, NULL);
+	schedule();
 }
 

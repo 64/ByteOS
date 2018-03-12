@@ -11,7 +11,7 @@ void percpu_init(void)
 	msr_write(0xC0000101, (uint64_t)cpu);
 
 	cpu->id = smp_cpu_id();
-	cpu->task = NULL;
+	cpu->current = NULL;
 	cpu->rsp_scratch = NULL;
 	cpu->need_reschedule = false;
 

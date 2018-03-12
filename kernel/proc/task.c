@@ -1,6 +1,7 @@
 #include "proc.h"
 #include "mm.h"
 #include "libk.h"
+#include "percpu.h"
 #include "util.h"
 
 extern void ret_from_ufork(void);
@@ -99,12 +100,16 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t flags, co
 	*--stack = regs->r14;
 	*--stack = regs->r15;
 	t->rsp_top = (virtaddr_t)stack;
+
+	// Add the task to the scheduler
+	t->state = TASK_RUNNABLE;
+	sched_add(t);
 	return t;
 }
 
 void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*argv[]), unsigned int UNUSED(flags))
 {
-	struct task *self = current();
+	struct task *self = percpu_get(current);
 	if (self->mmu == NULL) {
 		self->mmu = kmalloc(sizeof(struct mmu_info), KM_NONE);
 		self->mmu->p4 = page_to_virt(pmm_alloc_order(0, GFP_NONE));

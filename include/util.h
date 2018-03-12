@@ -28,3 +28,10 @@
 	(_val & (_align - 1)) == 0; })
 
 #define UNUSED(x) x __attribute__((unused))
+
+void __attribute__((error("Static assertion failed"))) __error_fn(void);
+#define _static_assert(cond) ({ \
+	do { \
+		if (!(cond)) \
+			__error_fn(); \
+	} while (0); })

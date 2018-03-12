@@ -2,7 +2,7 @@
 
 bits 64
 section .text
-; rdi: Pointer to next task_tcb
+; rdi: Pointer to next task
 global switch_to
 switch_to:
 	push rbx
@@ -23,12 +23,12 @@ switch_to:
 
 	; Set RSP0 in TSS
 	mov rax, [gs:0x18] 
-	mov rcx, [rdi + 0x18]
+	mov rcx, [rdi + 0x8]
 	mov [rax + 4], rcx
 
 	; Swap cr3 if necessary
 	mov rax, cr3
-	mov rcx, [rdi + 8]
+	mov rcx, [rdi + 0x10]
 	test rcx, rcx
 	jz .cr3_done
 	mov rcx, [rcx]

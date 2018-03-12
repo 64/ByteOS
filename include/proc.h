@@ -8,10 +8,21 @@
 #define TASK_NONE 0
 
 struct task {
+	// Careful not to move these as they are referenced in asm
 	virtaddr_t rsp_top;
-	struct mmu_info *mmu;
-	uint64_t flags;
 	virtaddr_t rsp_original;
+	struct mmu_info *mmu;
+
+	// Scheduler information
+	struct dlist_entry list;
+
+	// Process state
+	enum {
+		TASK_RUNNABLE,
+		TASK_RUNNING,
+		TASK_BLOCKED
+	} state;
+	uint64_t flags;
 };
 
 struct callee_regs {
@@ -28,6 +39,7 @@ void switch_to(struct task *);
 
 void schedule(void);
 void sched_run(void);
+void sched_add(struct task *t);
 
 struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t flags, const struct callee_regs *regs);
 void task_execve(virtaddr_t function, char *argv[], unsigned int flags);

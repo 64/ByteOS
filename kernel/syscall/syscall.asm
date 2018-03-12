@@ -62,7 +62,7 @@ syscall_entry:
 	; Switch to kernel stack
 	mov [gs:0x8], rsp
 	mov rsp, [gs:0x0]
-	mov rsp, [rsp + 0x18]
+	mov rsp, [rsp + 0x8]
 
 	; Setup simulated IRQ frame
 	push qword (GDT_USER_DATA | 0x3)
