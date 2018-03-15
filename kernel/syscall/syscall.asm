@@ -60,13 +60,13 @@ syscall_entry:
 	; WARNING: Do not clobber any argument registers like rdi
 
 	; Switch to kernel stack
-	mov [gs:0x8], rsp
-	mov rsp, [gs:0x0]
+	mov [PERCPU_RSP_SCRATCH], rsp
+	mov rsp, [PERCPU_CURRENT]
 	mov rsp, [rsp + 0x8]
 
 	; Setup simulated IRQ frame
 	push qword (GDT_USER_DATA | 0x3)
-	push qword [gs:0x8] ; Old RSP
+	push qword [PERCPU_RSP_SCRATCH] ; Old RSP
 	push r11
 	push qword (GDT_USER_CODE | 0x3)
 	push rcx ; rip

@@ -13,16 +13,16 @@ switch_to:
 	push r15
 
 	; Save current rsp
-	mov rax, [gs:0x0]
+	mov rax, [PERCPU_CURRENT]
 	mov [rax], rsp
 	; Load next rsp
 	mov rsp, [rdi]
 
 	; Set current in per-cpu data
-	mov [gs:0x0], rdi
+	mov [PERCPU_CURRENT], rdi
 
 	; Set RSP0 in TSS
-	mov rax, [gs:0x18] 
+	mov rax, [PERCPU_TSS] 
 	mov rcx, [rdi + 0x8]
 	mov [rax + 4], rcx
 

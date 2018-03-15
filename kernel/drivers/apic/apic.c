@@ -25,7 +25,7 @@ static void add_lapic(struct madt_entry_lapic *entry)
 	lapic_list[lapic_list_size].id = entry->apic_id;
 	lapic_list[lapic_list_size].acpi_id = entry->acpi_id;
 	lapic_list_size++;
-	klog("apic", "Detected local APIC, id %d\n", entry->apic_id);
+	klog_verbose("apic", "Detected local APIC, id %d\n", entry->apic_id);
 }
 
 static void add_ioapic(struct madt_entry_ioapic *entry)
@@ -35,7 +35,7 @@ static void add_ioapic(struct madt_entry_ioapic *entry)
 	// Map the I/O APIC base so we can access it
 	vmm_map_page(&kernel_mmu, entry->phys_addr, phys_to_virt(entry->phys_addr), VMM_ALLOC_MMAP | PAGE_GLOBAL | PAGE_DISABLE_CACHE | PAGE_WRITABLE);
 	ioapic_list[ioapic_list_size++] = entry;
-	klog("apic", "Detected I/O APIC, id %d\n", entry->apic_id);
+	klog_verbose("apic", "Detected I/O APIC, id %d\n", entry->apic_id);
 }
 
 static void add_override(struct madt_entry_override *entry)
@@ -43,7 +43,7 @@ static void add_override(struct madt_entry_override *entry)
 	if (override_list_size >= MAX_OVERRIDES)
 		return;
 	override_list[override_list_size++] = entry;
-	klog("apic", "GSI %d overrides IRQ %u, flags %x\n", entry->gsi, entry->source, entry->flags);
+	klog_verbose("apic", "GSI %d overrides IRQ %u, flags %x\n", entry->gsi, entry->source, entry->flags);
 }
 
 static void add_nmi(struct madt_entry_nmi *entry)
@@ -52,9 +52,9 @@ static void add_nmi(struct madt_entry_nmi *entry)
 		return;
 	nmi_list[nmi_list_size++] = entry;
 	if (entry->acpi_id == 0xFF)
-		klog("apic", "NMI for all CPUs, LINT%d\n", entry->lint_num);
+		klog_verbose("apic", "NMI for all CPUs, LINT%d\n", entry->lint_num);
 	else
-		klog("apic", "NMI for CPU %d, LINT%d\n", entry->acpi_id, entry->lint_num);
+		klog_verbose("apic", "NMI for CPU %d, LINT%d\n", entry->acpi_id, entry->lint_num);
 
 }
 
@@ -92,7 +92,8 @@ static void parse_madt(struct acpi_madt *madt)
 	}
 
 	lapic_base = tmp_lapic_base;
-	klog("apic", "Local APIC base at %p\n", lapic_base);
+	klog_verbose("apic", "Local APIC base at %p\n", lapic_base);
+	klog("apic", "Detected %zu CPUs\n", lapic_list_size);
 
 	// Map the APIC base so we can access it
 	vmm_map_page(&kernel_mmu, virt_to_phys(lapic_base), lapic_base, VMM_ALLOC_MMAP | PAGE_GLOBAL | PAGE_DISABLE_CACHE | PAGE_WRITABLE);

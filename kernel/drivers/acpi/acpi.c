@@ -90,15 +90,13 @@ static inline void print_table(struct acpi_header *hd)
 	klog("acpi", "%c%c%c%c at %p, OEM %c%c%c%c%c%c\n",
 	     hd->signature[0], hd->signature[1], hd->signature[2], hd->signature[3], (virtaddr_t)virt_to_phys(hd),
 	     hd->oem_id[0], hd->oem_id[1], hd->oem_id[2], hd->oem_id[3], hd->oem_id[4], hd->oem_id[5]);
-#ifdef VERBOSE
-	klog("acpi", "  Length: %u\n", hd->length);
-	klog("acpi", "  Revision: %u\n", hd->revision);
-	klog("acpi", "  OEM Table ID: %c%c%c%c%c%c%c%c\n", hd->oem_table_id[0], hd->oem_table_id[1], hd->oem_table_id[2],
+	klog_verbose("acpi", "  Length: %u\n", hd->length);
+	klog_verbose("acpi", "  Revision: %u\n", hd->revision);
+	klog_verbose("acpi", "  OEM Table ID: %c%c%c%c%c%c%c%c\n", hd->oem_table_id[0], hd->oem_table_id[1], hd->oem_table_id[2],
 	     hd->oem_table_id[3], hd->oem_table_id[4], hd->oem_table_id[5], hd->oem_table_id[6], hd->oem_table_id[7]);
-	klog("acpi", "  OEM Revision: %u\n", hd->oem_revision);
-	klog("acpi", "  Creator ID: %c%c%c%c\n", hd->creator_id[0], hd->creator_id[1], hd->creator_id[2], hd->creator_id[3]);
-	klog("acpi", "  Creator Revision: %u\n", hd->creator_revision);
-#endif
+	klog_verbose("acpi", "  OEM Revision: %u\n", hd->oem_revision);
+	klog_verbose("acpi", "  Creator ID: %c%c%c%c\n", hd->creator_id[0], hd->creator_id[1], hd->creator_id[2], hd->creator_id[3]);
+	klog_verbose("acpi", "  Creator Revision: %u\n", hd->creator_revision);
 }
 
 static void acpi_dump_tables(void)

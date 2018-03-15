@@ -15,6 +15,12 @@
 %define ENOSYS 0xFFFFFFFFFFFFFFFF
 %define SYSCALL_FORK 2
 
+%define PERCPU_CURRENT gs:0x0
+%define PERCPU_RSP_SCRATCH gs:0x8
+%define PERCPU_TSS gs:0x10
+%define PERCPU_RUN_QUEUE gs:0x18
+%define PERCPU_ID gs:0x20
+
 ; outb(port, val)
 %macro outb 2
 	mov al, %2

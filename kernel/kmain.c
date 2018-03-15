@@ -12,6 +12,7 @@
 #include "drivers/ps2.h"
 #include "drivers/pit.h"
 #include "drivers/acpi.h"
+#include "drivers/smbios.h"
 
 void kmain(physaddr_t);
 
@@ -32,6 +33,9 @@ void kmain(physaddr_t mboot_info_phys)
 
 	// Find ACPI tables
 	acpi_init();
+
+	// Find SMBIOS tables
+	smbios_init();
 
 	// Gather info from the MADT
 	apic_init();

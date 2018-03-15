@@ -13,7 +13,6 @@ void percpu_init(void)
 	cpu->id = smp_cpu_id();
 	cpu->current = NULL;
 	cpu->rsp_scratch = NULL;
-	cpu->need_reschedule = false;
 
 	if (cpu->id == 0)
 		cpu->tss = tss64;

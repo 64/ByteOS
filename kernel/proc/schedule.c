@@ -33,7 +33,7 @@ void sched_add(struct task *t)
 		t->list.prev = NULL;
 	} else
 		dlist_append(run_queue, list, t);
-	klog("sched", "Added task at %p\n", t);
+	//klog("sched", "Added task at %p\n", t);
 }
 
 static void utask_entry(void)

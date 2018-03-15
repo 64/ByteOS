@@ -4,11 +4,8 @@ section .text
 global ret_from_interrupt:
 ret_from_interrupt:
 	; TODO: Check preempt_count
-	; Check need_reschedule flag
-	mov al, [gs:0x10]
-	test al, al
-	jnz .need_reschedule
-
+	; TODO: Check need_reschedule flag
+	;jnz .need_reschedule
 .done:
 	pop r11
 	pop r10

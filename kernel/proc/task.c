@@ -27,7 +27,6 @@ static struct page_table *clone_pgtab(struct page_table *pgtab, size_t level)
 		// We are copying a physical page, not a page table
 		virtaddr_t dest = page_to_virt(pmm_alloc_order(0, GFP_NONE));
 		virtaddr_t src = pgtab;
-		kprintf("Copying %p to %p\n", src, dest);
 		memcpy(dest, src, PAGE_SIZE);
 		return dest;
 	}
@@ -64,6 +63,7 @@ static struct mmu_info *clone_mmu(struct mmu_info *pmmu)
 struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t flags, const struct callee_regs *regs)
 {
 	struct task *t = kmalloc(sizeof(struct task), KM_NONE);
+	memset(t, 0, sizeof *t);
 	t->flags = parent->flags;
 
 	// Allocate a kernel stack

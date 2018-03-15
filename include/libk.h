@@ -49,5 +49,11 @@ __attribute__((noreturn)) void abort_self(void);
 #ifdef DEBUG
 	#define kassert_dbg(x) kassert(x)
 #else
-	#define kassert_dbg(x)
+	#define kassert_dbg(x) do {} while (0)
+#endif
+
+#ifdef VERBOSE
+	#define klog_verbose(...) klog(__VA_ARGS__)
+#else
+	#define klog_verbose(...) do {} while (0)
 #endif

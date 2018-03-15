@@ -5,6 +5,7 @@
 #include "mm.h"
 
 #define TASK_KTHREAD (1 << 0)
+#define TASK_NEED_PREEMPT (1 << 1)
 #define TASK_NONE 0
 
 struct task {
@@ -22,7 +23,8 @@ struct task {
 		TASK_RUNNING,
 		TASK_BLOCKED
 	} state;
-	uint64_t flags;
+	uint64_t flags; // Includes TASK_NEED_PREEMPT flag
+	uint64_t preempt_count; // Number of locks held (preemption disabled when > 0)
 };
 
 struct callee_regs {
