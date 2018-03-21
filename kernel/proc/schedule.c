@@ -38,10 +38,16 @@ void sched_add(struct task *t)
 
 static void utask_entry(void)
 {
-	if (execute_syscall(2, 0, 0, 0, 0) > 0) // Fork
+	uint64_t var = 0;
+	// Fork
+	if (execute_syscall(2, 0, 0, 0, 0) > 0) {
 		execute_syscall(1, 'P', 0, 0, 0); // Write
-	else
+		var = 1;
+	} else {
 		execute_syscall(1, 'C', 0, 0, 0); // Write
+		var = 2;
+	}
+	execute_syscall(1, '0' + (uint8_t)var, 0, 0, 0);
 	while (1)
 		execute_syscall(0, 0, 0, 0, 0); // Yield
 }

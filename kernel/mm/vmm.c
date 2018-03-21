@@ -118,7 +118,7 @@ static void __attribute__((unused)) dump_page_tables_p0(struct page_table *p0, u
 	}	
 }
 
-pte_t vmm_get_pte(struct mmu_info *mmu, void *addr)
+pte_t *vmm_get_pte(struct mmu_info *mmu, void *addr)
 {
 	const uintptr_t va = (uintptr_t)addr;
 	const uint16_t p4_index = (va & P4_ADDR_MASK) >> P4_ADDR_SHIFT;
@@ -138,13 +138,13 @@ pte_t vmm_get_pte(struct mmu_info *mmu, void *addr)
 	if (p1_table == NULL)
 		return 0;
 
-	return p1_table->pages[p1_index];
+	return &p1_table->pages[p1_index];
 }
 
 bool vmm_has_flags(struct mmu_info *mmu, void *addr, uint64_t flags)
 {
 	kassert_dbg(addr != NULL);
-	return (vmm_get_pte(mmu, addr) & flags) != 0;
+	return (*vmm_get_pte(mmu, addr) & flags) != 0;
 }
 
 void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsigned long flags)
@@ -227,6 +227,6 @@ physaddr_t vmm_get_phys_addr(struct mmu_info *mmu, void *virt)
 {
 	kassert_dbg(virt >= (void *)0x1000); // Doesn't work below this address
 	uint16_t page_offset = (uintptr_t)virt & PAGE_OFFSET_MASK;
-	physaddr_t addr = (physaddr_t)(vmm_get_pte(mmu, virt) & PTE_ADDR_MASK);
+	physaddr_t addr = (physaddr_t)(*vmm_get_pte(mmu, virt) & PTE_ADDR_MASK);
 	return (addr == 0) ? 0 : addr + page_offset;
 }

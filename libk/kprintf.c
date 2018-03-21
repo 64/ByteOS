@@ -86,6 +86,8 @@ static int __kvprintf(const char *fmt, va_list params)
 					break;
 				case 's': {
 					const char *s = va_arg(params, const char *);
+					if (s == NULL) 
+						s = "(null)";
 					kprintf_write_str((char *)s);
 					nwritten += strlen(s);
 					break;

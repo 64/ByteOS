@@ -29,7 +29,7 @@ __attribute__((noreturn)) void abort_self(void);
 			"\x1B[1;41;37mpanic at %s:%s:%u\x1B[0m\n", \
 			__FILE__, __func__, __LINE__ \
 		); \
-		kprintf(__VA_ARGS__); \
+		kprintf_nolock(__VA_ARGS__); \
 		abort(); \
 	} while(0)
 

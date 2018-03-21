@@ -1,9 +1,13 @@
+#include "libk.h"
+#include "proc.h"
+#include "types.h"
+#include "percpu.h"
 #include "interrupts.h"
 #include "drivers/apic.h"
-#include "libk.h"
-#include "types.h"
 
 #define INT_PAGE_FAULT 14
+
+#define PAGE_FAULT_RW (1 << 1)
 
 static const char *const exception_messages[32] = {
 	"Division by zero",
@@ -40,11 +44,19 @@ static const char *const exception_messages[32] = {
 	"(reserved exception 31)"
 };
 
-// TODO: Implement lazy TLB invalidation
 static void page_fault(uint8_t int_no, struct isr_ctx *regs)
 {
 	uintptr_t faulting_address;
 	asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
+
+	struct task *current = percpu_get(current);
+	if (current != NULL) {
+		pte_t *pte = vmm_get_pte(current->mmu, (virtaddr_t)faulting_address);
+		if (regs->info & PAGE_FAULT_RW && cow_handle_write(pte))
+			return;
+	}
+
+	// Otherwise, the write was not allowed, so we panic
 	panic(
 		"%s:\n"
 		"\tfaulting address: %p\n"

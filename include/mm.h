@@ -22,6 +22,7 @@
 #define PAGE_DIRTY (1ULL << 6)
 #define PAGE_HUGE (1ULL << 7)
 #define PAGE_GLOBAL (1ULL << 8)
+#define PAGE_COW (1ULL << 9)
 #define PAGE_EXECUTABLE (1ULL << 63)
 
 #define PAGE_SIZE 4096
@@ -73,8 +74,8 @@ struct mmap {
 // Initial entries are zeroed out by memset
 struct page {
 	struct dlist_entry list; // Can be used for whatever purpose
+	uint32_t refcount; // Reference count for copy-on-write mappings
 	int8_t order; // For buddy allocator system
-	uint32_t count; // Reference count for copy-on-write mappings
 };
 
 // Describes a contiguous block of memory
@@ -113,7 +114,7 @@ void vmm_init(void);
 void vmm_map_all(struct mmap *);
 physaddr_t vmm_get_phys_addr(struct mmu_info *, void *);
 bool vmm_has_flags(struct mmu_info *, void *, uint64_t flags);
-pte_t vmm_get_pte(struct mmu_info *, void *);
+pte_t *vmm_get_pte(struct mmu_info *, void *);
 void vmm_map_page(struct mmu_info *, physaddr_t, virtaddr_t, unsigned long);
 void vmm_dump_tables(void);
 void vmm_destroy_low_mappings(struct mmu_info *);
@@ -128,6 +129,9 @@ void pmm_free_order(struct page *page, unsigned int order);
 
 void *kmalloc(size_t, unsigned int) __attribute__((malloc));
 void kfree(void *);
+
+void cow_copy_pte(pte_t *dest, pte_t *src);
+bool cow_handle_write(pte_t *pte);
 
 static inline physaddr_t virt_to_phys(virtaddr_t v) {
 	if (v == NULL)

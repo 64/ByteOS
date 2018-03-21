@@ -21,16 +21,15 @@ static inline void copy_kernel_mappings(struct page_table *p4)
 	memcpy(p4, kernel_mmu.p4, PAGE_SIZE);
 }
 
+static inline pte_t clone_single_page(pte_t *pte)
+{
+	pte_t dest;
+	cow_copy_pte(&dest, pte);
+	return dest;
+}
+
 static struct page_table *clone_pgtab(struct page_table *pgtab, size_t level)
 {
-	if (level == 0) {
-		// We are copying a physical page, not a page table
-		virtaddr_t dest = page_to_virt(pmm_alloc_order(0, GFP_NONE));
-		virtaddr_t src = pgtab;
-		memcpy(dest, src, PAGE_SIZE);
-		return dest;
-	}
-
 	struct page_table *rv = page_to_virt(pmm_alloc_order(0, GFP_NONE));
 	size_t end_index = 512;
 	if (level == 4) {
@@ -40,18 +39,21 @@ static struct page_table *clone_pgtab(struct page_table *pgtab, size_t level)
 
 	for (size_t i = 0; i < end_index; i++) {
 		if (pgtab->pages[i] & PAGE_PRESENT) {
-			physaddr_t pgtab_phys = (physaddr_t)(pgtab->pages[i] & PTE_ADDR_MASK);
-			virtaddr_t pgtab_virt = phys_to_virt(pgtab_phys);
-			kassert_dbg(ISALIGN_POW2((uintptr_t)pgtab_virt, PAGE_SIZE));
-			uint64_t flags = pgtab->pages[i] & ~PTE_ADDR_MASK;
-			rv->pages[i] = virt_to_phys(clone_pgtab(pgtab_virt, level - 1)) | flags;
+			if (level == 1) {
+				rv->pages[i] = clone_single_page(&pgtab->pages[i]);
+			} else {
+				uint64_t flags = pgtab->pages[i] & ~PTE_ADDR_MASK;
+				physaddr_t pgtab_phys = (physaddr_t)(pgtab->pages[i] & PTE_ADDR_MASK);
+				virtaddr_t pgtab_virt = phys_to_virt(pgtab_phys);
+				kassert_dbg(ISALIGN_POW2((uintptr_t)pgtab_virt, PAGE_SIZE));
+				rv->pages[i] = virt_to_phys(clone_pgtab(pgtab_virt, level - 1)) | flags;
+			}
 		}
 	}
 
 	return rv;
 }
 
-// TODO: Copy on write page table mappings
 static struct mmu_info *clone_mmu(struct mmu_info *pmmu)
 {
 	// Allocate an mmu struct

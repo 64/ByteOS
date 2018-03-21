@@ -35,7 +35,7 @@ static void add_ioapic(struct madt_entry_ioapic *entry)
 	// Map the I/O APIC base so we can access it
 	vmm_map_page(&kernel_mmu, entry->phys_addr, phys_to_virt(entry->phys_addr), VMM_ALLOC_MMAP | PAGE_GLOBAL | PAGE_DISABLE_CACHE | PAGE_WRITABLE);
 	ioapic_list[ioapic_list_size++] = entry;
-	klog_verbose("apic", "Detected I/O APIC, id %d\n", entry->apic_id);
+	klog_verbose("apic", "Detected I/O APIC at %p, id %d\n", (void *)(uintptr_t)entry->phys_addr, entry->apic_id);
 }
 
 static void add_override(struct madt_entry_override *entry)
