@@ -4,6 +4,7 @@
 #include "asm.h"
 #include "util.h"
 #include "smp.h"
+#include "percpu.h"
 #include "drivers/pit.h"
 
 #define P4_ADDR_SHIFT 39
@@ -22,6 +23,8 @@ static void dump_page_tables_p0(struct page_table *, uintptr_t);
 
 extern struct page_table p4_table; // Initial kernel p4 table
 struct mmu_info kernel_mmu;
+
+__attribute__((aligned(PAGE_SIZE))) uint8_t zero_page[PAGE_SIZE];
 
 void vmm_init(void)
 {
@@ -42,6 +45,11 @@ void vmm_map_all(struct mmap *mmap)
 			mmap->highest_mapped = MAX(j, mmap->highest_mapped);
 		}
 	}
+
+	// Mark the zero page as read only so we fault if we access it
+	*vmm_get_pte(&kernel_mmu, zero_page) = 0;
+	percpu_set_addr((struct percpu *)zero_page);
+
 	kernel_mmu.p4 = phys_to_virt((physaddr_t)&p4_table);
 }
 

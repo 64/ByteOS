@@ -2,7 +2,9 @@
 #include "proc.h"
 #include "percpu.h"
 #include "libk.h"
+#include "asm.h"
 
+// Note: caller is expected to flush TLB and disable preemption
 void cow_copy_pte(pte_t *dest, pte_t *src)
 {
 	struct page *page = phys_to_page(*src & PTE_ADDR_MASK);
@@ -17,11 +19,10 @@ void cow_copy_pte(pte_t *dest, pte_t *src)
 
 	// Copy the PTE
 	*dest = *src;
-	kprintf("Handling a CoW copy\n");
 }
 
 // Returns true if the write is allowed and should be retried
-bool cow_handle_write(pte_t *pte)
+bool cow_handle_write(pte_t *pte, virtaddr_t virt)
 {
 	if (!(*pte & PAGE_COW))
 		return false;
@@ -44,5 +45,6 @@ bool cow_handle_write(pte_t *pte)
 	// Otherwise, this was the last reference and we are free to reuse this memory
 	*pte &= ~PAGE_COW;
 	*pte |= PAGE_WRITABLE;
+	invlpg((uintptr_t)virt);
 	return true;
 }

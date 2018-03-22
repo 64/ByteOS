@@ -8,13 +8,15 @@ extern void ret_from_ufork(void);
 extern void ret_from_kfork(void);
 extern void __attribute__((noreturn)) ret_from_execve(virtaddr_t entry, uint64_t rsp);
 
-static const struct callee_regs default_regs = {
-	0, 0, 0, 0, 0, 0, 0
-};
-
 #define TASK_KSTACK_ORDER 1
 #define TASK_KSTACK_PAGES (1 << TASK_KSTACK_ORDER)
 #define TASK_KSTACK_SIZE (TASK_KSTACK_PAGES * PAGE_SIZE)
+
+static pid_t next_pid = 1;
+
+static const struct callee_regs default_regs = {
+	0, 0, 0, 0, 0, 0, 0
+};
 
 static inline void copy_kernel_mappings(struct page_table *p4)
 {
@@ -59,6 +61,9 @@ static struct mmu_info *clone_mmu(struct mmu_info *pmmu)
 	// Allocate an mmu struct
 	struct mmu_info *mmu = kmalloc(sizeof(struct mmu_info), KM_NONE);
 	mmu->p4 = clone_pgtab(pmmu->p4, 4);
+
+	// Since the entire address space got mapped as read only, we need to invalidate all of it
+	reload_cr3();
 	return mmu;
 }
 
@@ -67,6 +72,9 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t flags, co
 	struct task *t = kmalloc(sizeof(struct task), KM_NONE);
 	memset(t, 0, sizeof *t);
 	t->flags = parent->flags;
+	t->pid = __atomic_fetch_add(&next_pid, 1, __ATOMIC_RELAXED);
+
+	klog_verbose("task", "Forked PID %d to create PID %d\n", parent->pid, t->pid);
 
 	// Allocate a kernel stack
 	uintptr_t kstack = TASK_KSTACK_SIZE + (uintptr_t)page_to_virt(pmm_alloc_order(TASK_KSTACK_ORDER, GFP_NONE));
@@ -125,6 +133,7 @@ void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*arg
 	// Set up the entry point
 	uintptr_t entry = 0x1000;
 	vmm_map_page(self->mmu, kern_to_phys(function), (virtaddr_t)entry, PAGE_EXECUTABLE | PAGE_USER_ACCESSIBLE);
+	vmm_map_page(self->mmu, kern_to_phys(function) + PAGE_SIZE, (virtaddr_t)(entry + PAGE_SIZE), PAGE_EXECUTABLE | PAGE_USER_ACCESSIBLE);
 	entry += ((uintptr_t)function & 0xFFF);
 
 	for (size_t i = 0; i < 2; i++) {

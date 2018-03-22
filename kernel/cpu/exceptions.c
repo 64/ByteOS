@@ -49,13 +49,19 @@ static void page_fault(uint8_t int_no, struct isr_ctx *regs)
 	uintptr_t faulting_address;
 	asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
 
+	// If the access was to the zero page in kernel space, we messed up big time
+	// (likely was a percpu access before the percpu struct was initialised)
+	if ((faulting_address & ~(PAGE_SIZE - 1)) == (uintptr_t)zero_page)
+		goto kernel_panic;
+
 	struct task *current = percpu_get(current);
 	if (current != NULL) {
 		pte_t *pte = vmm_get_pte(current->mmu, (virtaddr_t)faulting_address);
-		if (regs->info & PAGE_FAULT_RW && cow_handle_write(pte))
+		if (regs->info & PAGE_FAULT_RW && cow_handle_write(pte, (virtaddr_t)faulting_address))
 			return;
 	}
 
+kernel_panic:
 	// Otherwise, the write was not allowed, so we panic
 	panic(
 		"%s:\n"

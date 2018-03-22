@@ -45,6 +45,8 @@
 
 typedef uint64_t pte_t;
 
+extern uint8_t zero_page[PAGE_SIZE];
+
 struct page_table {
 	pte_t pages[512];
 } __attribute__((packed, aligned(PAGE_SIZE)));
@@ -131,7 +133,7 @@ void *kmalloc(size_t, unsigned int) __attribute__((malloc));
 void kfree(void *);
 
 void cow_copy_pte(pte_t *dest, pte_t *src);
-bool cow_handle_write(pte_t *pte);
+bool cow_handle_write(pte_t *pte, virtaddr_t virt);
 
 static inline physaddr_t virt_to_phys(virtaddr_t v) {
 	if (v == NULL)

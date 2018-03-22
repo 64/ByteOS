@@ -185,7 +185,7 @@ static void dump_smbios_tables(struct smbios_header *start, size_t nstructs)
 		cur = (struct smbios_header *)((char *)cur + total);
 	}
 	klog("smbios", "Scanned %zu SMBIOS tables.\n", num);
-	kassert_dbg(nstructs == 0 || num + 1 == nstructs);
+	kassert(nstructs == 0 || num + 1 == nstructs);
 #else
 	(void)start;
 	(void)nstructs;

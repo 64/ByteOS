@@ -3,10 +3,13 @@
 #include <stdint.h>
 
 #include "mm.h"
+#include "smp.h"
 
 #define TASK_KTHREAD (1 << 0)
 #define TASK_NEED_PREEMPT (1 << 1)
 #define TASK_NONE 0
+
+typedef int32_t pid_t;
 
 struct task {
 	// Careful not to move these as they are referenced in asm
@@ -23,8 +26,11 @@ struct task {
 		TASK_RUNNING,
 		TASK_BLOCKED
 	} state;
+
 	uint64_t flags; // Includes TASK_NEED_PREEMPT flag
-	uint64_t preempt_count; // Number of locks held (preemption disabled when > 0)
+	pid_t pid;
+
+	cpuset_t affinity; // Defines which processors this task can run on
 };
 
 struct callee_regs {

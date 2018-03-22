@@ -7,14 +7,18 @@
 #include "util.h"
 
 struct percpu {
-	struct task *current; // Currently running task
+	// Be careful changing these three variables as they are referenced in asm
+	struct task *current;
 	virtaddr_t rsp_scratch;
 	virtaddr_t tss;
+
 	struct task *run_queue;
+	uint32_t preempt_count;
 	uint32_t id;
 };
 
 void percpu_init(void);
+void percpu_set_addr(struct percpu *);
 
 #define __percpu(var) (((struct percpu *)NULL)->var)
 #define __percpu_type(var) typeof(__percpu(var))
