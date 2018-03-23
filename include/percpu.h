@@ -11,13 +11,14 @@ struct percpu {
 	struct task *current;
 	virtaddr_t rsp_scratch;
 	virtaddr_t tss;
-
-	struct task *run_queue;
 	uint32_t preempt_count;
+
 	uint32_t id;
+	struct task *run_queue;
 };
 
-void percpu_init(void);
+void percpu_init_ap(void);
+void percpu_init_bsp(void);
 void percpu_set_addr(struct percpu *);
 
 #define __percpu(var) (((struct percpu *)NULL)->var)

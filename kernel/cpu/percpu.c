@@ -5,20 +5,28 @@
 
 extern uint64_t tss64[];
 
-void percpu_init(void)
-{
-	struct percpu *cpu = kmalloc(sizeof * cpu, KM_NONE);
-	percpu_set_addr(cpu);
+static struct percpu bsp_percpu = {
+	.tss = tss64
+};
 
+void percpu_init_ap(void)
+{
+	// Initialise a temp struct just for the kmalloc call (since it will lock)
+	struct percpu tmp = { 0 };
+	percpu_set_addr(&tmp);
+
+	struct percpu *cpu = kmalloc(sizeof * cpu, KM_NONE);
 	cpu->id = smp_cpu_id();
 	cpu->current = NULL;
 	cpu->rsp_scratch = NULL;
 	cpu->preempt_count = 0;
+	cpu->tss = 0x0; // TODO
+	percpu_set_addr(cpu);
+}
 
-	if (cpu->id == 0)
-		cpu->tss = tss64;
-	else
-		cpu->tss = 0x0; // TODO
+void percpu_init_bsp(void)
+{
+	percpu_set_addr(&bsp_percpu);
 }
 
 void percpu_set_addr(struct percpu *p)

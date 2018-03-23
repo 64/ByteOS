@@ -48,7 +48,6 @@ void vmm_map_all(struct mmap *mmap)
 
 	// Mark the zero page as read only so we fault if we access it
 	*vmm_get_pte(&kernel_mmu, zero_page) = 0;
-	percpu_set_addr((struct percpu *)zero_page);
 
 	kernel_mmu.p4 = phys_to_virt((physaddr_t)&p4_table);
 }

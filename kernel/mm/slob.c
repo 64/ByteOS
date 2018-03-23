@@ -42,7 +42,7 @@ static void morecore(void)
 	slist_set_next(hd, list, head);
 	head = hd;
 
-	klog("slob", "morecore allocated a page\n");
+	klog_verbose("slob", "morecore allocated a page\n");
 }
 
 // TODO: Worry about alignment

@@ -79,13 +79,15 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t flags, co
 	// Allocate a kernel stack
 	uintptr_t kstack = TASK_KSTACK_SIZE + (uintptr_t)page_to_virt(pmm_alloc_order(TASK_KSTACK_ORDER, GFP_NONE));
 	uint64_t *stack = (uint64_t *)kstack;
+	// TODO: Remove this variable. We can work out the stack top by masking rsp
+	// given that the stack size is fixed at compile time.
 	t->rsp_original = (virtaddr_t)kstack;
 
 	// Copy MMU information and set up the kernel stack
 	if (flags & TASK_KTHREAD) {
 		if (regs == NULL)
 			regs = &default_regs;
-		t->mmu = NULL;	
+		t->mmu = &kernel_mmu;	
 		t->flags |= TASK_KTHREAD;
 		*--stack = (uint64_t)entry;
 		*--stack = (uint64_t)ret_from_kfork; // Where switch_to will return
@@ -120,7 +122,7 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t flags, co
 void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*argv[]), unsigned int UNUSED(flags))
 {
 	struct task *self = percpu_get(current);
-	if (self->mmu == NULL) {
+	if (self->mmu == &kernel_mmu) {
 		self->mmu = kmalloc(sizeof(struct mmu_info), KM_NONE);
 		self->mmu->p4 = page_to_virt(pmm_alloc_order(0, GFP_NONE));
 		copy_kernel_mappings(self->mmu->p4);
@@ -130,8 +132,12 @@ void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*arg
 		vmm_destroy_low_mappings(self->mmu);
 	}
 
+#define UTASK_ENTRY 0x1000
+#define UTASK_STACK_BOTTOM 0x3000
+#define UTASK_STACK_TOP 0x5000
+
 	// Set up the entry point
-	uintptr_t entry = 0x1000;
+	uintptr_t entry = UTASK_ENTRY;
 	vmm_map_page(self->mmu, kern_to_phys(function), (virtaddr_t)entry, PAGE_EXECUTABLE | PAGE_USER_ACCESSIBLE);
 	vmm_map_page(self->mmu, kern_to_phys(function) + PAGE_SIZE, (virtaddr_t)(entry + PAGE_SIZE), PAGE_EXECUTABLE | PAGE_USER_ACCESSIBLE);
 	entry += ((uintptr_t)function & 0xFFF);
@@ -140,8 +146,8 @@ void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*arg
 		size_t off = i * PAGE_SIZE;
 		uintptr_t page = (uintptr_t)page_to_virt(pmm_alloc_order(0, GFP_NONE));
 		vmm_map_page(self->mmu, virt_to_phys((virtaddr_t)(page + off)),
-				(virtaddr_t)(0x2000 + off), PAGE_WRITABLE | PAGE_USER_ACCESSIBLE);
+				(virtaddr_t)(UTASK_STACK_BOTTOM + off), PAGE_WRITABLE | PAGE_USER_ACCESSIBLE);
 	}
 
-	ret_from_execve((virtaddr_t)entry, 0x4000);
+	ret_from_execve((virtaddr_t)entry, UTASK_STACK_TOP);
 }

@@ -21,6 +21,9 @@ void kmain(physaddr_t mboot_info_phys)
 	// Get the virtual address of the multiboot info structure
 	struct multiboot_info *mboot_info_virt = phys_to_kern(mboot_info_phys);
 
+	// Initialise our per-CPU data area
+	percpu_init_bsp();
+
 	// Initialise paging
 	vmm_init();
 
@@ -58,9 +61,6 @@ void kmain(physaddr_t mboot_info_phys)
 
 	// Turn on IRQs
 	irq_enable();
-
-	// Initialise per-CPU data structures
-	percpu_init();
 
 	// Boot all the cores
 	smp_init();

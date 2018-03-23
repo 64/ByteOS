@@ -49,9 +49,8 @@ static void page_fault(uint8_t int_no, struct isr_ctx *regs)
 	uintptr_t faulting_address;
 	asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
 
-	// If the access was to the zero page in kernel space, we messed up big time
-	// (likely was a percpu access before the percpu struct was initialised)
-	if ((faulting_address & ~(PAGE_SIZE - 1)) == (uintptr_t)zero_page)
+	// The fault was likely due to an access in kernel space, so give up
+	if (faulting_address & (1ULL << 63))
 		goto kernel_panic;
 
 	struct task *current = percpu_get(current);

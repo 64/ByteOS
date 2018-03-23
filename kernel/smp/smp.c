@@ -101,7 +101,6 @@ void smp_ap_kmain(void)
 {
 	lapic_enable();
 	irq_enable();
-	percpu_init();
 
 	__atomic_add_fetch(&smp_nr_cpus_ready, 1, __ATOMIC_RELAXED);
 }

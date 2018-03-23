@@ -79,10 +79,8 @@ smp_trampoline_64:
 	extern smp_ap_started_flag
 	lock inc byte [smp_ap_started_flag]
 
-	extern percpu_set_addr
-	extern zero_page
-	mov rdi, zero_page
-	call percpu_set_addr
+	extern percpu_init_ap
+	call percpu_init_ap
 
 	extern load_idt
 	call load_idt
