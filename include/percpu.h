@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #include "types.h"
+#include "smp.h"
 #include "util.h"
 
 struct percpu {
@@ -13,7 +14,7 @@ struct percpu {
 	virtaddr_t tss;
 	uint32_t preempt_count;
 
-	uint32_t id;
+	cpuid_t id;
 	struct task *run_queue;
 };
 

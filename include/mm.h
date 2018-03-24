@@ -25,11 +25,12 @@
 #define PAGE_COW (1ULL << 9)
 #define PAGE_EXECUTABLE (1ULL << 63)
 
+#define VMM_ALLOC_MMAP (1 << 15)
+#define VMM_UNMAP (1 << 16)
+
 #define PAGE_SIZE 4096
 #define PAGE_SHIFT 12
 #define PTE_ADDR_MASK (~(0xFFF0000000000FFFUL))
-
-#define VMM_ALLOC_MMAP (1 << 0)
 
 #define MMAP_ALLOC_PA (1 << 0)
 #define MMAP_MAX_REGIONS 128
@@ -105,6 +106,8 @@ struct vm_area {
 
 struct mmu_info {
 	struct page_table *p4;
+
+	spinlock_t area_lock;
 	struct vm_area *areas;
 };
 
@@ -134,6 +137,9 @@ void kfree(void *);
 
 void cow_copy_pte(pte_t *dest, pte_t *src);
 bool cow_handle_write(pte_t *pte, virtaddr_t virt);
+void cow_handle_free(pte_t *pte);
+
+void area_add(struct mmu_info *mmu, struct vm_area *area);
 
 static inline physaddr_t virt_to_phys(virtaddr_t v) {
 	if (v == NULL)

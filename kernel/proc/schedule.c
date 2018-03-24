@@ -38,7 +38,6 @@ void sched_add(struct task *t)
 
 static void utask_entry(void)
 {
-	// TODO: Test forking twice
 	uint64_t var = 0;
 	// Fork
 	if (execute_syscall(2, 0, 0, 0, 0) > 0) {
@@ -66,11 +65,18 @@ static void ktask_entry(void)
 	task_execve(utask_entry, NULL, 0);
 }
 
+static void init_dummy(struct task *t)
+{
+	memset(t, 0, sizeof *t);
+	cpuset_set_id(&t->affinity, 0, 1);
+}
+
 void sched_run(void)
 {
 	klog("sched", "Starting scheduler...\n");
 	percpu_set(run_queue, NULL);
 	percpu_set(current, &dummy);
+	init_dummy(&dummy);
 	task_fork(&dummy, ktask_entry, TASK_KTHREAD, NULL);
 	schedule();
 }

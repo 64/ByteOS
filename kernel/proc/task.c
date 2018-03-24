@@ -113,6 +113,8 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t flags, co
 	*--stack = regs->r15;
 	t->rsp_top = (virtaddr_t)stack;
 
+	cpuset_copy(&t->affinity, &parent->affinity);
+
 	// Add the task to the scheduler
 	t->state = TASK_RUNNABLE;
 	sched_add(t);
@@ -128,7 +130,6 @@ void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*arg
 		copy_kernel_mappings(self->mmu->p4);
 		change_cr3(virt_to_phys(self->mmu->p4));
 	} else {
-		// TODO: Free all process-used low memory
 		vmm_destroy_low_mappings(self->mmu);
 	}
 
@@ -149,5 +150,28 @@ void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*arg
 				(virtaddr_t)(UTASK_STACK_BOTTOM + off), PAGE_WRITABLE | PAGE_USER_ACCESSIBLE);
 	}
 
+	// Create a vm_area for the code
+	struct vm_area *code = kmalloc(sizeof(struct vm_area), KM_NONE);
+	memset(code, 0, sizeof *code);
+	code->base = UTASK_ENTRY;
+	code->len = 2 * PAGE_SIZE;
+	code->type = VM_AREA_TEXT;
+	code->flags = VM_AREA_EXECUTABLE;
+	area_add(self->mmu, code);
+
+	// Create a vm_area for the stack
+	struct vm_area *stack = kmalloc(sizeof(struct vm_area), KM_NONE);
+	memset(stack, 0, sizeof *stack);
+	stack->base = UTASK_STACK_TOP;
+	stack->len = UTASK_STACK_TOP - UTASK_STACK_BOTTOM;
+	stack->type = VM_AREA_STACK;
+	stack->flags = VM_AREA_WRITABLE;
+	area_add(self->mmu, stack);
+
+	slist_foreach(cur, list, self->mmu->areas) {
+		klog("task", "Added area at %p, size %zu\n", (void *)cur->base, cur->len);
+	}
+
+	reload_cr3(); // TODO: Prevent reloading twice
 	ret_from_execve((virtaddr_t)entry, UTASK_STACK_TOP);
 }

@@ -162,12 +162,18 @@ void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsign
 	const uint16_t p2_index = (va & P2_ADDR_MASK) >> P2_ADDR_SHIFT;
 	const uint16_t p1_index = (va & P1_ADDR_MASK) >> P1_ADDR_SHIFT;
 
+	bool unmap = flags & VMM_UNMAP;
+	bool lowmem = virt < (virtaddr_t)KERNEL_LOGICAL_BASE;
+	unsigned int pgtab_flags = flags | (lowmem ? PAGE_USER_ACCESSIBLE : 0);
+	
+
 	// When the bit is on, execution is disabled, so we need to toggle the bit
 	flags ^= PAGE_EXECUTABLE;
 
 	struct page_table *p3_table = pgtab_extract_virt_addr(mmu->p4, p4_index);
 	if (p3_table == NULL) {
-		mmu->p4->pages[p4_index] = alloc_pgtab(flags);
+		if (unmap) return;
+		mmu->p4->pages[p4_index] = alloc_pgtab(pgtab_flags);
 		p3_table = pgtab_extract_virt_addr(mmu->p4, p4_index);
 		kassert_dbg(p3_table != NULL);
 		memset(p3_table, 0, sizeof(struct page_table));
@@ -175,7 +181,8 @@ void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsign
 
 	struct page_table *p2_table = pgtab_extract_virt_addr(p3_table, p3_index);
 	if (p2_table == NULL) {
-		p3_table->pages[p3_index] = alloc_pgtab(flags);
+		if (unmap) return;
+		p3_table->pages[p3_index] = alloc_pgtab(pgtab_flags);
 		p2_table = pgtab_extract_virt_addr(p3_table, p3_index);
 		kassert_dbg(p2_table != NULL);
 		memset(p2_table, 0, sizeof(struct page_table));
@@ -183,7 +190,8 @@ void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsign
 
 	struct page_table *p1_table = pgtab_extract_virt_addr(p2_table, p2_index);
 	if (p1_table == NULL) {
-		p2_table->pages[p2_index] = alloc_pgtab(flags);
+		if (unmap) return;
+		p2_table->pages[p2_index] = alloc_pgtab(pgtab_flags);
 		p1_table = pgtab_extract_virt_addr(p2_table, p2_index);
 		kassert_dbg(p1_table != NULL);
 		memset(p1_table, 0, sizeof(struct page_table));
@@ -197,8 +205,12 @@ void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsign
 	}
 #endif
 
-	flags &= ~VMM_ALLOC_MMAP; // Don't care about this flag anymore
-	p1_table->pages[p1_index] = (phys & PTE_ADDR_MASK) | PAGE_PRESENT | flags;
+	if (unmap) {
+		p1_table->pages[p1_index] = 0;
+	} else {
+		flags &= ~(VMM_ALLOC_MMAP); // Don't care about these flags anymore
+		p1_table->pages[p1_index] = (phys & PTE_ADDR_MASK) | PAGE_PRESENT | flags;
+	}
 	invlpg((uintptr_t)virt);
 }
 
@@ -216,6 +228,17 @@ void vmm_destroy_low_mappings(struct mmu_info *mmu)
 			for (size_t p2_index = 0; p2_index < 512; p2_index++) {
 				struct page_table *p1 = pgtab_extract_virt_addr(p2, p2_index);
 				if (p1 != NULL) {
+					for (size_t p1_index = 0; p1_index < 512; p1_index++) {
+						if (p1->pages[p1_index] & PAGE_PRESENT) {
+							if (p1->pages[p1_index] & PAGE_COW) {
+								cow_handle_free(&p1->pages[p1_index]);
+							} else {
+								physaddr_t phys = p1->pages[p1_index] & PTE_ADDR_MASK;
+								pmm_free_order(phys_to_page(phys), 0);
+							}
+							p1->pages[p1_index] = 0;
+						}
+					}
 					pmm_free_order(virt_to_page(p1), 0);
 					p2->pages[p2_index] = 0;
 				}

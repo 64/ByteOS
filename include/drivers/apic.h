@@ -2,9 +2,10 @@
 
 #include <stddef.h>
 #include "types.h"
+#include "limits.h"
 #include "drivers/acpi.h"
 
-#define MAX_LAPICS 16
+#define MAX_LAPICS MAX_CORES
 #define MAX_IOAPICS 16
 #define MAX_NMIS (2 * MAX_LAPICS)
 #define MAX_OVERRIDES 48

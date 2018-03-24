@@ -48,3 +48,17 @@ bool cow_handle_write(pte_t *pte, virtaddr_t virt)
 	invlpg((uintptr_t)virt);
 	return true;
 }
+
+// TODO: This might be a race condition (either now or in the future) if another
+// process tries to copy a PTE at the same time as we're freeing it.
+void cow_handle_free(pte_t *pte)
+{
+	kassert_dbg(*pte & PAGE_COW);
+
+	struct page *page = phys_to_page(*pte & PTE_ADDR_MASK);	
+	uint64_t next_count = __atomic_sub_fetch(&page->refcount, 1, __ATOMIC_RELAXED);
+
+	if (next_count == 0) {
+		pmm_free_order(page, 0);
+	}
+}
