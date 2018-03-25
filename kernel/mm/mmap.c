@@ -122,6 +122,7 @@ struct mmap_region mmap_alloc_low(size_t n, unsigned int alloc_flags)
 			if (remaining > 0)
 				mmap_insert_region(&mem_map.available, new_base, remaining, rg->flags);
 			kassert_dbg(old_rg.base > 0 && old_rg.len > 0);
+			// TODO: Memset zero it all out
 			return old_rg;
 		}
 	}

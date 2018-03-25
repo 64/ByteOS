@@ -122,7 +122,7 @@ physaddr_t vmm_get_phys_addr(struct mmu_info *, void *);
 bool vmm_has_flags(struct mmu_info *, void *, uint64_t flags);
 pte_t *vmm_get_pte(struct mmu_info *, void *);
 void vmm_map_page(struct mmu_info *, physaddr_t, virtaddr_t, unsigned long);
-void vmm_dump_tables(void);
+void vmm_dump_tables(struct mmu_info *);
 void vmm_destroy_low_mappings(struct mmu_info *);
 
 struct mmap *mmap_init(struct multiboot_info *);

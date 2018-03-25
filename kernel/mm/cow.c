@@ -24,12 +24,13 @@ void cow_copy_pte(pte_t *dest, pte_t *src)
 // Returns true if the write is allowed and should be retried
 bool cow_handle_write(pte_t *pte, virtaddr_t virt)
 {
-	if (!(*pte & PAGE_COW))
+	if (pte == NULL || !(*pte & PAGE_COW))
 		return false;
-
 
 	struct page *page = phys_to_page(*pte & PTE_ADDR_MASK);
 	uint64_t next_count = __atomic_sub_fetch(&page->refcount, 1, __ATOMIC_RELAXED);
+
+	//kprintf_nolock("Handle CoW write to address %p\n", virt);
 
 	if (next_count != 0) {
 		// We need to allocate another page, and copy the memory into it
@@ -53,6 +54,7 @@ bool cow_handle_write(pte_t *pte, virtaddr_t virt)
 // process tries to copy a PTE at the same time as we're freeing it.
 void cow_handle_free(pte_t *pte)
 {
+	kassert_dbg(pte != NULL);
 	kassert_dbg(*pte & PAGE_COW);
 
 	struct page *page = phys_to_page(*pte & PTE_ADDR_MASK);	
@@ -60,5 +62,6 @@ void cow_handle_free(pte_t *pte)
 
 	if (next_count == 0) {
 		pmm_free_order(page, 0);
+		kprintf("Freed\n");
 	}
 }

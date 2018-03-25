@@ -76,13 +76,13 @@ static inline pte_t alloc_pgtab(unsigned int alloc_flags)
 	}
 }
 
-void vmm_dump_tables(void)
+void vmm_dump_tables(struct mmu_info *mmu)
 {
-	for (size_t i = 0; i < 512; i++) {
-		struct page_table *pgtab = pgtab_extract_virt_addr(kernel_mmu.p4, i);
+	for (size_t i = 0; i < (1 << 7); i++) {
+		struct page_table *pgtab = pgtab_extract_virt_addr(mmu->p4, i);
 		if (pgtab == NULL)
 			continue;
-		kprintf("P3: %lx\n", kernel_mmu.p4->pages[i] & ~PTE_ADDR_MASK);
+		kprintf("P3: %lx\n", mmu->p4->pages[i] & ~PTE_ADDR_MASK);
 		dump_page_tables_p2(pgtab, 0xFFFF000000000000 | (i << 39));
 	}
 }
@@ -135,15 +135,15 @@ pte_t *vmm_get_pte(struct mmu_info *mmu, void *addr)
 
 	struct page_table *p3_table = pgtab_extract_virt_addr(mmu->p4, p4_index);
 	if (p3_table == NULL)
-		return 0;
+		return NULL;
 
 	struct page_table *p2_table = pgtab_extract_virt_addr(p3_table, p3_index);
 	if (p2_table == NULL)
-		return 0;
+		return NULL;
 
 	struct page_table *p1_table = pgtab_extract_virt_addr(p2_table, p2_index);
 	if (p1_table == NULL)
-		return 0;
+		return NULL;
 
 	return &p1_table->pages[p1_index];
 }
@@ -165,7 +165,6 @@ void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsign
 	bool unmap = flags & VMM_UNMAP;
 	bool lowmem = virt < (virtaddr_t)KERNEL_LOGICAL_BASE;
 	unsigned int pgtab_flags = flags | (lowmem ? PAGE_USER_ACCESSIBLE : 0);
-	
 
 	// When the bit is on, execution is disabled, so we need to toggle the bit
 	flags ^= PAGE_EXECUTABLE;
@@ -206,6 +205,7 @@ void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsign
 #endif
 
 	if (unmap) {
+		klog_verbose("vmm", "Unmapped page at %p\n", virt);
 		p1_table->pages[p1_index] = 0;
 	} else {
 		flags &= ~(VMM_ALLOC_MMAP); // Don't care about these flags anymore
@@ -227,21 +227,21 @@ void vmm_destroy_low_mappings(struct mmu_info *mmu)
 				continue;
 			for (size_t p2_index = 0; p2_index < 512; p2_index++) {
 				struct page_table *p1 = pgtab_extract_virt_addr(p2, p2_index);
-				if (p1 != NULL) {
-					for (size_t p1_index = 0; p1_index < 512; p1_index++) {
-						if (p1->pages[p1_index] & PAGE_PRESENT) {
-							if (p1->pages[p1_index] & PAGE_COW) {
-								cow_handle_free(&p1->pages[p1_index]);
-							} else {
-								physaddr_t phys = p1->pages[p1_index] & PTE_ADDR_MASK;
-								pmm_free_order(phys_to_page(phys), 0);
-							}
-							p1->pages[p1_index] = 0;
+				if (p1 == NULL)
+					continue;
+				for (size_t p1_index = 0; p1_index < 512; p1_index++) {
+					if (p1->pages[p1_index] & PAGE_PRESENT) {
+						if (p1->pages[p1_index] & PAGE_COW) {
+							cow_handle_free(&p1->pages[p1_index]);
+						} else {
+							physaddr_t phys = p1->pages[p1_index] & PTE_ADDR_MASK;
+							pmm_free_order(phys_to_page(phys), 0);
 						}
+						p1->pages[p1_index] = 0;
 					}
-					pmm_free_order(virt_to_page(p1), 0);
-					p2->pages[p2_index] = 0;
 				}
+				pmm_free_order(virt_to_page(p1), 0);
+				p2->pages[p2_index] = 0;
 			}
 			pmm_free_order(virt_to_page(p2), 0);
 			p3->pages[p3_index] = 0;

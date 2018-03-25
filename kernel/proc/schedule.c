@@ -10,7 +10,7 @@ void schedule(void)
 {
 	// TODO: Disable preemption
 	struct task *next = runq_next();
-	klog("sched", "Switching to %p\n", next);
+	//klog("sched", "Switching to %p\n", next);
 	kassert_dbg(next != percpu_get(current));
 	kassert_dbg(next->state == TASK_RUNNABLE);
 	next->state = TASK_RUNNING;
@@ -30,7 +30,7 @@ void sched_yield(void)
 
 static void utask_entry(void)
 {
-	uint64_t var = 0;
+	volatile uint64_t var = 0;
 	if (execute_syscall(2, 0, 0, 0, 0) > 0) { // Fork
 		execute_syscall(1, 'C', 0, 0, 0); // Write
 		execute_syscall(0, 0, 0, 0, 0); // Yield

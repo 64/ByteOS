@@ -25,7 +25,7 @@
 #define ISALIGN_POW2(val, align) ({ \
 	const typeof((val)) _val = (val); \
 	const typeof((align)) _align = (align); \
-	(_val & (_align - 1)) == 0; })
+	((uintptr_t)_val & ((uintptr_t)_align - 1)) == 0; })
 
 #define UNUSED(x) x __attribute__((unused))
 

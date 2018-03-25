@@ -87,11 +87,10 @@ void runq_remove(struct task *t)
 			} else {
 				dlist_set_next(prev, list, next);
 			}
-			kprintf("Prev = %p, next = %p\n", prev, next);
 			break;
 		}
 	}
-	klog("runq", "Removed task %p\n", t);
+	klog_verbose("runq", "Removed task %p\n", t);
 
 	spin_unlock(&run_queue->lock);
 }
