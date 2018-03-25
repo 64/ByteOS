@@ -336,9 +336,9 @@ isr_stub_irq 246
 isr_stub_irq 247
 isr_stub_irq 248
 isr_stub_irq 249
-isr_stub_irq 250
-isr_stub_ipi 251, tlb_shootdown
-isr_stub_ipi 252, abort ; Must match interrupts.h
+isr_stub_ipi 250, tlb_shootdown
+isr_stub_ipi 251, abort ; Must match interrupts.h
+isr_stub_noerr 252 ; NMI
 isr_stub_irq 253 ; LINT0
 isr_stub_irq 254 ; LINT1
 isr_stub_nop 255 ; APIC Spurious interrupt vector

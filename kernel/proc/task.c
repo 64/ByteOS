@@ -147,7 +147,7 @@ void task_exit(struct task *t, int UNUSED(code))
 
 	if (t == percpu_get(current)) {
 		// TODO: Reap ourselves
-		schedule();
+		sched_yield();
 		panic("Schedule returned at the end of task_exit");
 	}
 }

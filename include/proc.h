@@ -36,7 +36,7 @@ struct task {
 
 struct runq {
 	spinlock_t lock;
-	struct task *head;
+	struct task *head, *idle;
 };
 
 struct callee_regs {
@@ -53,6 +53,7 @@ void switch_to(struct task *);
 
 void schedule(void);
 void sched_run(void);
+void sched_yield(void);
 void sched_add(struct task *t);
 
 struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t flags, const struct callee_regs *regs);
@@ -65,3 +66,5 @@ void runq_start_balancer(void);
 void runq_add(struct task *t);
 void runq_remove(struct task *t);
 struct task *runq_next(void);
+
+void idle_task(void);

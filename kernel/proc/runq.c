@@ -5,7 +5,7 @@
 
 static void runq_balancer(void)
 {
-	klog("runq", "Run queue balancer started for CPU %u\n", percpu_get(id));
+	klog_verbose("runq", "Run queue balancer started for CPU %u\n", percpu_get(id));
 }
 
 // Needs to be called once per CPU
@@ -19,6 +19,17 @@ void runq_init(void)
 // Needs to be called once per CPU
 void runq_start_balancer(void)
 {
+	// Start the idle task
+	struct task *idle = task_fork(NULL, idle_task, TASK_KTHREAD, NULL);
+	cpuset_clear(&idle->affinity);
+	cpuset_set_id(&idle->affinity, percpu_get(id), 1);
+	cpuset_pin(&idle->affinity);
+	idle->state = TASK_RUNNABLE;
+	dlist_set_next(idle, list, (struct task *)NULL);
+	percpu_get(run_queue)->idle = idle;
+	klog("runq", "Idle task at %p\n", idle);
+
+	// Start the run queue balancer
 	struct task *balancer = task_fork(NULL, runq_balancer, TASK_KTHREAD, NULL);
 	cpuset_clear(&balancer->affinity);
 	cpuset_set_id(&balancer->affinity, percpu_get(id), 1);
@@ -50,8 +61,11 @@ struct task *runq_next(void)
 
 	struct task *t = percpu_get(current);
 	struct task *next = dlist_get_next(t, list);
-	if (next == NULL)
+	if (next == NULL) {
 		next = percpu_get(run_queue)->head;
+		if (next == NULL)
+			next = run_queue->idle;
+	}
 
 	spin_unlock(&run_queue->lock);
 	return next;
@@ -68,11 +82,16 @@ void runq_remove(struct task *t)
 			struct task *next = dlist_get_next(cur, list);
 			if (prev == NULL) {
 				run_queue->head = next;
-			} else
+				if (next != NULL)
+					next->list.prev = NULL;
+			} else {
 				dlist_set_next(prev, list, next);
+			}
+			kprintf("Prev = %p, next = %p\n", prev, next);
 			break;
 		}
 	}
+	klog("runq", "Removed task %p\n", t);
 
 	spin_unlock(&run_queue->lock);
 }

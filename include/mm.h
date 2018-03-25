@@ -73,8 +73,9 @@ struct mmap {
 	struct mmap_type reserved;
 };
 
-// This should be kept as small as possible
-// Initial entries are zeroed out by memset
+// One of these for each page of available physical memory.
+// This should be kept as small as possible (for obvious reasons).
+// Initial entries are zeroed out by memset.
 struct page {
 	struct dlist_entry list; // Can be used for whatever purpose
 	uint32_t refcount; // Reference count for copy-on-write mappings

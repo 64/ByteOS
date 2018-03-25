@@ -1,5 +1,6 @@
 %include "include.asm"
 
+section .text
 global ret_from_ufork
 ; Final work before returning to a child user space thread
 ret_from_ufork:

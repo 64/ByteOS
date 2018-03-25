@@ -49,7 +49,7 @@ static inline struct lapic_info *find_lapic(uint8_t id)
 
 static inline void lapic_set_nmi(uint8_t vec, struct madt_entry_nmi *nmi_info)
 {
-	kassert_dbg(vec >= IRQ_LINT_BASE && vec < IRQ_APIC_SPURIOUS);
+	kassert_dbg(vec == IRQ_NMI);
 	uint32_t nmi = 800 | vec;
 	if (nmi_info->flags & 2)
 		nmi |= (1 << 13);
@@ -96,7 +96,7 @@ void lapic_enable(void)
 
 	for (size_t i = 0; i < nmi_list_size; i++)
 		if (nmi_list[i]->acpi_id == lapic->acpi_id || nmi_list[i]->acpi_id == 0xFF)
-			lapic_set_nmi(IRQ_LINT_BASE + nmi_list[i]->lint_num, nmi_list[i]);
+			lapic_set_nmi(IRQ_NMI, nmi_list[i]);
 
 	// Enable the LAPIC via the spurious interrupt register
 	lapic_write(APIC_REG_SPURIOUS, lapic_read(APIC_REG_SPURIOUS) | (1 << 8) | IRQ_APIC_SPURIOUS);

@@ -196,7 +196,7 @@ static struct zone *page_to_zone(struct page *page)
 	return NULL;
 }
 
-static bool is_page_free(struct page *page, struct zone *zone)
+static __attribute__((unused)) bool is_page_free(struct page *page, struct zone *zone)
 {
 	if (dlist_get_next(page, list) == NULL && dlist_get_prev(page, list) == NULL)
 		return false;

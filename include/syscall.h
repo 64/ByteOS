@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-#define NUM_SYSCALLS 3
+#define NUM_SYSCALLS 4
 #define SYSCALL_ERROR 0xFFFFFFFFFFFFFFFFULL
 
 typedef int64_t (*syscall_t)(void);

@@ -82,6 +82,9 @@ void exception_handler(struct isr_ctx *regs)
 		case INT_PAGE_FAULT:
 			page_fault(int_no, regs);
 			break;
+		case IRQ_NMI:
+			int_no = 2;
+			// fallthrough
 		default:
 			panic(
 				"%s:\n"

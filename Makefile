@@ -1,11 +1,11 @@
 # Thank you https://github.com/no92 for cleaning this up a lot!
 ISO		:= build/byteos.iso
 KERNEL		:= build/byteos.elf
-OS		:= $(shell uname -s)
+OS		?= $(shell uname -s)
 
 AS		:= nasm
-EMU		:= qemu-system-x86_64
-BOCHS           := bochs
+QEMU		?= qemu-system-x86_64
+BOCHS           ?= bochs
 AR		:= x86_64-elf-ar
 CC		?= cc
 TEST_CC		:= $(CC)
@@ -13,19 +13,19 @@ CC		:= x86_64-elf-gcc
 OBJDUMP		:= x86_64-elf-objdump
 READELF		:= x86_64-elf-readelf
 OBJCOPY		:= x86_64-elf-objcopy
-GDB		:= gdb
+GDB		?= gdb
 
 CFLAGS		+= -ffreestanding -mno-red-zone -mcmodel=kernel -Iinclude -std=gnu11
 CFLAGS		+= -Wall -Werror -Wextra -Wparentheses -Wmissing-declarations -Wunreachable-code -Wunused 
 CFLAGS		+= -Wmissing-field-initializers -Wmissing-prototypes -Wpointer-arith -Wswitch-enum
 CFLAGS		+= -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wuninitialized
 CFLAGS		+= -mno-sse -mno-mmx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-sse4a
-DEBUG_CFLAGS    := -fsanitize=undefined -Og -g -DDEBUG
-RELEASE_CFLAGS  := -O3
-ASFLAGS		:= -f elf64 -F dwarf -g -w+all -Werror -i$(shell pwd)/include/
-EMUFLAGS	:= -net none -smp sockets=1,cores=4,threads=1 -serial stdio -cdrom $(ISO)
+DEBUG_CFLAGS    ?= -fsanitize=undefined -Og -g -DDEBUG
+RELEASE_CFLAGS  ?= -O3
+ASFLAGS		?= -f elf64 -F dwarf -g -w+all -Werror -i$(shell pwd)/include/
+QEMUFLAGS	?= -net none -smp sockets=1,cores=4,threads=1 -serial stdio -cdrom $(ISO)
 ASTYLEFLAGS	:= --style=linux -z2 -k3 -H -xg -p -T8 -S
-BOCHSFLAGS      := -f .bochsrc -q
+BOCHSFLAGS      ?= -f .bochsrc -q
 
 CRTI_OBJ	:= kernel/crt/crti.asm.o
 CRTBEGIN_OBJ    := kernel/crt/crtbegin.o
@@ -48,7 +48,7 @@ MOD_SNOW	:= vendor/snow
 SUBMODULES	:= ds cansid snow
 
 ifeq ($(OS),Linux)
-	EMUFLAGS += -M accel=kvm:tcg
+	QEMUFLAGS += -M accel=kvm:tcg
 endif
 
 ifeq ($(DEBUG),0)
@@ -67,7 +67,7 @@ endif
 all: $(ISO)
 
 run: $(ISO)
-	@$(EMU) $(EMUFLAGS)
+	@$(QEMU) $(QEMUFLAGS)
 
 bochs: $(ISO)
 	@$(BOCHS) $(BOCHSFLAGS)
@@ -83,7 +83,7 @@ clean:
 	@$(RM) $(DEPFILES)
 
 gdb: $(ISO)
-	@$(EMU) $(EMUFLAGS) -no-reboot -s -S &
+	@$(QEMU) $(QEMUFLAGS) -no-reboot -s -S &
 	@sleep 0.5
 	@$(GDB)
 	@pkill qemu
