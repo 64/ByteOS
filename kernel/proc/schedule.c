@@ -9,31 +9,18 @@ static struct task dummy;
 void schedule(void)
 {
 	// TODO: Disable preemption
-	// TODO: Switch to child if forked
-	struct task *t = percpu_get(current);
-	struct task *next = dlist_get_next(t, list);
-	if (next == NULL)
-		next = percpu_get(run_queue);
+	struct task *next = runq_next();
 	//klog("sched", "Next = %p\n", next);
 	kassert_dbg(next->state == TASK_RUNNABLE);
 	//klog("sched", "Switching to %p\n", next);
 	next->state = TASK_RUNNING;
-	t->state = TASK_RUNNABLE;
+	percpu_get(current)->state = TASK_RUNNABLE;
 	switch_to(next);
 }
 
 void sched_add(struct task *t)
 {
-	// TODO: Disable preemption
-	struct task *run_queue = percpu_get(run_queue);
-	if (run_queue == NULL) {
-		percpu_set(run_queue, t);
-		dlist_set_next(t, list, (struct task *)NULL);
-		dlist_set_next(percpu_get(current), list, t);
-		t->list.prev = NULL;
-	} else
-		dlist_append(run_queue, list, t);
-	//klog("sched", "Added task at %p\n", t);
+	runq_add(t);
 }
 
 static void utask_entry(void)
@@ -60,8 +47,11 @@ static void utask_entry(void)
 		execute_syscall(0, 0, 0, 0, 0); // Yield
 }
 
+// The first kernel thread. Perform advanced initialisation (e.g forking) from here.
+// Ends with a call to execve, beginning the first user process.
 static void ktask_entry(void)
 {
+	runq_start_balancer();	
 	task_execve(utask_entry, NULL, 0);
 }
 
@@ -69,15 +59,17 @@ static void init_dummy(struct task *t)
 {
 	memset(t, 0, sizeof *t);
 	cpuset_set_id(&t->affinity, 0, 1);
+	t->mmu = &kernel_mmu;
 }
 
 void sched_run(void)
 {
 	klog("sched", "Starting scheduler...\n");
-	percpu_set(run_queue, NULL);
+	runq_init();
 	percpu_set(current, &dummy);
 	init_dummy(&dummy);
-	task_fork(&dummy, ktask_entry, TASK_KTHREAD, NULL);
+	struct task *t = task_fork(&dummy, ktask_entry, TASK_KTHREAD, NULL);
+	task_wakeup(t);
 	schedule();
 }
 

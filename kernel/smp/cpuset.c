@@ -7,6 +7,26 @@ void cpuset_init(cpuset_t *cpus)
 	*cpus = 0;	
 }
 
+void cpuset_clear(cpuset_t *cpus)
+{
+	*cpus = 0;
+}
+
+void cpuset_pin(cpuset_t *cpus)
+{
+	*cpus |= 1;
+}
+
+void cpuset_unpin(cpuset_t *cpus)
+{
+	*cpus &= ~1;
+}
+
+bool cpuset_is_pinned(cpuset_t *cpus)
+{
+	return *cpus | 1;
+}
+
 void cpuset_copy(cpuset_t *dest, cpuset_t *src)
 {
 	*dest = *src;
@@ -15,16 +35,16 @@ void cpuset_copy(cpuset_t *dest, cpuset_t *src)
 bool cpuset_query_id(cpuset_t *cpus, cpuid_t id)
 {
 	kassert_dbg(id < MAX_CORES);
-	return *cpus & (1 << id);
+	return *cpus & (1 << ++id);
 }
 
 void cpuset_set_id(cpuset_t *cpus, cpuid_t id, bool val)
 {
 	kassert_dbg(id < MAX_CORES);
 	if (val)
-		*cpus |= (1 << id);
+		*cpus |= (1 << ++id);
 	else
-		*cpus &= ~(1 << id);
+		*cpus &= ~(1 << ++id);
 }
 
 #ifdef VERBOSE

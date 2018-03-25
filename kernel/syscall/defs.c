@@ -22,7 +22,8 @@ static int64_t NAME(fork)(uint64_t flags, struct callee_regs *regs, virtaddr_t r
 {
 	if (flags & TASK_KTHREAD)
 		return -1;
-	task_fork(percpu_get(current), return_addr, flags, regs);
+	struct task *child = task_fork(percpu_get(current), return_addr, flags, regs);
+	task_wakeup(child);
 	schedule();
 	return 1; // TODO: Return child PID
 }

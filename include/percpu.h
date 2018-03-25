@@ -15,7 +15,7 @@ struct percpu {
 	uint32_t preempt_count;
 
 	cpuid_t id;
-	struct task *run_queue;
+	struct runq *run_queue;
 };
 
 void percpu_init_ap(void);

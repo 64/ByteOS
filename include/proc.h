@@ -21,9 +21,10 @@ struct task {
 	struct dlist_entry list;
 
 	// Process state
-	enum {
+	enum task_state {
 		TASK_RUNNABLE,
 		TASK_RUNNING,
+		TASK_NOT_STARTED,
 		TASK_BLOCKED
 	} state;
 
@@ -31,6 +32,11 @@ struct task {
 	pid_t pid;
 
 	cpuset_t affinity; // Defines which processors this task can run on
+};
+
+struct runq {
+	spinlock_t lock;
+	struct task *head;
 };
 
 struct callee_regs {
@@ -51,3 +57,11 @@ void sched_add(struct task *t);
 
 struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t flags, const struct callee_regs *regs);
 void task_execve(virtaddr_t function, char *argv[], unsigned int flags);
+void task_wakeup(struct task *t);
+void task_exit(struct task *t, int code);
+
+void runq_init(void);
+void runq_start_balancer(void);
+void runq_add(struct task *t);
+void runq_remove(struct task *t);
+struct task *runq_next(void);

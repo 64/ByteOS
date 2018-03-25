@@ -69,6 +69,9 @@ static struct mmu_info *clone_mmu(struct mmu_info *pmmu)
 
 struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t flags, const struct callee_regs *regs)
 {
+	if (parent == NULL)
+		parent = percpu_get(current);
+
 	struct task *t = kmalloc(sizeof(struct task), KM_NONE);
 	memset(t, 0, sizeof *t);
 	t->flags = parent->flags;
@@ -116,9 +119,37 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t flags, co
 	cpuset_copy(&t->affinity, &parent->affinity);
 
 	// Add the task to the scheduler
-	t->state = TASK_RUNNABLE;
-	sched_add(t);
+	t->state = TASK_NOT_STARTED;
 	return t;
+}
+
+void task_wakeup(struct task *t)
+{
+	if (t->state == TASK_RUNNING)
+		klog_warn("task", "Task tried to wake itself\n");
+
+	if (t->state != TASK_RUNNABLE && t->state != TASK_RUNNING) {
+		t->state = TASK_RUNNABLE;
+		sched_add(t);
+	}
+}
+
+void task_exit(struct task *t, int UNUSED(code))
+{
+	if (t->state == TASK_RUNNABLE || TASK_RUNNING)
+		runq_remove(t);
+
+	if (t->flags & TASK_KTHREAD) {
+
+	} else {
+		vmm_destroy_low_mappings(t->mmu);
+	}
+
+	if (t == percpu_get(current)) {
+		// TODO: Reap ourselves
+		schedule();
+		panic("Schedule returned at the end of task_exit");
+	}
 }
 
 void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*argv[]), unsigned int UNUSED(flags))
@@ -169,7 +200,7 @@ void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*arg
 	area_add(self->mmu, stack);
 
 	slist_foreach(cur, list, self->mmu->areas) {
-		klog("task", "Added area at %p, size %zu\n", (void *)cur->base, cur->len);
+		klog_verbose("task", "Added area at %p, size %zu\n", (void *)cur->base, cur->len);
 	}
 
 	reload_cr3(); // TODO: Prevent reloading twice
