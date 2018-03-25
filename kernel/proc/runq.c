@@ -27,7 +27,6 @@ void runq_start_balancer(void)
 	idle->state = TASK_RUNNABLE;
 	dlist_set_next(idle, list, (struct task *)NULL);
 	percpu_get(run_queue)->idle = idle;
-	klog("runq", "Idle task at %p\n", idle);
 
 	// Start the run queue balancer
 	struct task *balancer = task_fork(NULL, runq_balancer, TASK_KTHREAD, NULL);

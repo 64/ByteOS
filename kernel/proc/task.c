@@ -34,6 +34,8 @@ static struct page_table *clone_pgtab(struct page_table *pgtab, size_t level)
 {
 	struct page_table *rv = page_to_virt(pmm_alloc_order(0, GFP_NONE));
 	size_t end_index = 512;
+	memset(rv, 0, sizeof *rv);
+
 	if (level == 4) {
 		copy_kernel_mappings(rv);
 		end_index = (1 << 7);
@@ -156,7 +158,7 @@ void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*arg
 {
 	struct task *self = percpu_get(current);
 	if (self->mmu == &kernel_mmu) {
-		self->mmu = kmalloc(sizeof(struct mmu_info), KM_NONE);
+		self->mmu = vmm_mmu_alloc();
 		self->mmu->p4 = page_to_virt(pmm_alloc_order(0, GFP_NONE));
 		copy_kernel_mappings(self->mmu->p4);
 		change_cr3(virt_to_phys(self->mmu->p4));

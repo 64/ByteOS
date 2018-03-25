@@ -176,7 +176,9 @@ struct page *pmm_alloc_order(unsigned int order, unsigned int alloc_flags)
 		struct page *rv = zone_alloc_order(zone, order, alloc_flags);
 		if (rv != NULL) {
 			spin_unlock(&zone_list_lock);
-			memset(page_to_virt(rv), 0, PAGE_SIZE * (1 << order));
+#ifdef DEBUG
+			memset(page_to_virt(rv), 0xBB, PAGE_SIZE * (1 << order));
+#endif
 			return rv;
 		}
 	}

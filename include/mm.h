@@ -124,6 +124,7 @@ pte_t *vmm_get_pte(struct mmu_info *, void *);
 void vmm_map_page(struct mmu_info *, physaddr_t, virtaddr_t, unsigned long);
 void vmm_dump_tables(struct mmu_info *);
 void vmm_destroy_low_mappings(struct mmu_info *);
+struct mmu_info *vmm_mmu_alloc(void);
 
 struct mmap *mmap_init(struct multiboot_info *);
 void mmap_dump_info(void);

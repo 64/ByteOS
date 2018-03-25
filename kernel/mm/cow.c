@@ -30,7 +30,7 @@ bool cow_handle_write(pte_t *pte, virtaddr_t virt)
 	struct page *page = phys_to_page(*pte & PTE_ADDR_MASK);
 	uint64_t next_count = __atomic_sub_fetch(&page->refcount, 1, __ATOMIC_RELAXED);
 
-	//kprintf_nolock("Handle CoW write to address %p\n", virt);
+	//kprintf_nolock("Handle CoW write to address %p\n", page);
 
 	if (next_count != 0) {
 		// We need to allocate another page, and copy the memory into it

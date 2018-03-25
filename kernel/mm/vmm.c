@@ -260,3 +260,10 @@ physaddr_t vmm_get_phys_addr(struct mmu_info *mmu, void *virt)
 	physaddr_t addr = (physaddr_t)(*vmm_get_pte(mmu, virt) & PTE_ADDR_MASK);
 	return (addr == 0) ? 0 : addr + page_offset;
 }
+
+struct mmu_info *vmm_mmu_alloc(void)
+{
+	struct mmu_info *rv = kmalloc(sizeof(struct mmu_info), KM_NONE);
+	memset(rv, 0, sizeof *rv);
+	return rv;
+}
