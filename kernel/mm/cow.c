@@ -8,7 +8,7 @@
 void cow_copy_pte(pte_t *dest, pte_t *src)
 {
 	struct page *page = phys_to_page(*src & PTE_ADDR_MASK);
-	__atomic_fetch_add(&page->refcount, 1, __ATOMIC_RELAXED);
+	__atomic_fetch_add(&page->refcount, 1, __ATOMIC_ACQUIRE);
 
 	// Make page read-only and CoW if it isn't already
 	if (!(*src & PAGE_COW)) {
@@ -28,7 +28,7 @@ bool cow_handle_write(pte_t *pte, virtaddr_t virt)
 		return false;
 
 	struct page *page = phys_to_page(*pte & PTE_ADDR_MASK);
-	uint64_t next_count = __atomic_sub_fetch(&page->refcount, 1, __ATOMIC_RELAXED);
+	uint64_t next_count = __atomic_sub_fetch(&page->refcount, 1, __ATOMIC_ACQUIRE);
 
 	//kprintf_nolock("Handle CoW write to address %p\n", page);
 
@@ -58,7 +58,7 @@ void cow_handle_free(pte_t *pte)
 	kassert_dbg(*pte & PAGE_COW);
 
 	struct page *page = phys_to_page(*pte & PTE_ADDR_MASK);	
-	uint64_t next_count = __atomic_sub_fetch(&page->refcount, 1, __ATOMIC_RELAXED);
+	uint64_t next_count = __atomic_sub_fetch(&page->refcount, 1, __ATOMIC_ACQUIRE);
 
 	if (next_count == 0) {
 		pmm_free_order(page, 0);

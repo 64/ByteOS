@@ -39,6 +39,10 @@ void ps2kbd_init(void)
 	irq_register_handler(vec, ps2kbd_irq_handler);
 	irq_unmask(ISA_TO_INTERRUPT(1));
 	klog("ps2kbd", "Initialised keyboard on IRQ %u\n", vec);
+
+	// Flush the output buffer (again)
+	while ((inb(PS2_STATUS) & 1) != 0)
+		(void)inb(PS2_DATA);
 }
 
 static void ps2kbd_irq_handler(struct isr_ctx *UNUSED(regs))

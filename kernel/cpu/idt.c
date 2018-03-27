@@ -8,7 +8,7 @@
 
 #define IDT_INSTALL(index, ist) ({ \
 	void ISR_NAME(index)(void); \
-	idt_set_isr(index, ISR_NAME(index), ist, 0x8E); })
+	idt_set_isr(index, ISR_NAME(index), ist, 0x8F); })
 
 void idt_set_isr(uint8_t index, virtaddr_t entry, uint8_t ist, uint8_t type_attr)
 {

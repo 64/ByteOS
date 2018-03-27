@@ -151,7 +151,10 @@ pte_t *vmm_get_pte(struct mmu_info *mmu, void *addr)
 bool vmm_has_flags(struct mmu_info *mmu, void *addr, uint64_t flags)
 {
 	kassert_dbg(addr != NULL);
-	return (*vmm_get_pte(mmu, addr) & flags) != 0;
+	pte_t *pte = vmm_get_pte(mmu, addr);
+	if (pte == NULL)
+		return false;
+	return (*pte & flags) != 0;
 }
 
 void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsigned long flags)

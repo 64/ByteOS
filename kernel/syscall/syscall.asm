@@ -41,7 +41,7 @@ syscall_enable:
 	; Set FMASK MSR for rflags
 	mov ecx, 0xC0000084 ; IA32_FMASK MSR
 	rdmsr
-	or eax, (1 << 9) ; Disable interrupts upon syscall entry
+	or eax, (1 << 9) | (1 << 10) ; Disable interrupts, clear direction flag
 	wrmsr
 
 	ret
