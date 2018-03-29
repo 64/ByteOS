@@ -22,7 +22,7 @@ CFLAGS		+= -Wmissing-field-initializers -Wmissing-prototypes -Wpointer-arith -Ws
 CFLAGS		+= -Wredundant-decls -Wshadow -Wstrict-prototypes -Wswitch-default -Wuninitialized
 CFLAGS		+= -mno-sse -mno-mmx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-sse4a
 DEBUG_CFLAGS    ?= -fsanitize=undefined -Og -g -DDEBUG
-RELEASE_CFLAGS  ?= -O3
+RELEASE_CFLAGS  ?= -O3 -flto
 ASFLAGS		?= -f elf64 -F dwarf -g -w+all -Werror -i$(shell pwd)/include/
 QEMUFLAGS	?= -net none -smp sockets=1,cores=4,threads=1 -serial stdio -cdrom $(ISO)
 ASTYLEFLAGS	:= --style=linux -z2 -k3 -H -xg -p -T8 -S
@@ -32,14 +32,14 @@ CRTI_OBJ	:= kernel/crt/crti.asm.o
 CRTBEGIN_OBJ    := kernel/crt/crtbegin.o
 CRTEND_OBJ	:= kernel/crt/crtend.o
 CRTN_OBJ	:= kernel/crt/crtn.asm.o
+LIBK_OBJ	:= $(addsuffix .o,$(shell find libk -not -path "*tests*" -name '*.c' -o -name '*.asm'))
 KERNEL_OBJ_RAW	:= $(addsuffix .o,$(shell find kernel -path kernel/crt -prune -type f -o -name '*.c' -o -name '*.asm'))
-KERNEL_OBJ_ALL	:= $(CRTI_OBJ) $(CRTN_OBJ) $(KERNEL_OBJ_RAW)
-KERNEL_OBJ	:= $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(KERNEL_OBJ_RAW) $(CRTEND_OBJ) $(CRTN_OBJ)
+KERNEL_OBJ_ALL	:= $(CRTI_OBJ) $(CRTN_OBJ) $(KERNEL_OBJ_RAW) $(LIBK_OBJ)
+KERNEL_OBJ	:= $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(KERNEL_OBJ_RAW) $(LIBK_OBJ) $(CRTEND_OBJ) $(CRTN_OBJ)
 KERNEL_SRC_DEPS := include/gen/syscall_gen.h include/gen/syscall_gen.c include/gen/syscall_gen.asm
 
 DEPFILES	:= $(patsubst %.o,%.d,$(KERNEL_OBJ_ALL))
 
-LIBK_OBJ	:= $(addsuffix .o,$(shell find libk -not -path "*tests*" -name '*.c' -o -name '*.asm'))
 LIBK_TESTABLE	:= $(addprefix libk/,string.c)
 DEPFILES	+= $(patsubst %.o,%.d,$(LIBK_OBJ))
 TIME_START 	:= $(shell date +"%s.%N")
@@ -136,17 +136,14 @@ build/:
 	@mkdir build
 	@mkdir -p include/gen
 
-build/libk.a: $(LIBK_OBJ)
-	@$(AR) rcs $@ $(LIBK_OBJ)
-
 $(ISO): build/ iso/boot/byteos.elf
 	@printf "\t\e[32;1mCreating\e[0m $(ISO)\n"
 	@grub-mkrescue -o $@ iso 2> /dev/null
 	@printf "\t\e[32;1;4mDone\e[24m in $(shell date +%s.%3N --date='$(TIME_START) seconds ago')s\e[0m\n"
 
-$(KERNEL): $(KERNEL_SRC_DEPS) $(KERNEL_OBJ_ALL) build/libk.a
+$(KERNEL): $(KERNEL_SRC_DEPS) $(KERNEL_OBJ_ALL)
 	@printf "\t\e[32;1mLinking\e[0m $(KERNEL)\n"
-	@$(CC) -T linker.ld -o $@ $(KERNEL_OBJ) $(LDFLAGS) -n -nostdlib -Lbuild -lk -lgcc
+	@$(CC) -T linker.ld -o $@ $(KERNEL_OBJ) $(LDFLAGS) -n -nostdlib -lgcc
 	@$(OBJCOPY) --only-keep-debug $(KERNEL) build/byteos.sym
 	@$(OBJCOPY) --strip-debug $(KERNEL)
 	@grub-file --is-x86-multiboot2 $@
@@ -160,16 +157,15 @@ kernel/%.c.o: kernel/%.c
 	@$(CC) -c $< -o $@ -MMD $(CFLAGS)
 
 libk/%.c.o: libk/%.c
+	@printf "\t\e[32;1mCompiling\e[0m $<\n"
 	@$(CC) -c $< -o $@ -MMD $(CFLAGS)
 
 # Syscall generation code
-include/syscall.h: include/gen/syscall_gen.h
-kernel/syscall/defs.c: include/gen/syscall_gen.c
-include/include.asm: include/gen/syscall_gen.asm
-
-include/gen/syscall_gen.h: include/gen/syscall_gen.asm
-include/gen/syscall_gen.c: include/gen/syscall_gen.asm
+include/gen/syscall_gen.h:
+	@$(PYTHON) util/syscall_gen.py h
+include/gen/syscall_gen.c:
+	@$(PYTHON) util/syscall_gen.py c
 include/gen/syscall_gen.asm: util/syscall_gen.py
-	$(PYTHON) util/syscall_gen.py syscall_gen
+	@$(PYTHON) util/syscall_gen.py asm
 
 -include $(DEPFILES)

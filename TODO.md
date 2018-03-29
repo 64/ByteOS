@@ -10,3 +10,5 @@
 - [ ] Finish run queue balancing
 - [ ] Implement priority based scheduling
 - [ ] Syscall header file generator (in python?)
+- [ ] Save caller preserved registers on syscall?
+- [ ] Add arg to fork

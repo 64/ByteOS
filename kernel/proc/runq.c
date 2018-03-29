@@ -20,7 +20,7 @@ void runq_init(void)
 void runq_start_balancer(void)
 {
 	// Start the idle task
-	struct task *idle = task_fork(NULL, idle_task, TASK_KTHREAD, NULL);
+	struct task *idle = create_kthread(idle_task, NULL);
 	cpuset_clear(&idle->affinity);
 	cpuset_set_id(&idle->affinity, percpu_get(id), 1);
 	cpuset_pin(&idle->affinity);
@@ -29,7 +29,7 @@ void runq_start_balancer(void)
 	percpu_get(run_queue)->idle = idle;
 
 	// Start the run queue balancer
-	struct task *balancer = task_fork(NULL, runq_balancer, TASK_KTHREAD, NULL);
+	struct task *balancer = create_kthread(runq_balancer, NULL);
 	cpuset_clear(&balancer->affinity);
 	cpuset_set_id(&balancer->affinity, percpu_get(id), 1);
 	cpuset_pin(&balancer->affinity);
@@ -44,13 +44,13 @@ void runq_add(struct task *t)
 	if (run_queue->head == NULL) {
 		run_queue->head = t;
 		dlist_set_next(t, list, (struct task *)NULL);
-		dlist_set_next(percpu_get(current), list, t);
+		dlist_set_next(current, list, t);
 		t->list.prev = NULL;
 	} else
 		dlist_append(run_queue->head, list, t);
 
 	spin_unlock(&run_queue->lock);
-	//klog("runq", "Added task at %p\n", t);
+	klog_verbose("runq", "Added task at %p\n", t);
 }
 
 struct task *runq_next(void)
@@ -58,7 +58,7 @@ struct task *runq_next(void)
 	struct runq *run_queue = percpu_get(run_queue);
 	spin_lock(&run_queue->lock);
 
-	struct task *t = percpu_get(current);
+	struct task *t = current;
 	struct task *next = dlist_get_next(t, list);
 	if (next == NULL) {
 		next = percpu_get(run_queue)->head;
@@ -89,7 +89,7 @@ void runq_remove(struct task *t)
 			break;
 		}
 	}
-	klog_verbose("runq", "Removed task %p\n", t);
 
 	spin_unlock(&run_queue->lock);
+	klog_verbose("runq", "Removed task %p\n", t);
 }

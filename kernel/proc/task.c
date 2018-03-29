@@ -12,11 +12,9 @@ extern void __attribute__((noreturn)) ret_from_execve(virtaddr_t entry, uint64_t
 #define TASK_KSTACK_PAGES (1 << TASK_KSTACK_ORDER)
 #define TASK_KSTACK_SIZE (TASK_KSTACK_PAGES * PAGE_SIZE)
 
-static pid_t next_pid = 1;
+static tid_t next_tid = 1;
 
-static const struct callee_regs default_regs = {
-	0, 0, 0, 0, 0, 0, 0
-};
+static const struct callee_regs default_regs = { 0 };
 
 static inline void copy_kernel_mappings(struct page_table *p4)
 {
@@ -69,32 +67,36 @@ static struct mmu_info *clone_mmu(struct mmu_info *pmmu)
 	return mmu;
 }
 
-struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t flags, const struct callee_regs *regs)
+struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t clone_flags, const struct callee_regs *regs)
 {
 	if (parent == NULL)
-		parent = percpu_get(current);
+		parent = current;
+
+	kassert_dbg(!((clone_flags & FORK_KTHREAD) && (clone_flags & FORK_UTHREAD)));
 
 	struct task *t = kmalloc(sizeof(struct task), KM_NONE);
 	memset(t, 0, sizeof *t);
 	t->flags = parent->flags;
-	t->pid = __atomic_fetch_add(&next_pid, 1, __ATOMIC_RELAXED);
+	t->tid = __atomic_fetch_add(&next_tid, 1, __ATOMIC_RELAXED);
+	t->tgid = t->tid;
 
-	klog_verbose("task", "Forked PID %d to create PID %d\n", parent->pid, t->pid);
+	klog_verbose("task", "Forked PID %d to create PID %d\n", parent->tid, t->tid);
 
 	// Allocate a kernel stack
 	uintptr_t kstack = TASK_KSTACK_SIZE + (uintptr_t)page_to_virt(pmm_alloc_order(TASK_KSTACK_ORDER, GFP_NONE));
 	uint64_t *stack = (uint64_t *)kstack;
 	// TODO: Remove this variable. We can work out the stack top by masking rsp
-	// given that the stack size is fixed at compile time.
+	// given that the stack size is fixed at compile time, and allocs are aligned.
 	t->rsp_original = (virtaddr_t)kstack;
 
 	// Copy MMU information and set up the kernel stack
-	if (flags & TASK_KTHREAD) {
+	if (clone_flags & FORK_KTHREAD) {
 		if (regs == NULL)
 			regs = &default_regs;
 		t->mmu = &kernel_mmu;	
 		t->flags |= TASK_KTHREAD;
 		*--stack = (uint64_t)entry;
+		*--stack = regs->rbx; // Argument passed to the thread
 		*--stack = (uint64_t)ret_from_kfork; // Where switch_to will return
 	} else {
 		kassert_dbg(regs != NULL);
@@ -140,7 +142,7 @@ void task_exit(struct task *t, int UNUSED(code))
 {
 	if (t->state == TASK_RUNNABLE || TASK_RUNNING)
 		runq_remove(t);
-	t->state = TASK_FINISHED;
+	t->state = TASK_ZOMBIE;
 
 	if (t->flags & TASK_KTHREAD) {
 
@@ -148,7 +150,7 @@ void task_exit(struct task *t, int UNUSED(code))
 		vmm_destroy_low_mappings(t->mmu);
 	}
 
-	if (t == percpu_get(current)) {
+	if (t == current) {
 		// TODO: Reap ourselves
 		sched_yield();
 		panic("Schedule returned at the end of task_exit");
@@ -157,7 +159,7 @@ void task_exit(struct task *t, int UNUSED(code))
 
 void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*argv[]), unsigned int UNUSED(flags))
 {
-	struct task *self = percpu_get(current);
+	struct task *self = current;
 	if (self->mmu == &kernel_mmu) {
 		self->mmu = vmm_mmu_alloc();
 		self->mmu->p4 = page_to_virt(pmm_alloc_order(0, GFP_NONE));

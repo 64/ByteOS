@@ -53,7 +53,6 @@ static void page_fault(uint8_t int_no, struct isr_ctx *regs)
 	if (faulting_address & (1ULL << 63))
 		goto kernel_panic;
 
-	struct task *current = percpu_get(current);
 	if (current != NULL) {
 		pte_t *pte = vmm_get_pte(current->mmu, (virtaddr_t)faulting_address);
 		if (regs->info & PAGE_FAULT_RW && cow_handle_write(pte, (virtaddr_t)faulting_address))

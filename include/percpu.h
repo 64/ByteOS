@@ -9,7 +9,7 @@
 
 struct percpu {
 	// Be careful changing these three variables as they are referenced in asm
-	struct task *current;
+	struct task *current_task;
 	virtaddr_t rsp_scratch;
 	virtaddr_t tss;
 	uint32_t preempt_count;
@@ -57,3 +57,5 @@ static inline struct percpu *percpu_get_id(cpuid_t id)
 	default: _static_assert(false);				        \
 	}								\
 }) 
+
+#define current (percpu_get(current_task))

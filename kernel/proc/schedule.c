@@ -11,10 +11,10 @@ void schedule(void)
 	// TODO: Disable preemption
 	struct task *next = runq_next();
 	//klog("sched", "Switching to %p\n", next);
-	kassert_dbg(next != percpu_get(current));
+	kassert_dbg(next != current);
 	kassert_dbg(next->state == TASK_RUNNABLE);
 	next->state = TASK_RUNNING;
-	percpu_get(current)->state = TASK_RUNNABLE;
+	current->state = TASK_RUNNABLE;
 	switch_to(next);
 }
 
@@ -69,9 +69,9 @@ void sched_run(void)
 {
 	klog("sched", "Starting scheduler...\n");
 	runq_init();
-	percpu_set(current, &dummy);
+	percpu_set(current_task, &dummy);
 	init_dummy(&dummy);
-	struct task *t = task_fork(&dummy, ktask_entry, TASK_KTHREAD, NULL);
+	struct task *t = task_fork(&dummy, ktask_entry, FORK_KTHREAD, NULL);
 	task_wakeup(t);
 	sched_yield();
 }

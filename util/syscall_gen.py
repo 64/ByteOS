@@ -1,6 +1,13 @@
 import sys as _sys
 
-print("\t\033[32;1mGenerating\033[0m syscalls")
+if len(_sys.argv) != 2:
+    print("Incorrect number of arguments")
+    exit(-1)
+elif ["c", "h", "asm"].index(_sys.argv[1]) == -1:
+    print("Invalid filetype %s" % _sys.argv[1])
+    exit(-1)
+
+print("\t\033[32;1mGenerating\033[0m include/gen/syscall_gen.%s" % _sys.argv[1])
 
 syscall_list = []
 
@@ -58,24 +65,11 @@ c_out = """%s
 asm_out = """%s
 """ % asm_defs
 
-if len(_sys.argv) != 2:
-    print("Incorrect number of arguments")
-    exit(-1)
+out_data = { "c": c_out, "h": h_out, "asm": asm_out }
 
-prefix = "include/gen/%s" % _sys.argv[1]
+prefix = "include/gen/syscall_gen"
+path = prefix + "." + _sys.argv[1]
 
-h_path = prefix + ".h"
-c_path = prefix + ".c"
-asm_path = prefix + ".asm"
-
-h_file = open(h_path, "w")
-c_file = open(c_path, "w")
-asm_file = open(asm_path, "w")
-
-h_file.write(h_out)
-c_file.write(c_out)
-asm_file.write(asm_out)
-
-h_file.close()
-c_file.close()
-asm_file.close()
+target_file = open(path, "w")
+target_file.write(out_data[_sys.argv[1]])
+target_file.close()

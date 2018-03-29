@@ -95,7 +95,8 @@ syscall_entry:
 	xor r11, r11
 	iretq
 .syscall_fork:
-	mov rsi, [rsp + 24] ; Read user rsp off stack
+	test rsi, rsi ; Check if a child stack was passed or not
+	cmovz rsi, [rsp + 24] ; Read user rsp off stack
 	push r15
 	push r14
 	push r13
@@ -105,8 +106,8 @@ syscall_entry:
 	push rsi ; rsp
 	mov rsi, rsp ; Callee-saved registers
 	mov rdx, rcx ; Return address of child
-	mov rax, [syscall_table + SYSCALL_FORK * 8]
-	call rax
+	extern syscall_fork
+	call syscall_fork
 	add rsp, 8
 	pop rbp
 	pop rbx

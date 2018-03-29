@@ -10,14 +10,14 @@ ret_from_ufork:
 global ret_from_kfork
 ; Final work before returning to a kernel thread
 ret_from_kfork:
+	pop rdi
 	pop rax
-	push .return
-	jmp rax
-.return:
-	extern task_exit
+	call rax
 	mov rdi, [PERCPU_CURRENT]
 	mov rsi, 0
+	extern task_exit
 	call task_exit
+	; Doesn't return
 
 global ret_from_execve
 ; Final work after an execve was called, returning to userspace

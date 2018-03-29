@@ -23,15 +23,15 @@ int64_t syscall_fork(uint64_t flags, struct callee_regs *regs, virtaddr_t return
 {
 	if (flags & TASK_KTHREAD)
 		return -1;
-	struct task *child = task_fork(percpu_get(current), return_addr, flags, regs);
+	struct task *child = task_fork(current, return_addr, flags, regs);
 	task_wakeup(child);
 	sched_yield();
-	return child->pid;
+	return child->tid;
 }
 
 int64_t syscall_exit(int code)
 {
-	task_exit(percpu_get(current), code);
+	task_exit(current, code);
 	panic("exit returned");
 	return -1;
 }

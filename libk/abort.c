@@ -4,14 +4,15 @@
 
 __attribute__((noreturn)) void abort_self(void)
 {
-	asm volatile (
-		"cli\n"
-		".stop: hlt\n"
-		"jmp .stop\n"
-		:
-		:
-		:
-	);
+	while (1) {
+		asm volatile (
+			"cli\n"
+			"hlt\n"
+			:
+			:
+			:
+		);
+	}
 	__builtin_unreachable();
 }
 
