@@ -1,12 +1,8 @@
 #include <stdint.h>
 
-#define NUM_SYSCALLS 4
-#define SYSCALL_ERROR 0xFFFFFFFFFFFFFFFFULL
-
 typedef int64_t (*syscall_t)(void);
 
-// Definition for syscall jump table
-extern syscall_t syscall_table[NUM_SYSCALLS];
+#include "gen/syscall_gen.h"
 
 static inline int64_t execute_syscall(uint64_t num, uint64_t arg1, uint64_t arg2, uint64_t arg3, uint64_t arg4)
 {

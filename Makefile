@@ -14,6 +14,7 @@ OBJDUMP		:= x86_64-elf-objdump
 READELF		:= x86_64-elf-readelf
 OBJCOPY		:= x86_64-elf-objcopy
 GDB		?= gdb
+PYTHON		?= python3
 
 CFLAGS		+= -ffreestanding -mno-red-zone -mcmodel=kernel -Iinclude -std=gnu11
 CFLAGS		+= -Wall -Werror -Wextra -Wparentheses -Wmissing-declarations -Wunreachable-code -Wunused 
@@ -34,6 +35,7 @@ CRTN_OBJ	:= kernel/crt/crtn.asm.o
 KERNEL_OBJ_RAW	:= $(addsuffix .o,$(shell find kernel -path kernel/crt -prune -type f -o -name '*.c' -o -name '*.asm'))
 KERNEL_OBJ_ALL	:= $(CRTI_OBJ) $(CRTN_OBJ) $(KERNEL_OBJ_RAW)
 KERNEL_OBJ	:= $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(KERNEL_OBJ_RAW) $(CRTEND_OBJ) $(CRTN_OBJ)
+KERNEL_SRC_DEPS := include/gen/syscall_gen.h include/gen/syscall_gen.c include/gen/syscall_gen.asm
 
 DEPFILES	:= $(patsubst %.o,%.d,$(KERNEL_OBJ_ALL))
 
@@ -77,6 +79,7 @@ vbox: $(ISO)
 
 clean:
 	@$(RM) -r build
+	@$(RM) -r include/gen
 	@$(RM) iso/boot/byteos.elf
 	@$(RM) -v $(shell find kernel libk -name "*.orig")
 	@$(RM) $(KERNEL_OBJ_ALL) $(LIBK_OBJ)
@@ -131,6 +134,7 @@ iso/boot/byteos.elf: $(KERNEL)
 
 build/:
 	@mkdir build
+	@mkdir -p include/gen
 
 build/libk.a: $(LIBK_OBJ)
 	@$(AR) rcs $@ $(LIBK_OBJ)
@@ -140,7 +144,7 @@ $(ISO): build/ iso/boot/byteos.elf
 	@grub-mkrescue -o $@ iso 2> /dev/null
 	@printf "\t\e[32;1;4mDone\e[24m in $(shell date +%s.%3N --date='$(TIME_START) seconds ago')s\e[0m\n"
 
-$(KERNEL): $(KERNEL_OBJ_ALL) build/libk.a
+$(KERNEL): $(KERNEL_SRC_DEPS) $(KERNEL_OBJ_ALL) build/libk.a
 	@printf "\t\e[32;1mLinking\e[0m $(KERNEL)\n"
 	@$(CC) -T linker.ld -o $@ $(KERNEL_OBJ) $(LDFLAGS) -n -nostdlib -Lbuild -lk -lgcc
 	@$(OBJCOPY) --only-keep-debug $(KERNEL) build/byteos.sym
@@ -153,9 +157,19 @@ kernel/%.asm.o: kernel/%.asm
 
 kernel/%.c.o: kernel/%.c
 	@printf "\t\e[32;1mCompiling\e[0m $<\n"
-	@$(CC) -c $< -o $@ -MD $(CFLAGS)
+	@$(CC) -c $< -o $@ -MMD $(CFLAGS)
 
 libk/%.c.o: libk/%.c
-	@$(CC) -c $< -o $@ -MD $(CFLAGS)
+	@$(CC) -c $< -o $@ -MMD $(CFLAGS)
+
+# Syscall generation code
+include/syscall.h: include/gen/syscall_gen.h
+kernel/syscall/defs.c: include/gen/syscall_gen.c
+include/include.asm: include/gen/syscall_gen.asm
+
+include/gen/syscall_gen.h: include/gen/syscall_gen.asm
+include/gen/syscall_gen.c: include/gen/syscall_gen.asm
+include/gen/syscall_gen.asm: util/syscall_gen.py
+	$(PYTHON) util/syscall_gen.py syscall_gen
 
 -include $(DEPFILES)

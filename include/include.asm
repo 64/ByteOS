@@ -1,3 +1,5 @@
+%include "gen/syscall_gen.asm"
+
 %define PAGE_SIZE 0x1000
 
 %define KERNEL_TEXT_BASE 0xFFFFFFFF80000000
@@ -10,10 +12,6 @@
 %define GDT_TSS 0x30
 
 %define KERNEL_CPU_STACK_SIZE (PAGE_SIZE * 4)
-
-%define NUM_SYSCALLS 4
-%define ENOSYS 0xFFFFFFFFFFFFFFFF
-%define SYSCALL_FORK 2
 
 %define PERCPU_CURRENT gs:0x0
 %define PERCPU_RSP_SCRATCH gs:0x8

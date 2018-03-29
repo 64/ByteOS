@@ -3,22 +3,23 @@
 #include "proc.h"
 #include "percpu.h"
 
-#define NAME(name) syscall_ ## name
-#define CAST(name) (syscall_t)NAME(name)
+#include "gen/syscall_gen.c"
 
-static int64_t NAME(yield)(void)
+#define NAME(name) syscall_ ## name
+
+int64_t syscall_sched_yield(void)
 {
 	sched_yield();
 	return 0;
 }
 
-static int64_t NAME(write)(char c)
+int64_t syscall_write(char c)
 {
 	kprintf("%c\n", c);
 	return 0;
 }
 
-static int64_t NAME(fork)(uint64_t flags, struct callee_regs *regs, virtaddr_t return_addr)
+int64_t syscall_fork(uint64_t flags, struct callee_regs *regs, virtaddr_t return_addr)
 {
 	if (flags & TASK_KTHREAD)
 		return -1;
@@ -28,16 +29,9 @@ static int64_t NAME(fork)(uint64_t flags, struct callee_regs *regs, virtaddr_t r
 	return child->pid;
 }
 
-static int64_t NAME(exit)(int code)
+int64_t syscall_exit(int code)
 {
 	task_exit(percpu_get(current), code);
 	panic("exit returned");
 	return -1;
 }
-
-syscall_t syscall_table[NUM_SYSCALLS] = {
-	CAST(yield),
-	CAST(write),
-	CAST(fork),
-	CAST(exit)
-};

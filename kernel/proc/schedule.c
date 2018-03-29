@@ -31,23 +31,23 @@ void sched_yield(void)
 static void utask_entry(void)
 {
 	volatile uint64_t var = 0;
-	if (execute_syscall(2, 0, 0, 0, 0) > 0) { // Fork
-		execute_syscall(1, 'C', 0, 0, 0); // Write
-		execute_syscall(0, 0, 0, 0, 0); // Yield
+	if (execute_syscall(SYSCALL_FORK, 0, 0, 0, 0) > 0) { // Fork
+		execute_syscall(SYSCALL_WRITE, 'C', 0, 0, 0); // Write
+		execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0); // Yield
 		var = 3;
 	} else {
-		if (execute_syscall(2, 0, 0, 0, 0) > 0) { // Fork
-			execute_syscall(1, 'B', 0, 0, 0); // Write
-			execute_syscall(0, 0, 0, 0, 0); // Yield
+		if (execute_syscall(SYSCALL_FORK, 0, 0, 0, 0) > 0) { // Fork
+			execute_syscall(SYSCALL_WRITE, 'B', 0, 0, 0); // Write
+			execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0); // Yield
 			var = 1;
 		} else {
-			execute_syscall(1, 'A', 0, 0, 0); // Write
-			execute_syscall(0, 0, 0, 0, 0); // Yield
+			execute_syscall(SYSCALL_WRITE, 'A', 0, 0, 0); // Write
+			execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0); // Yield
 			var = 2;
 		}
 	}
-	execute_syscall(1, '0' + (uint8_t)var, 0, 0, 0); // Write
-	execute_syscall(3, 0, 0, 0, 0); // Exit
+	execute_syscall(SYSCALL_WRITE, '0' + (uint8_t)var, 0, 0, 0); // Write
+	execute_syscall(SYSCALL_EXIT, 0, 0, 0, 0); // Exit
 }
 
 // The first kernel thread. Perform advanced initialisation (e.g forking) from here.
