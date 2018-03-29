@@ -25,7 +25,8 @@ struct task {
 		TASK_RUNNABLE,
 		TASK_RUNNING,
 		TASK_NOT_STARTED,
-		TASK_BLOCKED
+		TASK_BLOCKED,
+		TASK_FINISHED,
 	} state;
 
 	uint64_t flags; // Includes TASK_NEED_PREEMPT flag

@@ -140,6 +140,7 @@ void task_exit(struct task *t, int UNUSED(code))
 {
 	if (t->state == TASK_RUNNABLE || TASK_RUNNING)
 		runq_remove(t);
+	t->state = TASK_FINISHED;
 
 	if (t->flags & TASK_KTHREAD) {
 

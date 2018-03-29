@@ -116,7 +116,13 @@ static void slob_debug(void)
 
 void *kmalloc(size_t n, unsigned int alloc_flags)
 {
+#ifdef DEBUG
+	void *p = slob_alloc(n, alloc_flags);
+	memset(p, 0xBB, n);
+	return p;
+#else
 	return slob_alloc(n, alloc_flags);
+#endif
 }
 
 void kfree(void *p)

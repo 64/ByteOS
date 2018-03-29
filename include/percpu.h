@@ -22,6 +22,12 @@ void percpu_init_ap(void);
 void percpu_init_bsp(void);
 void percpu_set_addr(struct percpu *);
 
+extern struct percpu *percpu_table[];
+static inline struct percpu *percpu_get_id(cpuid_t id)
+{
+	return percpu_table[id];
+}
+
 #define __percpu(var) (((struct percpu *)NULL)->var)
 #define __percpu_type(var) typeof(__percpu(var))
 #define __percpu_marker(var)	((volatile __percpu_type(var) *)&__percpu(var))
