@@ -8,6 +8,8 @@ The design is heavily influenced by the Linux kernel, and as such you may find m
 
 This repository is licensed under the GPLv3. See `LICENSE.md` for more details.
 
+If you have questions, you can open an issue on GitHub or find me on the [OSDev Discord](https://discord.gg/5TCadrT).
+
 ## Building
 
 You will need:

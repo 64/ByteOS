@@ -108,8 +108,9 @@ struct vm_area {
 };
 
 struct mmu_info {
-	struct page_table *p4;
+	struct page_table *p4; // This should stay as the first member
 	atomic_t num_users; // > 1 if more than one thread is using these page tables, else 1
+	spinlock_t pgtab_lock;
 
 	spinlock_t cpu_lock;
 	cpuset_t cpus;

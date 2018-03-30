@@ -22,6 +22,10 @@ __attribute__((format (printf, 1, 2))) int kprintf_nolock(const char *, ...);
 __attribute__((noreturn)) void abort(void); // Sends an IPI to abort all other CPUs
 __attribute__((noreturn)) void abort_self(void);
 
+#ifndef LIBK_TEST
+__attribute__((noreturn)) void __stack_chk_fail(void);
+#endif
+
 #define panic(...) do { \
 		irq_disable(); \
 		kprintf_nolock( \
