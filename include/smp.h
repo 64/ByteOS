@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #include "interrupts.h"
+#include "atomic.h"
 #include "limits.h"
 
 typedef uint32_t cpuset_t;
@@ -48,9 +49,9 @@ static inline void preempt_dec(void)
 void cpuset_dump(cpuset_t *cpus);
 #endif
 
-extern volatile unsigned int smp_nr_cpus_ready;
+extern atomic_t smp_nr_cpus_ready;
 
-static inline unsigned int smp_nr_cpus(void)
+static inline uint64_t smp_nr_cpus(void)
 {
-	return __atomic_load_n(&smp_nr_cpus_ready, __ATOMIC_RELAXED);
+	return atomic_read(&smp_nr_cpus_ready);
 }

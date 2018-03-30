@@ -101,6 +101,9 @@ static void slob_free(virtaddr_t p)
 		spin_lock(&slob_lock);
 		slist_set_next(header, list, head);
 		head = header;
+#ifdef DEBUG
+		memset(p, 0xBB, header->units * UNIT);
+#endif
 		spin_unlock(&slob_lock);
 	}
 }

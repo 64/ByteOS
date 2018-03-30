@@ -24,7 +24,7 @@ static void dump_page_tables_p0(struct page_table *, uintptr_t);
 extern struct page_table p4_table; // Initial kernel p4 table
 struct mmu_info kernel_mmu;
 
-__attribute__((aligned(PAGE_SIZE))) uint8_t zero_page[PAGE_SIZE];
+__attribute__((aligned(PAGE_SIZE))) const uint8_t zero_page[PAGE_SIZE] = { 0 };
 
 void vmm_init(void)
 {
@@ -50,14 +50,6 @@ void vmm_map_all(struct mmap *mmap)
 	*vmm_get_pte(&kernel_mmu, zero_page) = 0;
 
 	kernel_mmu.p4 = phys_to_virt((physaddr_t)&p4_table);
-}
-
-static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgtab, uint16_t index)
-{
-	pte_t entry = pgtab->pages[index];
-	if ((entry & PAGE_PRESENT) == 0)
-		return NULL;
-	return phys_to_virt((entry & PTE_ADDR_MASK));
 }
 
 static inline pte_t alloc_pgtab(unsigned int alloc_flags)
@@ -125,7 +117,7 @@ static void __attribute__((unused)) dump_page_tables_p0(struct page_table *p0, u
 	}	
 }
 
-pte_t *vmm_get_pte(struct mmu_info *mmu, void *addr)
+pte_t *vmm_get_pte(struct mmu_info *mmu, const void *addr)
 {
 	const uintptr_t va = (uintptr_t)addr;
 	const uint16_t p4_index = (va & P4_ADDR_MASK) >> P4_ADDR_SHIFT;
@@ -214,46 +206,8 @@ void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsign
 		flags &= ~(VMM_ALLOC_MMAP); // Don't care about these flags anymore
 		p1_table->pages[p1_index] = (phys & PTE_ADDR_MASK) | PAGE_PRESENT | flags;
 	}
+	// TODO: Check if we actually need to do this
 	invlpg((uintptr_t)virt);
-}
-
-void vmm_destroy_low_mappings(struct mmu_info *mmu)
-{
-	// Only loop over the userspace mappings
-	for (size_t p4_index = 0; p4_index < (1 << 7); p4_index++) {
-		struct page_table *p3 = pgtab_extract_virt_addr(mmu->p4, p4_index);
-		if (p3 == NULL)
-			continue;
-		for (size_t p3_index = 0; p3_index < 512; p3_index++) {
-			struct page_table *p2 = pgtab_extract_virt_addr(p3, p3_index);
-			if (p2 == NULL)
-				continue;
-			for (size_t p2_index = 0; p2_index < 512; p2_index++) {
-				struct page_table *p1 = pgtab_extract_virt_addr(p2, p2_index);
-				if (p1 == NULL)
-					continue;
-				for (size_t p1_index = 0; p1_index < 512; p1_index++) {
-					if (p1->pages[p1_index] & PAGE_PRESENT) {
-						if (p1->pages[p1_index] & PAGE_COW) {
-							cow_handle_free(&p1->pages[p1_index]);
-						} else {
-							physaddr_t phys = p1->pages[p1_index] & PTE_ADDR_MASK;
-							pmm_free_order(phys_to_page(phys), 0);
-						}
-						p1->pages[p1_index] = 0;
-					}
-				}
-				pmm_free_order(virt_to_page(p1), 0);
-				p2->pages[p2_index] = 0;
-			}
-			pmm_free_order(virt_to_page(p2), 0);
-			p3->pages[p3_index] = 0;
-		}
-		pmm_free_order(virt_to_page(p3), 0);
-		mmu->p4->pages[p4_index] = 0;
-	}
-	reload_cr3();
-	// TODO: Might need a TLB shootdown here.
 }
 
 physaddr_t vmm_get_phys_addr(struct mmu_info *mmu, void *virt)
@@ -262,11 +216,4 @@ physaddr_t vmm_get_phys_addr(struct mmu_info *mmu, void *virt)
 	uint16_t page_offset = (uintptr_t)virt & PAGE_OFFSET_MASK;
 	physaddr_t addr = (physaddr_t)(*vmm_get_pte(mmu, virt) & PTE_ADDR_MASK);
 	return (addr == 0) ? 0 : addr + page_offset;
-}
-
-struct mmu_info *vmm_mmu_alloc(void)
-{
-	struct mmu_info *rv = kmalloc(sizeof(struct mmu_info), KM_NONE);
-	memset(rv, 0, sizeof *rv);
-	return rv;
 }

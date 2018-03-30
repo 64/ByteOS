@@ -12,60 +12,9 @@ extern void __attribute__((noreturn)) ret_from_execve(virtaddr_t entry, uint64_t
 #define TASK_KSTACK_PAGES (1 << TASK_KSTACK_ORDER)
 #define TASK_KSTACK_SIZE (TASK_KSTACK_PAGES * PAGE_SIZE)
 
-static tid_t next_tid = 1;
+static atomic_t next_tid = { 0 };
 
 static const struct callee_regs default_regs = { 0 };
-
-static inline void copy_kernel_mappings(struct page_table *p4)
-{
-	memcpy(p4, kernel_mmu.p4, PAGE_SIZE);
-}
-
-static inline pte_t clone_single_page(pte_t *pte)
-{
-	pte_t dest;
-	cow_copy_pte(&dest, pte);
-	return dest;
-}
-
-static struct page_table *clone_pgtab(struct page_table *pgtab, size_t level)
-{
-	struct page_table *rv = page_to_virt(pmm_alloc_order(0, GFP_NONE));
-	size_t end_index = 512;
-	memset(rv, 0, sizeof *rv);
-
-	if (level == 4) {
-		copy_kernel_mappings(rv);
-		end_index = (1 << 7);
-	}
-
-	for (size_t i = 0; i < end_index; i++) {
-		if (pgtab->pages[i] & PAGE_PRESENT) {
-			if (level == 1) {
-				rv->pages[i] = clone_single_page(&pgtab->pages[i]);
-			} else {
-				uint64_t flags = pgtab->pages[i] & ~PTE_ADDR_MASK;
-				physaddr_t pgtab_phys = (physaddr_t)(pgtab->pages[i] & PTE_ADDR_MASK);
-				virtaddr_t pgtab_virt = phys_to_virt(pgtab_phys);
-				kassert_dbg(ISALIGN_POW2((uintptr_t)pgtab_virt, PAGE_SIZE));
-				rv->pages[i] = virt_to_phys(clone_pgtab(pgtab_virt, level - 1)) | flags;
-			}
-		}
-	}
-
-	return rv;
-}
-
-static struct mmu_info *clone_mmu(struct mmu_info *pmmu)
-{
-	// Allocate an mmu struct
-	struct mmu_info *mmu = kmalloc(sizeof(struct mmu_info), KM_NONE);
-	mmu->p4 = clone_pgtab(pmmu->p4, 4);
-
-	// Since the entire address space got mapped as read only, we need to invalidate all of it
-	reload_cr3();
-	return mmu;
-}
 
 struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t clone_flags, const struct callee_regs *regs)
 {
@@ -77,7 +26,7 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t clone_fla
 	struct task *t = kmalloc(sizeof(struct task), KM_NONE);
 	memset(t, 0, sizeof *t);
 	t->flags = parent->flags;
-	t->tid = __atomic_fetch_add(&next_tid, 1, __ATOMIC_RELAXED);
+	t->tid = atomic_inc_load(&next_tid);
 	t->tgid = t->tid;
 
 	klog_verbose("task", "Forked PID %d to create PID %d\n", parent->tid, t->tid);
@@ -101,7 +50,13 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t clone_fla
 	} else {
 		kassert_dbg(regs != NULL);
 		t->flags &= ~(TASK_KTHREAD);
-		t->mmu = clone_mmu(parent->mmu);
+
+		if (clone_flags & FORK_UTHREAD) {
+			panic("unimplemented");
+		} else {
+			t->mmu = mmu_alloc();
+			mmu_clone_cow(t->mmu, parent->mmu);
+		}
 
 		// Set up simulated iret frame
 		*--stack = 0x20 | 0x3; // ss
@@ -144,11 +99,7 @@ void task_exit(struct task *t, int UNUSED(code))
 		runq_remove(t);
 	t->state = TASK_ZOMBIE;
 
-	if (t->flags & TASK_KTHREAD) {
-
-	} else {
-		vmm_destroy_low_mappings(t->mmu);
-	}
+	mmu_dec_users(t->mmu);
 
 	if (t == current) {
 		// TODO: Reap ourselves
@@ -160,14 +111,10 @@ void task_exit(struct task *t, int UNUSED(code))
 void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*argv[]), unsigned int UNUSED(flags))
 {
 	struct task *self = current;
-	if (self->mmu == &kernel_mmu) {
-		self->mmu = vmm_mmu_alloc();
-		self->mmu->p4 = page_to_virt(pmm_alloc_order(0, GFP_NONE));
-		copy_kernel_mappings(self->mmu->p4);
-		change_cr3(virt_to_phys(self->mmu->p4));
-	} else {
-		vmm_destroy_low_mappings(self->mmu);
-	}
+	if (self->mmu == &kernel_mmu)
+		self->mmu = mmu_alloc();
+
+	mmu_init(self->mmu);
 
 #define UTASK_ENTRY 0x1000
 #define UTASK_STACK_BOTTOM 0x3000
@@ -208,6 +155,6 @@ void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*arg
 		klog_verbose("task", "Added area at %p, size %zu\n", (void *)cur->base, cur->len);
 	}
 
-	reload_cr3(); // TODO: Prevent reloading twice
+	write_cr3(virt_to_phys(self->mmu->p4));
 	ret_from_execve((virtaddr_t)entry, UTASK_STACK_TOP);
 }

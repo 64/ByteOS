@@ -99,25 +99,24 @@ static inline void pause(void)
 	__builtin_ia32_pause();
 }
 
-static inline void reload_cr3(void)
+static inline uintptr_t read_cr3(void)
 {
+	uintptr_t rv;
 	asm volatile (
-		"mov %%cr3, %%rax\n"
-		"mov %%rax, %%cr3"
+		"mov %%cr3, %0"
+		: "=a"(rv)
 		:
-		:
-		: "rax", "memory"
 	);
+	return rv;
 }
 
-static inline void change_cr3(uintptr_t cr3)
+static inline void write_cr3(uintptr_t cr3)
 {
 	asm volatile (
-		"mov %0, %%rax\n"
-		"mov %%rax, %%cr3"
+		"mov %0, %%cr3"
 		:
-		: "r"(cr3)
-		: "rax", "memory"
+		: "a"(cr3)
+		: "memory"
 	);
 }
 

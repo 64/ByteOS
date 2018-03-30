@@ -8,13 +8,13 @@
 void cow_copy_pte(pte_t *dest, pte_t *src)
 {
 	struct page *page = phys_to_page(*src & PTE_ADDR_MASK);
-	__atomic_fetch_add(&page->refcount, 1, __ATOMIC_ACQUIRE);
+	atomic_inc_load(&page->refcount);
 
 	// Make page read-only and CoW if it isn't already
 	if (!(*src & PAGE_COW)) {
 		*src &= ~PAGE_WRITABLE;
 		*src |= PAGE_COW;
-		__atomic_fetch_add(&page->refcount, 1, __ATOMIC_RELAXED);
+		atomic_inc_load(&page->refcount);
 	}
 
 	// Copy the PTE
@@ -28,7 +28,7 @@ bool cow_handle_write(pte_t *pte, virtaddr_t virt)
 		return false;
 
 	struct page *page = phys_to_page(*pte & PTE_ADDR_MASK);
-	uint64_t next_count = __atomic_sub_fetch(&page->refcount, 1, __ATOMIC_ACQUIRE);
+	uint64_t next_count = atomic_dec_load(&page->refcount);
 
 	//kprintf_nolock("Handle CoW write to address %p\n", page);
 
@@ -57,11 +57,14 @@ void cow_handle_free(pte_t *pte)
 	kassert_dbg(pte != NULL);
 	kassert_dbg(*pte & PAGE_COW);
 
-	struct page *page = phys_to_page(*pte & PTE_ADDR_MASK);	
-	uint64_t next_count = __atomic_sub_fetch(&page->refcount, 1, __ATOMIC_ACQUIRE);
+	physaddr_t phys = *pte & PTE_ADDR_MASK;
+	if (phys < (uintptr_t)&_kernel_end_phys)
+		return; // This page is probably mapped to the zero page or some kernel code
+
+	struct page *page = phys_to_page(phys);	
+	uint64_t next_count = atomic_dec_load(&page->refcount);
 
 	if (next_count == 0) {
 		pmm_free_order(page, 0);
-		kprintf("Freed\n");
 	}
 }

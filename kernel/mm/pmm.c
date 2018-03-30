@@ -231,6 +231,9 @@ static void __pmm_free_order(struct page *page, unsigned int order, struct zone 
 		zone->free_lists[order] = page;
 		page->order = order;
 		//klog("pmm", "Freed order %u for page %p\n", order, page_to_virt(page));
+#ifdef DEBUG
+		memset(page_to_virt(page), 0xBB, (1 << page->order) * PAGE_SIZE);
+#endif
 	}
 }
 
@@ -242,7 +245,8 @@ void pmm_free_order(struct page *page, unsigned int order)
 	kassert_dbg(dlist_get_prev(page, list) == NULL);
 	spin_lock(&zone_list_lock);
 	struct zone *zone = page_to_zone(page);
-	kassert(zone != NULL);
+	if (zone == NULL)
+		panic("Tried to free page outside available zones");
 	__pmm_free_order(page, order, zone);
 	spin_unlock(&zone_list_lock);
 }

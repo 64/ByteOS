@@ -5,7 +5,9 @@
 #include <stdbool.h>
 #include "multiboot2.h"
 #include "types.h"
+#include "smp.h"
 #include "spin.h"
+#include "atomic.h"
 #include "ds/linked.h"
 
 #define KERNEL_TEXT_BASE 0xFFFFFFFF80000000
@@ -46,7 +48,7 @@
 
 typedef uint64_t pte_t;
 
-extern uint8_t zero_page[PAGE_SIZE];
+extern const uint8_t zero_page[PAGE_SIZE];
 
 struct page_table {
 	pte_t pages[512];
@@ -78,7 +80,7 @@ struct mmap {
 // Initial entries are zeroed out by memset.
 struct page {
 	struct dlist_entry list; // Can be used for whatever purpose
-	uint32_t refcount; // Reference count for copy-on-write mappings
+	atomic_t refcount; // Reference count for copy-on-write mappings
 	int8_t order; // For buddy allocator system
 };
 
@@ -107,6 +109,10 @@ struct vm_area {
 
 struct mmu_info {
 	struct page_table *p4;
+	atomic_t num_users; // > 1 if more than one thread is using these page tables, else 1
+
+	spinlock_t cpu_lock;
+	cpuset_t cpus;
 
 	spinlock_t area_lock;
 	struct vm_area *areas;
@@ -120,11 +126,9 @@ void vmm_init(void);
 void vmm_map_all(struct mmap *);
 physaddr_t vmm_get_phys_addr(struct mmu_info *, void *);
 bool vmm_has_flags(struct mmu_info *, void *, uint64_t flags);
-pte_t *vmm_get_pte(struct mmu_info *, void *);
+pte_t *vmm_get_pte(struct mmu_info *, const void *);
 void vmm_map_page(struct mmu_info *, physaddr_t, virtaddr_t, unsigned long);
 void vmm_dump_tables(struct mmu_info *);
-void vmm_destroy_low_mappings(struct mmu_info *);
-struct mmu_info *vmm_mmu_alloc(void);
 
 struct mmap *mmap_init(struct multiboot_info *);
 void mmap_dump_info(void);
@@ -134,12 +138,23 @@ void pmm_init(struct mmap *);
 struct page *pmm_alloc_order(unsigned int order, unsigned int alloc_flags) __attribute__((warn_unused_result));
 void pmm_free_order(struct page *page, unsigned int order);
 
+#define get_free_page() page_to_virt(pmm_alloc_order(0, GFP_NONE))
+#define free_page_at(addr) pmm_free_order(virt_to_page(addr), 0)
+
 void *kmalloc(size_t, unsigned int) __attribute__((malloc));
 void kfree(void *);
 
 void cow_copy_pte(pte_t *dest, pte_t *src);
 bool cow_handle_write(pte_t *pte, virtaddr_t virt);
 void cow_handle_free(pte_t *pte);
+
+struct mmu_info *mmu_alloc(void);
+void mmu_free(struct mmu_info *mmu);
+void mmu_init(struct mmu_info *mmu);
+void mmu_inc_users(struct mmu_info *mmu);
+void mmu_dec_users(struct mmu_info *mmu);
+void mmu_clean(struct mmu_info *mmu);
+void mmu_clone_cow(struct mmu_info *dest, struct mmu_info *mmu);
 
 void area_add(struct mmu_info *mmu, struct vm_area *area);
 
@@ -185,4 +200,12 @@ static inline struct page *virt_to_page(virtaddr_t p) {
 
 static inline virtaddr_t page_to_virt(struct page *p) {
 	return phys_to_virt(page_to_phys(p));
+}
+
+static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgtab, uint16_t index)
+{
+	pte_t entry = pgtab->pages[index];
+	if ((entry & PAGE_PRESENT) == 0)
+		return NULL;
+	return phys_to_virt((entry & PTE_ADDR_MASK));
 }

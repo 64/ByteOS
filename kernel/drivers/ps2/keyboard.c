@@ -48,5 +48,7 @@ void ps2kbd_init(void)
 static void ps2kbd_irq_handler(struct isr_ctx *UNUSED(regs))
 {
 	(void)ps2_read_data();
+#ifdef VERBOSE
 	kprintf("Keyboard handler fired\n");
+#endif
 }

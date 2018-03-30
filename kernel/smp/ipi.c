@@ -11,5 +11,5 @@ void ipi_abort(struct isr_ctx *UNUSED(regs))
 // TODO: Add a mechanism for calling invlpg, not just reloading cr3
 void ipi_tlb_shootdown(struct isr_ctx *UNUSED(regs))
 {
-	reload_cr3();			
+	write_cr3(read_cr3());			
 }
