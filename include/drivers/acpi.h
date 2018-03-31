@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include "types.h"
+#include "addr.h"
 
 void acpi_init(void);
 virtaddr_t acpi_find_table(char *signature);

@@ -20,7 +20,7 @@ syscall("exit", "int code")
 syscall("sched_yield")
 
 decls = [
-    "#include \"types.h\"",
+    "#include \"mm_types.h\"",
     "#include \"proc.h\"",
     "",
 ]

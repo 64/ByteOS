@@ -206,8 +206,9 @@ void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsign
 		flags &= ~(VMM_ALLOC_MMAP); // Don't care about these flags anymore
 		p1_table->pages[p1_index] = (phys & PTE_ADDR_MASK) | PAGE_PRESENT | flags;
 	}
+
 	// TODO: Check if we actually need to do this
-	invlpg((uintptr_t)virt);
+	tlb_flush_single(virt);
 }
 
 physaddr_t vmm_get_phys_addr(struct mmu_info *mmu, void *virt)

@@ -3,17 +3,19 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+typedef uint32_t cpuset_t;
+typedef uint8_t cpuid_t;
+
 #include "interrupts.h"
 #include "atomic.h"
 #include "limits.h"
-
-typedef uint32_t cpuset_t;
-typedef uint8_t cpuid_t;
 
 cpuid_t smp_cpu_id(void);
 void smp_init(void);
 void smp_ap_kmain(void);
 
+
+void ipi_send_fixed(cpuid_t, uint8_t vec);
 void ipi_abort(struct isr_ctx *regs);
 void ipi_tlb_shootdown(struct isr_ctx *regs);
 
@@ -49,9 +51,9 @@ static inline void preempt_dec(void)
 void cpuset_dump(cpuset_t *cpus);
 #endif
 
-extern atomic_t smp_nr_cpus_ready;
+extern atomic32_t smp_nr_cpus_ready;
 
 static inline uint64_t smp_nr_cpus(void)
 {
-	return atomic_read(&smp_nr_cpus_ready);
+	return atomic_read32(&smp_nr_cpus_ready);
 }

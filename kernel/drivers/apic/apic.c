@@ -1,6 +1,5 @@
 #include <stddef.h>
 #include "libk.h"
-#include "types.h"
 #include "util.h"
 #include "interrupts.h"
 #include "mm.h"

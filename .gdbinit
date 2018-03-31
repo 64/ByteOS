@@ -16,4 +16,8 @@ define mys
 step
 refresh
 end
+define myc
+continue
+refresh
+end
 tui enable

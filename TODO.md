@@ -10,3 +10,5 @@
 - [ ] Finish run queue balancing
 - [ ] Implement priority based scheduling
 - [ ] Save caller preserved registers on syscall?
+- [ ] Separate IST stacks per CPU
+- [ ] Reap dead processes (stack, struct task etc)

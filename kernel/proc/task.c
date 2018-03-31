@@ -12,7 +12,7 @@ extern void __attribute__((noreturn)) ret_from_execve(virtaddr_t entry, uint64_t
 #define TASK_KSTACK_PAGES (1 << TASK_KSTACK_ORDER)
 #define TASK_KSTACK_SIZE (TASK_KSTACK_PAGES * PAGE_SIZE)
 
-static atomic_t next_tid = { 0 };
+static atomic32_t next_tid = { 0 };
 
 static const struct callee_regs default_regs = { 0 };
 
@@ -26,7 +26,7 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t clone_fla
 	struct task *t = kmalloc(sizeof(struct task), KM_NONE);
 	memset(t, 0, sizeof *t);
 	t->flags = parent->flags;
-	t->tid = atomic_inc_load(&next_tid);
+	t->tid = atomic_inc_read32(&next_tid);
 	t->tgid = t->tid;
 
 	klog_verbose("task", "Forked PID %d to create PID %d\n", parent->tid, t->tid);
@@ -128,9 +128,8 @@ void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*arg
 
 	for (size_t i = 0; i < 2; i++) {
 		size_t off = i * PAGE_SIZE;
-		uintptr_t page = (uintptr_t)page_to_virt(pmm_alloc_order(0, GFP_NONE));
-		vmm_map_page(self->mmu, virt_to_phys((virtaddr_t)(page + off)),
-				(virtaddr_t)(UTASK_STACK_BOTTOM + off), PAGE_WRITABLE | PAGE_USER_ACCESSIBLE);
+		virtaddr_t page = page_to_virt(pmm_alloc_order(0, GFP_NONE));
+		vmm_map_page(self->mmu, virt_to_phys(page), (virtaddr_t)(UTASK_STACK_BOTTOM + off), PAGE_WRITABLE | PAGE_USER_ACCESSIBLE);
 	}
 
 	// Create a vm_area for the code

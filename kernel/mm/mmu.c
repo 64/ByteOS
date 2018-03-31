@@ -1,6 +1,8 @@
 #include "mm.h"
 #include "util.h"
 #include "libk.h"
+#include "proc.h"
+#include "percpu.h"
 
 static inline void copy_kernel_mappings(struct page_table *p4)
 {
@@ -18,8 +20,8 @@ struct mmu_info *mmu_alloc(void)
 void mmu_free(struct mmu_info *mmu)
 {
 	kassert_dbg(mmu != &kernel_mmu);
-	kassert_dbg(atomic_read(&mmu->num_users) == 0);
-	mmu_clean(mmu);
+	kassert_dbg(kref_read(&mmu->users) == 0);
+	mmu_reap(mmu);
 	kfree(mmu);
 }
 
@@ -29,25 +31,42 @@ void mmu_init(struct mmu_info *mmu)
 	copy_kernel_mappings(mmu->p4);
 }
 
+void mmu_switch_to(struct mmu_info *mmu)
+{
+	struct mmu_info *current_mmu = current->mmu;
+	if (current_mmu != mmu) {
+		spin_lock(&current_mmu->cpu_lock);
+		cpuset_set_id(&current_mmu->cpus, percpu_get(id), 0);
+		spin_unlock(&current_mmu->cpu_lock);
+
+		spin_lock(&mmu->cpu_lock);
+		cpuset_set_id(&mmu->cpus, percpu_get(id), 1);
+		spin_unlock(&mmu->cpu_lock);
+	}
+
+	write_cr3(virt_to_phys(mmu->p4));
+}
+
 void mmu_inc_users(struct mmu_info *mmu)
 {
 	if (mmu != &kernel_mmu) {
-		atomic_inc_load(&mmu->num_users);
+		kref_inc(&mmu->users);
 	}
 }
 
 void mmu_dec_users(struct mmu_info *mmu)
 {
 	if (mmu != &kernel_mmu) {
-		uint64_t num = atomic_dec_load(&mmu->num_users);
+		uint32_t num = kref_dec_read(&mmu->users);
 		if (num == 0)
 			mmu_free(mmu);
 	}
 }
 
-void mmu_clean(struct mmu_info *mmu)
+void mmu_reap(struct mmu_info *mmu)
 {
 	kassert_dbg(mmu != &kernel_mmu);
+
 	// Only loop over the userspace mappings
 	for (size_t p4_index = 0; p4_index < (1 << 7); p4_index++) {
 		struct page_table *p3 = pgtab_extract_virt_addr(mmu->p4, p4_index);
@@ -82,9 +101,12 @@ void mmu_clean(struct mmu_info *mmu)
 		mmu->p4->pages[p4_index] = 0;
 	}
 
-	write_cr3(virt_to_phys(kernel_mmu.p4));
+	// Prevent freeing the PML4 from underneath us
+	mmu_switch_to(&kernel_mmu); 
+
 	free_page_at(mmu->p4);
 	mmu->p4 = NULL;
+
 	// TODO: Might need a TLB shootdown here.
 }
 

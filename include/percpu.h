@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "types.h"
+#include "mm_types.h"
 #include "smp.h"
 #include "util.h"
 
@@ -15,6 +15,7 @@ struct percpu {
 	uint32_t preempt_count;
 
 	cpuid_t id;
+	uint8_t apic_id;
 	struct runq *run_queue;
 };
 

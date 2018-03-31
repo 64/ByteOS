@@ -1,8 +1,8 @@
 #pragma once
 
 #include <stddef.h>
-#include "types.h"
 #include "limits.h"
+#include "addr.h"
 #include "drivers/acpi.h"
 
 #define MAX_LAPICS MAX_CORES

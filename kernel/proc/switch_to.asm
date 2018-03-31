@@ -26,25 +26,11 @@ switch_to:
 	mov rcx, [rdi + 0x8]
 	mov [rax + 4], rcx
 
-	; Prepare to swap cr3
-	mov rax, cr3
-	mov rcx, [rdi + 0x10]
+	; Set the target MMU
+	mov rdi, [rdi + 0x10]
+	extern mmu_switch_to
+	call mmu_switch_to
 
-	; Check if the target cr3 is the kernel (we don't need to switch)
-	extern kernel_mmu
-	cmp rcx, kernel_mmu
-	je .cr3_done
-
-	; Check if the current cr3 is the same as the previous one
-	mov rcx, [rcx]
-	mov rsi, 0xFFFF800000000000
-	sub rcx, rsi
-	cmp rax, rcx
-	je .cr3_done
-	mov rax, rcx
-	mov cr3, rax
-
-.cr3_done:
 	pop r15
 	pop r14
 	pop r13

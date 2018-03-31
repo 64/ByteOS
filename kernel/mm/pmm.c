@@ -28,7 +28,7 @@ static void reserve_page_data_range(physaddr_t start, size_t num_pages)
 		if (!vmm_has_flags(&kernel_mmu, array_addr, PAGE_PRESENT)) {
 			// Need to alloc + map
 			struct mmap_region rg = mmap_alloc_low(PAGE_SIZE, MMAP_ALLOC_PA);
-			kprintf("Allocated struct pages for pfn %zu\n", pfn);
+			klog("pmm", "Allocated struct pages for pfn %zu\n", pfn);
 			kassert(rg.len == PAGE_SIZE);
 			vmm_map_page(&kernel_mmu, (physaddr_t)rg.base, array_addr, VMM_ALLOC_MMAP | PAGE_WRITABLE | PAGE_GLOBAL);
 		}
@@ -230,7 +230,6 @@ static void __pmm_free_order(struct page *page, unsigned int order, struct zone 
 		dlist_set_next(page, list, zone->free_lists[order]);
 		zone->free_lists[order] = page;
 		page->order = order;
-		//klog("pmm", "Freed order %u for page %p\n", order, page_to_virt(page));
 #ifdef DEBUG
 		memset(page_to_virt(page), 0xBB, (1 << page->order) * PAGE_SIZE);
 #endif

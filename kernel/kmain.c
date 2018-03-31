@@ -1,7 +1,6 @@
 #include "libk.h"
 #include "multiboot2.h"
 #include "mm.h"
-#include "types.h"
 #include "smp.h"
 #include "spin.h"
 #include "interrupts.h"

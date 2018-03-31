@@ -2,8 +2,8 @@
 #include <stdbool.h>
 #include <cpuid.h>
 #include "libk.h"
-#include "types.h"
 #include "mm.h"
+#include "percpu.h"
 #include "util.h"
 #include "interrupts.h"
 #include "drivers/acpi.h"
@@ -80,9 +80,13 @@ void lapic_send_ipi(uint8_t target, uint32_t flags)
 	// LAPIC hasn't been initialised yet
 	if (lapic_base == NULL)
 		return;
+	
+	// Getting preempted could mean a race condition here
+	preempt_inc();
 	if (!(flags & IPI_BROADCAST))
 		lapic_write(APIC_REG_ICR1, (uint32_t)target << 24);
 	lapic_write(APIC_REG_ICR0, flags);
+	preempt_dec();
 }
 
 void lapic_enable(void)
@@ -93,6 +97,7 @@ void lapic_enable(void)
 
 	uint8_t id = lapic_id();
 	struct lapic_info *lapic = find_lapic(id);
+	percpu_set(apic_id, id);
 
 	for (size_t i = 0; i < nmi_list_size; i++)
 		if (nmi_list[i]->acpi_id == lapic->acpi_id || nmi_list[i]->acpi_id == 0xFF)

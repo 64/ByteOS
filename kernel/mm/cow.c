@@ -8,13 +8,13 @@
 void cow_copy_pte(pte_t *dest, pte_t *src)
 {
 	struct page *page = phys_to_page(*src & PTE_ADDR_MASK);
-	atomic_inc_load(&page->refcount);
+	kref_inc(&page->refcount);
 
 	// Make page read-only and CoW if it isn't already
 	if (!(*src & PAGE_COW)) {
 		*src &= ~PAGE_WRITABLE;
 		*src |= PAGE_COW;
-		atomic_inc_load(&page->refcount);
+		kref_inc(&page->refcount);
 	}
 
 	// Copy the PTE
@@ -28,7 +28,7 @@ bool cow_handle_write(pte_t *pte, virtaddr_t virt)
 		return false;
 
 	struct page *page = phys_to_page(*pte & PTE_ADDR_MASK);
-	uint64_t next_count = atomic_dec_load(&page->refcount);
+	uint64_t next_count = kref_dec_read(&page->refcount);
 
 	//kprintf_nolock("Handle CoW write to address %p\n", page);
 
@@ -62,7 +62,7 @@ void cow_handle_free(pte_t *pte)
 		return; // This page is probably mapped to the zero page or some kernel code
 
 	struct page *page = phys_to_page(phys);	
-	uint64_t next_count = atomic_dec_load(&page->refcount);
+	uint64_t next_count = kref_dec_read(&page->refcount);
 
 	if (next_count == 0) {
 		pmm_free_order(page, 0);

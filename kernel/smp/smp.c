@@ -14,7 +14,7 @@ extern uintptr_t smp_trampoline_end;
 volatile bool smp_ap_started_flag;
 volatile virtaddr_t smp_ap_stack;
 
-atomic_t smp_nr_cpus_ready = { 0 };
+atomic32_t smp_nr_cpus_ready = { 0 };
 
 #define TRAMPOLINE_START 0x1000
 // TODO: Add a define for the kernel stack size
@@ -71,7 +71,7 @@ static void smp_boot_ap(size_t index)
 void smp_init(void)
 {
 	klog("smp", "CPU 0 online\n");
-	atomic_inc_load(&smp_nr_cpus_ready);
+	atomic_inc_read32(&smp_nr_cpus_ready);
 
 	uintptr_t vstart = (uintptr_t)&smp_trampoline_start;
 	uintptr_t vend = (uintptr_t)&smp_trampoline_end;
@@ -106,5 +106,5 @@ void smp_ap_kmain(void)
 	lapic_enable();
 	irq_enable();
 
-	atomic_inc_load(&smp_nr_cpus_ready);
+	atomic_inc_read32(&smp_nr_cpus_ready);
 }

@@ -1,6 +1,5 @@
 #include "libk.h"
 #include "proc.h"
-#include "types.h"
 #include "percpu.h"
 #include "interrupts.h"
 #include "drivers/apic.h"

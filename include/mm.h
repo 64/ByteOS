@@ -4,15 +4,12 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include "multiboot2.h"
-#include "types.h"
 #include "smp.h"
 #include "spin.h"
 #include "atomic.h"
+#include "mm_types.h"
 #include "ds/linked.h"
 
-#define KERNEL_TEXT_BASE 0xFFFFFFFF80000000
-#define KERNEL_PHYS_MAP_END 0x1000000
-#define KERNEL_LOGICAL_BASE 0xFFFF800000000000
 #define KERNEL_PAGE_DATA (KERNEL_TEXT_BASE + KERNEL_PHYS_MAP_END)
 
 #define PAGE_PRESENT (1ULL << 0)
@@ -30,7 +27,6 @@
 #define VMM_ALLOC_MMAP (1 << 15)
 #define VMM_UNMAP (1 << 16)
 
-#define PAGE_SIZE 4096
 #define PAGE_SHIFT 12
 #define PTE_ADDR_MASK (~(0xFFF0000000000FFFUL))
 
@@ -39,89 +35,17 @@
 
 #define GFP_CAN_FAIL (1 << 0)
 
-// This means that the largest allocation is 2^(MAX_ORDER - 1) * 4096 bytes
-#define MAX_ORDER 12
-
 #define GFP_NONE 0
 #define VMM_NONE 0
 #define KM_NONE 0
 
-typedef uint64_t pte_t;
 
 extern const uint8_t zero_page[PAGE_SIZE];
-
-struct page_table {
-	pte_t pages[512];
-} __attribute__((packed, aligned(PAGE_SIZE)));
-
-struct mmap_region {
-	uintptr_t base;
-	size_t len;
-	// TODO: Don't name this flags, it's an enum
-	enum mmap_region_flags {
-		MMAP_NONE,
-		MMAP_NOMAP
-	} flags;
-};
-
-struct mmap_type {
-	uint32_t count;
-	struct mmap_region *regions;
-};
-
-struct mmap {
-	physaddr_t highest_mapped;
-	struct mmap_type available;
-	struct mmap_type reserved;
-};
-
-// One of these for each page of available physical memory.
-// This should be kept as small as possible (for obvious reasons).
-// Initial entries are zeroed out by memset.
-struct page {
-	struct dlist_entry list; // Can be used for whatever purpose
-	atomic_t refcount; // Reference count for copy-on-write mappings
-	int8_t order; // For buddy allocator system
-};
-
-// Describes a contiguous block of memory
-struct zone {
-	struct slist_entry list;
-	physaddr_t pa_start; // Start of available memory in zone
-	size_t len; // Length of available memory in zone
-	struct page *free_lists[MAX_ORDER];
-};
-
-// Describes a region of virtual memory
-struct vm_area {
-	struct slist_entry list;
-	uintptr_t base;
-	size_t len;
-	uint32_t type;
-#define VM_AREA_OTHER 0
-#define VM_AREA_STACK 1
-#define VM_AREA_TEXT 2
-#define VM_AREA_BSS 3
-	uint32_t flags;
-#define VM_AREA_WRITABLE (1 << 0)
-#define VM_AREA_EXECUTABLE (1 << 1)
-};
-
-struct mmu_info {
-	struct page_table *p4; // This should stay as the first member
-	atomic_t num_users; // > 1 if more than one thread is using these page tables, else 1
-	spinlock_t pgtab_lock;
-
-	spinlock_t cpu_lock;
-	cpuset_t cpus;
-
-	spinlock_t area_lock;
-	struct vm_area *areas;
-};
-
 extern struct mmu_info kernel_mmu;
 extern const uintptr_t _kernel_end_phys;
-extern struct page * const page_data;
+
+extern struct tlb_op * volatile tlb_op_location;
+extern atomic32_t tlb_remaining_cpus;
 
 void vmm_init(void);
 void vmm_map_all(struct mmap *);
@@ -152,55 +76,19 @@ void cow_handle_free(pte_t *pte);
 struct mmu_info *mmu_alloc(void);
 void mmu_free(struct mmu_info *mmu);
 void mmu_init(struct mmu_info *mmu);
+void mmu_switch_to(struct mmu_info *mmu);
 void mmu_inc_users(struct mmu_info *mmu);
 void mmu_dec_users(struct mmu_info *mmu);
-void mmu_clean(struct mmu_info *mmu);
+void mmu_reap(struct mmu_info *mmu);
 void mmu_clone_cow(struct mmu_info *dest, struct mmu_info *mmu);
 
 void area_add(struct mmu_info *mmu, struct vm_area *area);
 
-static inline physaddr_t virt_to_phys(virtaddr_t v) {
-	if (v == NULL)
-		return (physaddr_t)NULL;
-	return (physaddr_t)v - KERNEL_LOGICAL_BASE;
-}
+void tlb_shootdown(struct mmu_info *mmu, virtaddr_t start, virtaddr_t end);
 
-static inline virtaddr_t phys_to_virt(physaddr_t p) {
-	if (p == (physaddr_t)NULL)
-		return NULL;
-	return (virtaddr_t)(p + KERNEL_LOGICAL_BASE);
-}
-
-static inline physaddr_t kern_to_phys(kernaddr_t k) {
-	if (k == NULL)
-		return (physaddr_t)NULL;
-	return (physaddr_t)k - KERNEL_TEXT_BASE;
-}
-
-static inline kernaddr_t phys_to_kern(physaddr_t p) {
-	if (p == (physaddr_t)NULL)
-		return NULL;
-	return (kernaddr_t)(p + KERNEL_TEXT_BASE);
-}
-
-static inline struct page *phys_to_page(physaddr_t p) {
-	if (p == (physaddr_t)NULL)
-		return NULL;
-	return (struct page *)(page_data + (p / PAGE_SIZE));
-}
-
-static inline physaddr_t page_to_phys(struct page *p) {
-	if (p == NULL)
-		return (physaddr_t)NULL;
-	return (physaddr_t)((p - page_data) * PAGE_SIZE);
-}
-
-static inline struct page *virt_to_page(virtaddr_t p) {
-	return phys_to_page(virt_to_phys(p));
-}
-
-static inline virtaddr_t page_to_virt(struct page *p) {
-	return phys_to_virt(page_to_phys(p));
+static inline void tlb_flush_single(virtaddr_t addr)
+{
+	invlpg((uintptr_t)addr);
 }
 
 static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgtab, uint16_t index)

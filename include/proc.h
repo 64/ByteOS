@@ -19,7 +19,7 @@ struct task {
 	// Careful not to move these as they are referenced in asm
 	virtaddr_t rsp_top;
 	virtaddr_t rsp_original;
-	struct mmu_info *mmu;
+	struct mmu_info *mmu; // For kernel threads, this is &kernel_mmu
 
 	// Scheduler information
 	struct dlist_entry list;
