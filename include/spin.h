@@ -3,8 +3,14 @@
 #include <stdbool.h>
 
 #include "asm.h"
+#include "atomic.h"
 
 typedef uint64_t spinlock_t;
+typedef struct {
+	atomic64_t readers;
+	spinlock_t rd_lock;
+	spinlock_t wr_lock;
+} rwlock_t;
 
 void spin_lock(volatile spinlock_t *lock);
 void spin_unlock(volatile spinlock_t *lock);
@@ -21,4 +27,34 @@ void spin_unlock(volatile spinlock_t *lock);
 static inline void spin_init(volatile spinlock_t *lock)
 {
 	*lock = 0;
+}
+
+static inline void read_lock(rwlock_t *lock)
+{
+	spin_lock(&lock->rd_lock);
+	uint64_t readers = atomic_inc_read64(&lock->readers);
+	if (readers == 1)
+		spin_lock(&lock->wr_lock);
+	preempt_inc();
+	spin_unlock(&lock->rd_lock);
+}
+
+static inline void read_unlock(rwlock_t *lock)
+{
+	spin_lock(&lock->rd_lock);
+	uint64_t readers = atomic_dec_read64(&lock->readers);
+	if (readers == 0)
+		spin_unlock(&lock->wr_lock);
+	preempt_dec();
+	spin_unlock(&lock->rd_lock);
+}
+
+static inline void write_lock(rwlock_t *lock)
+{
+	spin_lock(&lock->wr_lock);
+}
+
+static inline void write_unlock(rwlock_t *lock)
+{
+	spin_unlock(&lock->wr_lock);
 }

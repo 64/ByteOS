@@ -15,7 +15,8 @@ void cow_copy_pte(pte_t *dest, pte_t *src)
 		*src &= ~PAGE_WRITABLE;
 		*src |= PAGE_COW;
 		kref_inc(&page->refcount);
-	}
+	} else
+		kassert_dbg(!(*src & PAGE_WRITABLE));
 
 	// Copy the PTE
 	*dest = *src;
@@ -28,11 +29,12 @@ bool cow_handle_write(pte_t *pte, virtaddr_t virt)
 		return false;
 
 	struct page *page = phys_to_page(*pte & PTE_ADDR_MASK);
-	uint64_t next_count = kref_dec_read(&page->refcount);
+	spin_lock(&page->lock);
 
-	//kprintf_nolock("Handle CoW write to address %p\n", page);
+	//kprintf_nolock("Handle CoW write to address %p\n", (void *)page_to_phys(page));
 
-	if (next_count != 0) {
+	uint32_t next_count = kref_dec_read(&page->refcount);
+	if (next_count > 0) {
 		// We need to allocate another page, and copy the memory into it
 		physaddr_t dest = page_to_phys(pmm_alloc_order(0, GFP_NONE));
 		physaddr_t src = *pte & PTE_ADDR_MASK;
@@ -42,11 +44,12 @@ bool cow_handle_write(pte_t *pte, virtaddr_t virt)
 		*pte &= ~PTE_ADDR_MASK;
 		*pte |= (dest & PTE_ADDR_MASK);
 	}
-	
+
 	// Otherwise, this was the last reference and we are free to reuse this memory
+	spin_unlock(&page->lock);
 	*pte &= ~PAGE_COW;
 	*pte |= PAGE_WRITABLE;
-	invlpg((uintptr_t)virt);
+	tlb_flush_single(virt);
 	return true;
 }
 
@@ -61,9 +64,9 @@ void cow_handle_free(pte_t *pte)
 	if (phys < (uintptr_t)&_kernel_end_phys)
 		return; // This page is probably mapped to the zero page or some kernel code
 
-	struct page *page = phys_to_page(phys);	
-	uint64_t next_count = kref_dec_read(&page->refcount);
+	struct page *page = phys_to_page(phys);
 
+	uint64_t next_count = kref_dec_read(&page->refcount);
 	if (next_count == 0) {
 		pmm_free_order(page, 0);
 	}

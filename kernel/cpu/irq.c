@@ -58,8 +58,7 @@ void irq_handler(struct isr_ctx *regs)
 	if (handler != NULL)
 		handler(regs);
 	else {
-		// Could be NMI
-		if (int_no == IRQ_LINT_BASE || int_no == IRQ_LINT_BASE + 1)
+		if (int_no == IRQ_NMI)
 			kprintf_nolock("Unhandled IRQ %u at %p\n", int_no, (void *)regs->rip);
 		else
 			kprintf("Unhandled IRQ %u at %p\n", int_no, (void *)regs->rip);

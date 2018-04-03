@@ -139,3 +139,23 @@ static inline void write_rflags(uint64_t rflags)
 {
 	__builtin_ia32_writeeflags_u64(rflags);
 }
+
+// TODO: I don't think these need to be locked
+static inline void preempt_inc(void)
+{
+	asm volatile (
+		"lock incl %%gs:0x18"
+		:
+		:
+	);
+}
+
+static inline void preempt_dec(void)
+{
+	asm volatile (
+		"lock decl %%gs:0x18"
+		:
+		:
+	);
+}
+

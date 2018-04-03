@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "atomic.h"
+#include "spin.h"
 #include "limits.h"
 #include "ds/linked.h"
 
@@ -14,9 +15,18 @@ typedef void *kernaddr_t;
 // This should be kept as small as possible (for obvious reasons).
 // Initial entries are zeroed out by memset.
 struct page {
-	struct dlist_entry list; // Can be used for whatever purpose
-	kref_t refcount; // Reference count for copy-on-write mappings
-	int8_t order; // For buddy allocator system
+	// TODO: Add this union (will require a flags variable)
+	//union {
+		// PMM information
+		struct {
+			struct dlist_entry list;
+			int8_t order;
+		};
+		struct {
+			kref_t refcount; 
+			spinlock_t lock;
+		};
+	//};
 };
 
 extern struct page *const page_data;

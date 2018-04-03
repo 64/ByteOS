@@ -176,6 +176,7 @@ struct page *pmm_alloc_order(unsigned int order, unsigned int alloc_flags)
 		struct page *rv = zone_alloc_order(zone, order, alloc_flags);
 		if (rv != NULL) {
 			spin_unlock(&zone_list_lock);
+			//memset(rv, 0, sizeof *rv);
 #ifdef DEBUG
 			memset(page_to_virt(rv), 0xBB, PAGE_SIZE * (1 << order));
 #endif
@@ -184,7 +185,7 @@ struct page *pmm_alloc_order(unsigned int order, unsigned int alloc_flags)
 	}
 	spin_unlock(&zone_list_lock);
 	if (!(alloc_flags & GFP_CAN_FAIL))
-		panic("PMM out of memory");
+		panic("PMM out of memory at %u", alloc_flags);
 	return NULL;
 }
 
@@ -245,7 +246,7 @@ void pmm_free_order(struct page *page, unsigned int order)
 	spin_lock(&zone_list_lock);
 	struct zone *zone = page_to_zone(page);
 	if (zone == NULL)
-		panic("Tried to free page outside available zones");
+		panic("Tried to free page outside available zones at %p", page_to_virt(page));
 	__pmm_free_order(page, order, zone);
 	spin_unlock(&zone_list_lock);
 }

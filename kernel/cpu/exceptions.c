@@ -43,7 +43,7 @@ static const char *const exception_messages[32] = {
 	"(reserved exception 31)"
 };
 
-static void page_fault(uint8_t int_no, struct isr_ctx *regs)
+static void page_fault(struct isr_ctx *regs)
 {
 	uintptr_t faulting_address;
 	asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
@@ -52,24 +52,32 @@ static void page_fault(uint8_t int_no, struct isr_ctx *regs)
 	if (faulting_address & (1ULL << 63))
 		goto kernel_panic;
 
+	// If interrupts were enabled, we are safe to enable them again
+	if (regs->rflags & 0x200)
+		sti();
+
 	if (current != NULL) {
-		pte_t *pte = vmm_get_pte(current->mmu, (virtaddr_t)faulting_address);
-		if (regs->info & PAGE_FAULT_RW && cow_handle_write(pte, (virtaddr_t)faulting_address))
+		virtaddr_t aligned_addr = (virtaddr_t)(faulting_address & ~(PAGE_SIZE - 1));
+		write_lock(&current->mmu->pgtab_lock);
+		pte_t *pte = vmm_get_pte(current->mmu, aligned_addr);
+		bool done = regs->info & PAGE_FAULT_RW && cow_handle_write(pte, aligned_addr);
+		write_unlock(&current->mmu->pgtab_lock);
+		if (done)
 			return;
 	}
+
+	// TODO: Kill process
 
 kernel_panic:
 	// Otherwise, the write was not allowed, so we panic
 	panic(
-		"%s:\n"
+		"Page fault:\n"
 		"\tfaulting address: %p\n"
 		"\trip: %p, rsp: %p\n"
-		"\tint_no: %u, err_code: %lu, flags: %u\n",
-		exception_messages[int_no],
+		"\terr_code: %lx",
 		(void *)faulting_address,
 		(void *)regs->rip, (void *)regs->rsp,
-		int_no, (regs->info & 0xFFFFFFFF),
-		(unsigned int)(regs->info & 0x1F)
+		(regs->info & 0xFFFFFFFF)
 	);
 }
 
@@ -78,7 +86,7 @@ void exception_handler(struct isr_ctx *regs)
 	uint8_t int_no = (uint8_t)(regs->info >> 32);
 	switch (int_no) {
 		case INT_PAGE_FAULT:
-			page_fault(int_no, regs);
+			page_fault(regs);
 			break;
 		case IRQ_NMI:
 			int_no = 2;

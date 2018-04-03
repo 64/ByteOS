@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include "asm.h"
+
 typedef struct {
 	volatile uint32_t var;
 } atomic32_t;

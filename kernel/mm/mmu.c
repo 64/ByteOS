@@ -22,29 +22,43 @@ void mmu_free(struct mmu_info *mmu)
 	kassert_dbg(mmu != &kernel_mmu);
 	kassert_dbg(kref_read(&mmu->users) == 0);
 	mmu_reap(mmu);
-	kfree(mmu);
+	//kfree(mmu); // Causes use after free issues with mmu_switch if called before switching out
 }
 
 void mmu_init(struct mmu_info *mmu)
 {
+	cpuset_clear(&mmu->cpus);
 	mmu->p4 = page_to_virt(pmm_alloc_order(0, GFP_NONE));
 	copy_kernel_mappings(mmu->p4);
 }
 
-void mmu_switch_to(struct mmu_info *mmu)
+void mmu_update_cpuset(struct mmu_info *mmu, cpuid_t id, bool val)
 {
-	struct mmu_info *current_mmu = current->mmu;
-	if (current_mmu != mmu) {
-		spin_lock(&current_mmu->cpu_lock);
-		cpuset_set_id(&current_mmu->cpus, percpu_get(id), 0);
-		spin_unlock(&current_mmu->cpu_lock);
-
+	if (mmu != &kernel_mmu) {
 		spin_lock(&mmu->cpu_lock);
-		cpuset_set_id(&mmu->cpus, percpu_get(id), 1);
+		cpuset_set_id(&mmu->cpus, id, val);
 		spin_unlock(&mmu->cpu_lock);
 	}
+}
 
-	write_cr3(virt_to_phys(mmu->p4));
+// Important: Be careful if you access current here, as it refers to the new process, not the old one
+void mmu_switch(struct mmu_info *next, struct mmu_info *prev)
+{
+	kassert_dbg(next != NULL && prev != NULL);
+	if (next != prev) {
+		// Keep track of which CPUs are currently using the MMU.
+		// This is important so that we know which CPUs we have to send IPIs to
+		// when we need to do a TLB shootdown.
+		preempt_inc();
+		mmu_update_cpuset(next, percpu_get(id), 0);
+		mmu_update_cpuset(prev, percpu_get(id), 1);
+		preempt_dec();
+
+		// Swap the paging structures
+		kassert_dbg(next->p4 != prev->p4);
+		write_cr3(virt_to_phys(next->p4));
+	} else
+		kassert_dbg(next->p4 == prev->p4);
 }
 
 void mmu_inc_users(struct mmu_info *mmu)
@@ -63,9 +77,23 @@ void mmu_dec_users(struct mmu_info *mmu)
 	}
 }
 
+static void free_single_page(pte_t *pte)
+{
+	physaddr_t phys = *pte & PTE_ADDR_MASK;
+	if (*pte & PAGE_COW) {
+		cow_handle_free(pte);
+	} else if (phys > (physaddr_t)&_kernel_end_phys) {
+		pmm_free_order(phys_to_page(phys), 0);
+	}
+	*pte = 0;
+}
+
 void mmu_reap(struct mmu_info *mmu)
 {
 	kassert_dbg(mmu != &kernel_mmu);
+	kassert_dbg(atomic_read32(&mmu->users) == 0);
+
+	// Don't bother locking since there are guaranteed no other users at this point
 
 	// Only loop over the userspace mappings
 	for (size_t p4_index = 0; p4_index < (1 << 7); p4_index++) {
@@ -82,13 +110,7 @@ void mmu_reap(struct mmu_info *mmu)
 					continue;
 				for (size_t p1_index = 0; p1_index < 512; p1_index++) {
 					if (p1->pages[p1_index] & PAGE_PRESENT) {
-						if (p1->pages[p1_index] & PAGE_COW) {
-							cow_handle_free(&p1->pages[p1_index]);
-						} else {
-							physaddr_t phys = p1->pages[p1_index] & PTE_ADDR_MASK;
-							pmm_free_order(phys_to_page(phys), 0);
-						}
-						p1->pages[p1_index] = 0;
+						free_single_page(&p1->pages[p1_index]);
 					}
 				}
 				pmm_free_order(virt_to_page(p1), 0);
@@ -102,7 +124,7 @@ void mmu_reap(struct mmu_info *mmu)
 	}
 
 	// Prevent freeing the PML4 from underneath us
-	mmu_switch_to(&kernel_mmu); 
+	write_cr3(virt_to_phys(kernel_mmu.p4));
 
 	free_page_at(mmu->p4);
 	mmu->p4 = NULL;
@@ -147,12 +169,13 @@ static struct page_table *clone_pgtab(struct page_table *pgtab, size_t level)
 
 void mmu_clone_cow(struct mmu_info *dest, struct mmu_info *mmu)
 {
-	// Copy mappings from the parent
 	kassert_dbg(dest->p4 == NULL);
+
+	// Copy mappings from the parent
+	write_lock(&mmu->pgtab_lock);
 	dest->p4 = clone_pgtab(mmu->p4, 4);
+	write_unlock(&mmu->pgtab_lock);
 
 	// Since the entire address space got mapped as read only, we need to invalidate all of it
-	uintptr_t cr3 = read_cr3();
-	if (cr3 == (uintptr_t)mmu->p4)
-		write_cr3(cr3);
+	tlb_flush_all();
 }

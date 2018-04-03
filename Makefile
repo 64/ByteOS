@@ -63,7 +63,7 @@ ifeq ($(VERBOSE),1)
 	CFLAGS += -DVERBOSE
 endif
 
-.PHONY: all clean run vbox bochs gdb disassemble update-modules copy-all copy-snow copy-ds copy-cansid loc tidy test
+.PHONY: all clean run vbox bochs gdb disassemble update-modules copy-all copy-snow copy-ds copy-cansid loc tidy test ctags
 .SUFFIXES: .o .c .asm
 
 all: $(ISO)
@@ -90,6 +90,9 @@ gdb: $(ISO)
 	@sleep 0.5
 	@$(GDB)
 	@pkill qemu
+
+ctags:
+	ctags -R
 
 disassemble: build/ $(KERNEL)
 	@$(OBJDUMP) --no-show-raw-insn -d -Mintel $(KERNEL) | source-highlight -s asm -f esc256 | less -eRiMX

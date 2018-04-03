@@ -19,6 +19,7 @@ switch_to:
 	mov rsp, [rdi]
 
 	; Set current in per-cpu data
+	mov rsi, [PERCPU_CURRENT]
 	mov [PERCPU_CURRENT], rdi
 
 	; Set RSP0 in TSS
@@ -27,9 +28,10 @@ switch_to:
 	mov [rax + 4], rcx
 
 	; Set the target MMU
-	mov rdi, [rdi + 0x10]
-	extern mmu_switch_to
-	call mmu_switch_to
+	mov rdi, [rdi + 0x10] ; next
+	mov rsi, [rsi + 0x10] ; previous
+	extern mmu_switch
+	call mmu_switch
 
 	pop r15
 	pop r14

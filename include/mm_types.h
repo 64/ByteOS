@@ -62,12 +62,10 @@ struct vm_area {
 
 struct mmu_info {
 	struct page_table *p4; // This should stay as the first member
-	spinlock_t pgtab_lock;
+	rwlock_t pgtab_lock;
 
 	// users: Number of threads with this mmu_info set as active
-	// tmp_users: Number of entities that currently have this mmu set as active
 	kref_t users;
-	kref_t tmp_users;
 
 	spinlock_t cpu_lock;
 	cpuset_t cpus;

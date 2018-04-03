@@ -72,6 +72,7 @@ void __ubsan_handle_type_mismatch(struct type_mismatch_info *type_mismatch, uint
 	if (pointer == 0)
 		message = "null pointer access";
 	else if (type_mismatch->alignment != 0 && (pointer & (type_mismatch->alignment - 1)))
+		// PMM fails here, so disable this
 		//message = "unaligned memory access";
 		return;
 	else

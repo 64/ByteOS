@@ -38,8 +38,10 @@ void runq_start_balancer(void)
 
 void runq_add(struct task *t)
 {
+	preempt_inc();
 	struct runq *run_queue = percpu_get(run_queue);
 	spin_lock(&run_queue->lock);
+	preempt_dec();
 
 	if (run_queue->head == NULL) {
 		run_queue->head = t;
@@ -55,41 +57,51 @@ void runq_add(struct task *t)
 
 struct task *runq_next(void)
 {
+	preempt_inc();
 	struct runq *run_queue = percpu_get(run_queue);
 	spin_lock(&run_queue->lock);
+	preempt_dec();
 
 	struct task *t = current;
 	struct task *next = dlist_get_next(t, list);
 	if (next == NULL) {
-		next = percpu_get(run_queue)->head;
+		next = run_queue->head;
 		if (next == NULL)
 			next = run_queue->idle;
-	}
+	} else
+		kassert_dbg(next != current);
 
 	spin_unlock(&run_queue->lock);
+	klog_verbose("runq", "Next task is %p, then %p\n", next, next->list.next);
 	return next;
 }
 
 void runq_remove(struct task *t)
 {
+	preempt_inc();
 	struct runq *run_queue = percpu_get(run_queue);
 	spin_lock(&run_queue->lock);
+	preempt_dec();
 	
 	dlist_foreach(cur, list, run_queue->head) {
 		if (cur == t) {
 			struct task *prev = dlist_get_prev(cur, list);
 			struct task *next = dlist_get_next(cur, list);
-			if (prev == NULL) {
+
+			if (run_queue->head == cur)
 				run_queue->head = next;
-				if (next != NULL)
-					next->list.prev = NULL;
-			} else {
+
+			if (prev != NULL)
 				dlist_set_next(prev, list, next);
-			}
-			break;
+			if (next != NULL)
+				dlist_set_prev(next, list, prev);
+
+			spin_unlock(&run_queue->lock);
+			klog_verbose("runq", "Deleting %p with prev %p, next %p\n", t, prev, next);
+			klog_verbose("runq", "Removed task %p\n", t);
+			return;
 		}
 	}
 
-	spin_unlock(&run_queue->lock);
-	klog_verbose("runq", "Removed task %p\n", t);
+	panic("Tried to remove task at %p that isn't in run queue", t);
 }

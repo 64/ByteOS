@@ -10,6 +10,7 @@ include/gen/*
 *.gch
 bochsout.txt
 libk/tests/snow.h
+tags
 
 .*
 !.git*

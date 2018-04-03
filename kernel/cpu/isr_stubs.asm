@@ -335,7 +335,7 @@ isr_stub_irq 245
 isr_stub_irq 246
 isr_stub_irq 247
 isr_stub_irq 248
-isr_stub_irq 249
+isr_stub_ipi 249, sched_hint
 isr_stub_ipi 250, tlb_shootdown
 isr_stub_ipi 251, abort ; Must match interrupts.h
 isr_stub_noerr 252 ; NMI

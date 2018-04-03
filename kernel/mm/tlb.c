@@ -17,6 +17,7 @@ void tlb_shootdown(struct mmu_info *mmu, virtaddr_t start, virtaddr_t end)
 		.end = end,
 	};
 
+	klog_warn("tlb", "TLB shootdown range %p - %p\n", start, end);
 	spin_lock(&shootdown_lock);
 	spin_lock(&mmu->cpu_lock);
 

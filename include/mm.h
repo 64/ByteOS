@@ -49,7 +49,6 @@ extern atomic32_t tlb_remaining_cpus;
 
 void vmm_init(void);
 void vmm_map_all(struct mmap *);
-physaddr_t vmm_get_phys_addr(struct mmu_info *, void *);
 bool vmm_has_flags(struct mmu_info *, void *, uint64_t flags);
 pte_t *vmm_get_pte(struct mmu_info *, const void *);
 void vmm_map_page(struct mmu_info *, physaddr_t, virtaddr_t, unsigned long);
@@ -76,9 +75,10 @@ void cow_handle_free(pte_t *pte);
 struct mmu_info *mmu_alloc(void);
 void mmu_free(struct mmu_info *mmu);
 void mmu_init(struct mmu_info *mmu);
-void mmu_switch_to(struct mmu_info *mmu);
+void mmu_switch(struct mmu_info *next, struct mmu_info *prev);
 void mmu_inc_users(struct mmu_info *mmu);
 void mmu_dec_users(struct mmu_info *mmu);
+void mmu_update_cpuset(struct mmu_info *mmu, cpuid_t id, bool val);
 void mmu_reap(struct mmu_info *mmu);
 void mmu_clone_cow(struct mmu_info *dest, struct mmu_info *mmu);
 
@@ -89,6 +89,11 @@ void tlb_shootdown(struct mmu_info *mmu, virtaddr_t start, virtaddr_t end);
 static inline void tlb_flush_single(virtaddr_t addr)
 {
 	invlpg((uintptr_t)addr);
+}
+
+static inline void tlb_flush_all(void)
+{
+	write_cr3(read_cr3());
 }
 
 static inline struct page_table *pgtab_extract_virt_addr(struct page_table *pgtab, uint16_t index)

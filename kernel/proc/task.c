@@ -52,7 +52,8 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t clone_fla
 		t->flags &= ~(TASK_KTHREAD);
 
 		if (clone_flags & FORK_UTHREAD) {
-			panic("unimplemented");
+			mmu_inc_users(parent->mmu);
+			t->mmu = parent->mmu;
 		} else {
 			t->mmu = mmu_alloc();
 			mmu_clone_cow(t->mmu, parent->mmu);
@@ -113,6 +114,8 @@ void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*arg
 	struct task *self = current;
 	if (self->mmu == &kernel_mmu)
 		self->mmu = mmu_alloc();
+	else
+		mmu_dec_users(self->mmu);
 
 	mmu_init(self->mmu);
 
@@ -154,6 +157,12 @@ void __attribute__((noreturn)) task_execve(virtaddr_t function, char UNUSED(*arg
 		klog_verbose("task", "Added area at %p, size %zu\n", (void *)cur->base, cur->len);
 	}
 
+	// Switch to the new cr3.
+	// Disable preemption so the cpuset is always correct.
+	preempt_inc();
+	mmu_update_cpuset(self->mmu, percpu_get(id), 1);
 	write_cr3(virt_to_phys(self->mmu->p4));
+	preempt_dec();
+
 	ret_from_execve((virtaddr_t)entry, UTASK_STACK_TOP);
 }

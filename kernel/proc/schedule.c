@@ -11,8 +11,7 @@ void schedule(void)
 	// TODO: Disable preemption
 	struct task *next = runq_next();
 	//klog("sched", "Switching to %p\n", next);
-	kassert_dbg(next != current);
-	kassert_dbg(next->state == TASK_RUNNABLE);
+	kassert_dbg(next->state == TASK_RUNNABLE || next->state == TASK_RUNNING);
 	next->state = TASK_RUNNING;
 	current->state = TASK_RUNNABLE;
 	switch_to(next);
@@ -30,24 +29,11 @@ void sched_yield(void)
 
 static void utask_entry(void)
 {
-	volatile uint64_t var = 0;
-	if (execute_syscall(SYSCALL_FORK, 0, 0, 0, 0) > 0) { // Fork
-		execute_syscall(SYSCALL_WRITE, 'C', 0, 0, 0); // Write
-		execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0); // Yield
-		var = 3;
-	} else {
-		if (execute_syscall(SYSCALL_FORK, 0, 0, 0, 0) > 0) { // Fork
-			execute_syscall(SYSCALL_WRITE, 'B', 0, 0, 0); // Write
-			execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0); // Yield
-			var = 1;
-		} else {
-			execute_syscall(SYSCALL_WRITE, 'A', 0, 0, 0); // Write
-			execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0); // Yield
-			var = 2;
-		}
-	}
-	execute_syscall(SYSCALL_WRITE, '0' + (uint8_t)var, 0, 0, 0); // Write
-	execute_syscall(SYSCALL_EXIT, 0, 0, 0, 0); // Exit
+	volatile int x = 0;
+	execute_syscall(SYSCALL_FORK, FORK_UTHREAD, 0, 0, 0);
+	x++;
+	execute_syscall(SYSCALL_WRITE, '0' + x, 0, 0, 0);
+	execute_syscall(SYSCALL_EXIT, 0, 0, 0, 0);
 }
 
 // The first kernel thread. Perform advanced initialisation (e.g forking) from here.
