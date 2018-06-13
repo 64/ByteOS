@@ -12,8 +12,12 @@ long_mode_entry:
 	mov fs, ax
 	mov gs, ax
 
+	; Align the stack to 16 bytes
+	and rsp, ~0xF
+
 	; Multiboot structure (physical address)
 	push rbx
+	sub rsp, 8
 
 	; Initialise VGA textmode driver
 	extern vga_tmode_init
@@ -40,6 +44,7 @@ long_mode_entry:
 	call _init
 
 	; Pass multiboot information to kmain
+	add rsp, 8
 	pop rdi
 	extern kmain
 	call kmain
