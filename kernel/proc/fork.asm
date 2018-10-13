@@ -13,6 +13,7 @@ ret_from_kfork:
 	pop rdi
 	pop rax
 	call rax
+	; Thread finished, now exit
 	mov rdi, [PERCPU_CURRENT]
 	mov rsi, 0
 	extern task_exit

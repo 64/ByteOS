@@ -2,6 +2,8 @@
 
 #include <stddef.h>
 
+#include "generic.h"
+
 struct slist_entry {
 	struct slist_entry *next;
 };
@@ -9,11 +11,6 @@ struct slist_entry {
 struct dlist_entry {
 	struct dlist_entry *next, *prev;
 };
-
-// Compiler magic to find the original struct (taken from linux kernel)
-#define container_of(ptr, type, member) ({                      \
-        const typeof(((type *)0)->member) *__mptr = (ptr);    \
-        (type *)((char *)__mptr - offsetof(type, member)); })
 
 #define slist_entry(ptr, type, member) \
 	container_of(ptr, type, member)

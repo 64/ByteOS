@@ -4,6 +4,7 @@
 
 #include "mm.h"
 #include "smp.h"
+#include "ds/rbtree.h"
 
 #define TASK_KTHREAD (1 << 0)
 #define TASK_NEED_PREEMPT (1 << 1)
@@ -14,6 +15,11 @@
 
 typedef int32_t tgid_t;
 typedef int32_t tid_t;
+
+struct sched_entity {
+	struct rb_node node;
+	uint64_t vruntime; // Key for red-black tree
+};
 
 struct task {
 	// Careful not to move these as they are referenced in asm
@@ -33,16 +39,23 @@ struct task {
 		TASK_ZOMBIE,
 	} state;
 
-	uint64_t flags; // Includes TASK_NEED_PREEMPT flag
+	// Includes TASK_NEED_PREEMPT flag
+	uint64_t flags; 
+
+	// Task identifiers
 	tid_t tid;
 	tgid_t tgid;
 
 	cpuset_t affinity; // Defines which processors this task can run on
+
+	struct sched_entity sched;
 };
 
+// Per-CPU task list
 struct runq {
 	spinlock_t lock;
-	struct task *head, *idle;
+	struct task *idle; // Idle thread for this CPU
+	struct rbtree tree; // List of threads on the run queue
 };
 
 struct callee_regs {
@@ -70,14 +83,14 @@ void task_exit(struct task *t, int code);
 // Arguments to kthreads are passed in rbx
 #define create_kthread(entry, arg) ({ \
 	struct callee_regs tmp = { \
-		.rbx = (uint64_t)arg \
+		.rbx = (uint64_t)(arg) \
 	}; \
 	task_fork(current, (entry), FORK_KTHREAD, &tmp); })
 
 void runq_init(void);
-void runq_start_balancer(void);
 void runq_add(struct task *t);
 void runq_remove(struct task *t);
+void runq_balance_pull(void);
 struct task *runq_next(void);
 
 void idle_task(void);

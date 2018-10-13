@@ -27,7 +27,7 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t clone_fla
 	memset(t, 0, sizeof *t);
 	t->flags = parent->flags;
 	t->tid = atomic_inc_read32(&next_tid);
-	t->tgid = t->tid;
+	t->tgid = t->tid; // TODO
 
 	klog_verbose("task", "Forked PID %d to create PID %d\n", parent->tid, t->tid);
 

@@ -15,7 +15,7 @@ int64_t syscall_sched_yield(void)
 
 int64_t syscall_write(char c)
 {
-	kprintf("%c\n", c);
+	kprintf("%c", c);
 	return 0;
 }
 

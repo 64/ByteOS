@@ -391,6 +391,9 @@ higher_half:
 	add rax, KERNEL_TEXT_BASE
 	mov qword [rax], 0
 
+	; Align RSP again
+	add rsp, 10
+
 	; Flush whole TLB
 	mov rax, cr3
 	mov cr3, rax
