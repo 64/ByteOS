@@ -9,7 +9,7 @@
 %define GDT_KERNEL_DATA 0x10
 %define GDT_USER_DATA 0x20
 %define GDT_USER_CODE 0x28
-%define GDT_TSS 0x30
+%define GDT_TSS 0x30 ; Change this in percpu.c too
 
 %define KERNEL_CPU_STACK_SIZE (PAGE_SIZE * 4)
 

@@ -58,6 +58,7 @@ syscall_entry:
 	; rip is in rcx
 	; rflags is in r11
 	; WARNING: Do not clobber any argument registers like rdi
+	; TODO: Save all registers except rcx, r11, rax
 
 	; Switch to kernel stack
 	mov [PERCPU_RSP_SCRATCH], rsp

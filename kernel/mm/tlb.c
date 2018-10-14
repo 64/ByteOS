@@ -17,7 +17,7 @@ void tlb_shootdown(struct mmu_info *mmu, virtaddr_t start, virtaddr_t end)
 		.end = end,
 	};
 
-	klog_warn("tlb", "TLB shootdown range %p - %p\n", start, end);
+	klog_verbose("tlb", "TLB shootdown range %p - %p\n", start, end);
 	spin_lock(&shootdown_lock);
 	spin_lock(&mmu->cpu_lock);
 
@@ -26,13 +26,13 @@ void tlb_shootdown(struct mmu_info *mmu, virtaddr_t start, virtaddr_t end)
 	// Send the IPI
 	// TODO: Find a more efficient method than sending IPIs one by one (logical destination mode?)
 	for (size_t i = 0; i < smp_nr_cpus(); i++) {
-		if (i != percpu_get(id)) {
+		if (i != percpu_get(id) && cpuset_query_id(&mmu->cpus, i)) {
 			atomic_inc_read32(&tlb_remaining_cpus);
-			if (cpuset_query_id(&mmu->cpus, i))
-				ipi_send_fixed(i, IRQ_IPI_TLB_SHOOTDOWN);
+			ipi_send_fixed(i, IRQ_IPI_TLB_SHOOTDOWN);
 		}
 	}
 
+	// Wait for the other CPUs to finish
 	while (atomic_read32(&tlb_remaining_cpus) != 0) {
 		pause();
 	}

@@ -176,6 +176,7 @@ void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsign
 	flags ^= PAGE_EXECUTABLE;
 
 	write_lock(&mmu->pgtab_lock);
+
 	struct page_table *p3_table = pgtab_extract_virt_addr(mmu->p4, p4_index);
 	if (p3_table == NULL) {
 		if (unmap) goto release_and_ret;
@@ -208,10 +209,12 @@ void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsign
 	if (smp_nr_cpus() > 1) {
 		kassert((p1_table->pages[p1_index] & PAGE_GLOBAL) == 0);
 		kassert((flags & PAGE_GLOBAL) == 0);
+		tlb_shootdown(mmu, virt, (virtaddr_t)((physaddr_t)virt + PAGE_SIZE));
 	}
 #endif
 
 	if (unmap) {
+		// TODO: Implement page table freeing
 		klog_verbose("vmm", "Unmapped page at %p\n", virt);
 		p1_table->pages[p1_index] = 0;
 	} else {

@@ -71,7 +71,8 @@ struct callee_regs {
 void switch_to(struct task *);
 
 void schedule(void);
-void sched_run(void);
+void sched_run_bsp(void);
+void sched_run_ap(void);
 void sched_yield(void);
 void sched_add(struct task *t);
 
@@ -87,9 +88,9 @@ void task_exit(struct task *t, int code);
 	}; \
 	task_fork(current, (entry), FORK_KTHREAD, &tmp); })
 
-void runq_init(void);
-void runq_add(struct task *t);
-void runq_remove(struct task *t);
+void runq_init(struct task *);
+void runq_add(struct task *);
+void runq_remove(struct task *);
 void runq_balance_pull(void);
 struct task *runq_next(void);
 

@@ -147,7 +147,9 @@ int kprintf_nolock(const char *fmt, ...)
 {
 	va_list params;
 	va_start(params, fmt);
+	bool locked = spin_try_lock(&kprintf_lock);
 	int nwritten = __kvprintf(fmt, params);
+	if (locked) spin_unlock(&kprintf_lock);
 	va_end(params);
 	return nwritten;
 }

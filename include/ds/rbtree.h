@@ -18,11 +18,8 @@ struct rbtree {
 };
 
 #define rb_entry(ptr, type, member) \
-	container_of(ptr, type, member)
-
-#define rb_entry_safe(ptr, type, member) \
 	({ const struct rb_node *__ptr = (ptr); \
-	__ptr != NULL ? rb_entry(__ptr, type, member) : NULL; })
+	__ptr != NULL ? container_of(__ptr, type, member) : NULL; })
 
 #define RB_PARENT_MASK (~1)
 #define RB_COLOR_MASK (~RB_PARENT_MASK)

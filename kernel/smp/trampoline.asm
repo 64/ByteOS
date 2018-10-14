@@ -88,8 +88,8 @@ smp_trampoline_64:
 	extern smp_ap_kmain
 	call smp_ap_kmain
 
-	sti
 .end:
+	sti
 	hlt
 	jmp .end
 

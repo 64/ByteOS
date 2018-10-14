@@ -4,11 +4,11 @@
 
 #include "asm.h"
 
-typedef struct {
+typedef volatile struct {
 	volatile uint32_t var;
 } atomic32_t;
 
-typedef struct {
+typedef volatile struct {
 	volatile uint64_t var;
 } atomic64_t;
 

@@ -13,14 +13,14 @@ static uint64_t min_vruntime(struct runq *r)
 }
 
 // Initialises the run queue for the current CPU
-void runq_init(void)
+void runq_init(struct task *initial_parent)
 {
 	struct runq *rq = kmalloc(sizeof(struct runq), KM_NONE);
 	memset(rq, 0, sizeof *rq);
 	percpu_set(run_queue, rq);
 
 	// Create the idle task
-	struct task *idle = create_kthread(idle_task, NULL);
+	struct task *idle = task_fork(initial_parent, idle_task, TASK_KTHREAD, NULL);
 	cpuset_clear(&idle->affinity);
 	cpuset_set_id(&idle->affinity, percpu_get(id), 1);
 	cpuset_pin(&idle->affinity);

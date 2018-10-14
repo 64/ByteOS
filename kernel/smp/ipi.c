@@ -2,6 +2,7 @@
 #include "util.h"
 #include "interrupts.h"
 #include "percpu.h"
+#include "proc.h"
 #include "mm.h"
 #include "smp.h"
 
@@ -11,9 +12,11 @@ void ipi_send_fixed(cpuid_t id, uint8_t vec)
 	lapic_send_ipi(apic_id, IPI_FIXED | vec);
 }
 
+// Begins running the scheduler
 void ipi_sched_hint(struct isr_ctx *UNUSED(regs))
 {
-	
+	sched_run_ap();
+	panic("AP scheduler returned");
 }
 
 void ipi_abort(struct isr_ctx *UNUSED(regs))
@@ -21,7 +24,6 @@ void ipi_abort(struct isr_ctx *UNUSED(regs))
 	abort_self();
 }
 
-// TODO: Add a mechanism for calling invlpg, not just reloading cr3
 void ipi_tlb_shootdown(struct isr_ctx *UNUSED(regs))
 {
 	struct tlb_op *op = tlb_op_location;

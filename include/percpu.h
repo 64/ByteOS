@@ -8,7 +8,7 @@
 #include "util.h"
 
 struct percpu {
-	// Be careful changing these three variables as they are referenced in asm
+	// Be careful changing these four variables as they are referenced in asm
 	struct task *current_task;
 	virtaddr_t rsp_scratch;
 	virtaddr_t tss;

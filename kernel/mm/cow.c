@@ -8,7 +8,6 @@
 void cow_copy_pte(pte_t *dest, pte_t *src)
 {
 	struct page *page = phys_to_page(*src & PTE_ADDR_MASK);
-	kref_inc(&page->refcount);
 
 	// Make page read-only and CoW if it isn't already
 	if (!(*src & PAGE_COW)) {
@@ -17,6 +16,9 @@ void cow_copy_pte(pte_t *dest, pte_t *src)
 		kref_inc(&page->refcount);
 	} else
 		kassert_dbg(!(*src & PAGE_WRITABLE));
+
+	if (kref_inc_read(&page->refcount) == 0)
+		panic("Tried to copy free'd page");
 
 	// Copy the PTE
 	*dest = *src;
@@ -35,7 +37,7 @@ bool cow_handle_write(pte_t *pte, virtaddr_t virt)
 
 	uint32_t next_count = kref_dec_read(&page->refcount);
 	if (next_count > 0) {
-		// We need to allocate another page, and copy the memory into it
+		// Allocate another page, and copy the memory into it
 		physaddr_t dest = page_to_phys(pmm_alloc_order(0, GFP_NONE));
 		physaddr_t src = *pte & PTE_ADDR_MASK;
 		memcpy(phys_to_virt(dest), phys_to_virt(src), PAGE_SIZE);
