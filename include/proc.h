@@ -56,6 +56,7 @@ struct runq {
 	spinlock_t lock;
 	struct task *idle; // Idle thread for this CPU
 	struct rbtree tree; // List of threads on the run queue
+	uint64_t num_threads; // Number of threads running on this CPU
 };
 
 struct callee_regs {

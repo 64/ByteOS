@@ -12,7 +12,6 @@ flush_gdt_tss:
 	mov qword [rsp + 2], rdi
 
 	lgdt [rsp]
-	xchg bx, bx
 	mov ax, GDT_TSS
 	ltr ax
 

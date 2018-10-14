@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+void syscall_enable(void);
+
 typedef int64_t (*syscall_t)(void);
 
 #include "gen/syscall_gen.h"

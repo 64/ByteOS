@@ -4,6 +4,7 @@
 #include "libk.h"
 #include "mm.h"
 #include "percpu.h"
+#include "syscall.h"
 #include "drivers/apic.h"
 #include "drivers/pit.h"
 #include "spin.h"
@@ -105,6 +106,7 @@ void smp_ap_kmain(void)
 {
 	lapic_enable();
 	irq_enable();
+	syscall_enable();
 
 	atomic_inc_read32(&smp_nr_cpus_ready);
 }

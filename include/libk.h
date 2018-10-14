@@ -6,6 +6,7 @@
 #define LIBK_FN(name) __libk_ ## name
 #else
 #include "asm.h"
+#include "smp.h"
 #define LIBK_FN(name) name
 #endif
 
@@ -30,8 +31,8 @@ __attribute__((noreturn)) void __stack_chk_fail(void);
 		irq_disable(); \
 		kprintf_nolock( \
 			"\n\x1B[0m--------------------------------------------------------------------------------\x1B[0m" \
-			"\x1B[1;41;37mpanic at %s:%s:%u\x1B[0m\n", \
-			__FILE__, __func__, __LINE__ \
+			"\x1B[1;41;37mpanic at %s:%s:%u CPU %d\x1B[0m\n", \
+			__FILE__, __func__, __LINE__, smp_cpu_id() \
 		); \
 		kprintf_nolock(__VA_ARGS__); \
 		abort(); \

@@ -5,6 +5,7 @@
 #include "mm.h"
 
 static struct task dummy;
+static atomic32_t schedulers_waiting;
 
 void schedule(void)
 {
@@ -68,9 +69,6 @@ static void utask_entry(void)
 // Ends with a call to execve, beginning the first user process.
 static void ktask_entry(void)
 {
-	// Start running the scheduler on all APs
-	lapic_send_ipi(0, IPI_BROADCAST | IPI_FIXED | IRQ_IPI_SCHED_HINT);
-
 	task_execve(utask_entry, NULL, 0);
 }
 
@@ -93,6 +91,15 @@ void sched_run_bsp(void)
 
 	runq_init(&dummy);
 	task_wakeup(t);
+
+	// Initialise the scheduler on APs
+	lapic_send_ipi(0, IPI_BROADCAST | IPI_FIXED | IRQ_IPI_SCHED_HINT);
+
+	// Wait for all schedulers to finish initialising
+	atomic_inc_read32(&schedulers_waiting);
+	while (atomic_read32(&schedulers_waiting) < smp_nr_cpus())
+		;
+
 	sched_yield();
 }
 
@@ -101,7 +108,11 @@ void sched_run_ap(void)
 	klog("sched", "Starting scheduler for CPU %d...\n", smp_cpu_id());
 	runq_init(&dummy);	
 	percpu_set(current_task, &dummy);
-	sched_yield();
-	while (1)
+
+	// Wait for all schedulers to finish initialising
+	atomic_inc_read32(&schedulers_waiting);
+	while (atomic_read32(&schedulers_waiting) < smp_nr_cpus())
 		;
+
+	sched_yield();
 }
