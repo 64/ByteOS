@@ -53,7 +53,7 @@ void percpu_init_ap(void)
 	percpu_set_addr(&tmp);
 
 	struct percpu *cpu = kmalloc(sizeof *cpu, KM_NONE);
-	cpu->id = smp_cpu_id();
+	cpu->id = smp_cpu_id_full();
 	cpu->current_task = NULL;
 	cpu->rsp_scratch = NULL;
 	cpu->preempt_count = 0;

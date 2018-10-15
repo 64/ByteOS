@@ -1,12 +1,16 @@
+%include "include.asm"
 bits 64
 
 section .text
-global ret_from_interrupt:
-ret_from_interrupt:
-	; TODO: Check preempt_count
-	; TODO: Check need_reschedule flag
-	;jnz .need_reschedule
-.done:
+global ret_and_reschedule
+global ret_direct
+ret_and_reschedule:
+	; If NEED_PREEMPT = 1 and preempt_count = 0, then reschedule
+	mov rax, [PERCPU_CURRENT]
+	mov rax, [rax + 0x18] ; rax = task->flags
+	bt rax, 1 ; TODO: Why does "bt [rax + 0x20], 1" not work?
+	jc need_reschedule
+ret_direct:
 	pop r11
 	pop r10
 	pop r9
@@ -18,8 +22,11 @@ ret_from_interrupt:
 	pop rdi
 	add rsp, 8 ; Info field
 	iretq
-
-.need_reschedule:
+need_reschedule:
+	bochs_magic
+	mov rax, [PERCPU_PREEMPT_COUNT]
+	test rax, rax
+	jnz ret_direct
 	extern schedule
 	call schedule
-	jmp .done
+	jmp ret_direct

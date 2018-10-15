@@ -11,12 +11,16 @@
 
 #define APIC_IRQ_MASK 0x10000
 
+static spinlock_t ioapic_lock;
+
+// Careful: will race
 static inline uint32_t ioapic_read(volatile uint32_t *ioapic, uint8_t reg)
 {
 	ioapic[0] = (reg & 0xFF);
 	return ioapic[4];
 }
 
+// Careful: will race
 static inline void ioapic_write(volatile uint32_t *ioapic, uint8_t reg, uint32_t data)
 {
 	ioapic[0] = (reg & 0xFF);
@@ -29,7 +33,7 @@ static inline uint32_t get_max_redirs(size_t ioapic_id)
 	return (ioapic_read(base, APIC_REG_VER) & 0xFF0000) >> 16;
 }
 
-static inline struct madt_entry_ioapic *gsi_to_ioapic(uint32_t gsi)
+static struct madt_entry_ioapic *gsi_to_ioapic(uint32_t gsi)
 {
 	for (size_t i = 0; i < ioapic_list_size; i++) {
 		uint32_t max_redirs = get_max_redirs(i);
@@ -70,20 +74,24 @@ void ioapic_redirect(uint32_t gsi, uint8_t UNUSED(source), uint16_t flags, uint8
 
 void ioapic_mask(uint32_t gsi)
 {
+	spin_lock(&ioapic_lock);
 	struct madt_entry_ioapic *ioapic = gsi_to_ioapic(gsi);
 	virtaddr_t ioapic_base = phys_to_virt(ioapic->phys_addr);
 	uint8_t irq_line = gsi - ioapic->gsi_base;
 	uint64_t prev = ioapic_redtbl_read(ioapic_base, irq_line);
 	ioapic_redtbl_write(ioapic_base, irq_line, prev | APIC_IRQ_MASK);
+	spin_unlock(&ioapic_lock);
 }
 
 void ioapic_unmask(uint32_t gsi)
 {
+	spin_lock(&ioapic_lock);
 	struct madt_entry_ioapic *ioapic = gsi_to_ioapic(gsi);
 	virtaddr_t ioapic_base = phys_to_virt(ioapic->phys_addr);
 	uint8_t irq_line = gsi - ioapic->gsi_base;
 	uint64_t prev = ioapic_redtbl_read(ioapic_base, irq_line);
 	ioapic_redtbl_write(ioapic_base, irq_line, prev & (~APIC_IRQ_MASK));
+	spin_unlock(&ioapic_lock);
 }
 
 uint8_t ioapic_isa_to_gsi(uint8_t isa)

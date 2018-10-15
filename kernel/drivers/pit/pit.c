@@ -1,9 +1,12 @@
 #include "libk.h"
 #include "util.h"
 #include "asm.h"
+#include "spin.h"
 #include "interrupts.h"
 #include "drivers/pit.h"
 #include "drivers/apic.h"
+
+static spinlock_t pit_lock;
 
 void pit_init(void)
 {
@@ -11,6 +14,7 @@ void pit_init(void)
 
 void pit_sleep_ms(uint64_t ms)
 {
+	spin_lock(&pit_lock);
 	uint64_t total_count = 0x4A9 * ms;
 	do {
 		uint16_t count = MIN(total_count, 0xFFFFU);
@@ -23,11 +27,12 @@ void pit_sleep_ms(uint64_t ms)
 		} while ((inb(0x40) & (1 << 7)) == 0);
 		total_count -= count;
 	} while ((total_count & ~0xFFFF) != 0);
+	spin_unlock(&pit_lock);
 }
 
 void pit_sleep_watch_flag(uint64_t ms, volatile bool *flag, bool original)
 {
-	
+	spin_lock(&pit_lock);	
 	uint64_t total_count = 0x4A9 * ms;
 	do {
 		uint16_t count = MIN(total_count, 0xFFFFU);
@@ -37,9 +42,11 @@ void pit_sleep_watch_flag(uint64_t ms, volatile bool *flag, bool original)
 		do {
 			pause();
 			if (__atomic_load_n(flag, __ATOMIC_RELAXED) != original)
-				return;
+				goto end;
 			outb(0x43, 0xE2);
 		} while ((inb(0x40) & (1 << 7)) == 0);
 		total_count -= count;
 	} while ((total_count & ~0xFFFF) != 0);
+end:
+	spin_unlock(&pit_lock);	
 }

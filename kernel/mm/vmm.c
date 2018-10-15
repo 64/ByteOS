@@ -209,6 +209,7 @@ void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsign
 	if (smp_nr_cpus() > 1) {
 		kassert((p1_table->pages[p1_index] & PAGE_GLOBAL) == 0);
 		kassert((flags & PAGE_GLOBAL) == 0);
+		// TODO: Only shootdown the CPUs that actually need it (look at cpuset in MMU struct)
 		tlb_shootdown(mmu, virt, (virtaddr_t)((physaddr_t)virt + PAGE_SIZE));
 	}
 #endif

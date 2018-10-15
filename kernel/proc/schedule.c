@@ -9,7 +9,12 @@ static atomic32_t schedulers_waiting;
 
 void schedule(void)
 {
-	// TODO: Disable preemption
+	// Disable preemption
+	preempt_inc();
+
+	// Remove 'need preempt' flag (apart from idle task, which always needs preemption
+	if ((current->flags & TASK_NEED_PREEMPT) && current->tid != 0)
+		current->flags &= ~TASK_NEED_PREEMPT;
 
 	// Update scheduler statistics for the previous task
 	current->sched.vruntime++; // Note that current may be the idle task here
@@ -32,6 +37,9 @@ void schedule(void)
 	current->state = TASK_RUNNABLE;
 	next->state = TASK_RUNNING;
 
+	// Re-enable preemption
+	preempt_dec();
+
 	// Do the context switch
 	switch_to(next);
 }
@@ -52,16 +60,46 @@ static void utask_entry(void)
 	if (execute_syscall(SYSCALL_FORK, 0, 0, 0, 0) == 0) {
 		while (1) {
 			execute_syscall(SYSCALL_WRITE, 'A' + (x++ % 26), 0, 0, 0);
-			execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0);
+			//execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0);
+		}
+	} else if (execute_syscall(SYSCALL_FORK, 0, 0, 0, 0) == 0) {
+		while (1) {
+			execute_syscall(SYSCALL_WRITE, 'a' + (x++ % 26), 0, 0, 0);
+			//execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0);
+		}
+	} else if (execute_syscall(SYSCALL_FORK, 0, 0, 0, 0) == 0) {
+		while (1) {
+			execute_syscall(SYSCALL_WRITE, '0' + (x++ % 10), 0, 0, 0);
+			//execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0);
 		}
 	} else if (execute_syscall(SYSCALL_FORK, 0, 0, 0, 0) == 0) {
 		while (1) {
 			execute_syscall(SYSCALL_WRITE, 'A' + (x++ % 26), 0, 0, 0);
-			execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0);
+			//execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0);
+		}
+	} else if (execute_syscall(SYSCALL_FORK, 0, 0, 0, 0) == 0) {
+		while (1) {
+			execute_syscall(SYSCALL_WRITE, 'a' + (x++ % 26), 0, 0, 0);
+			//execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0);
+		}
+	} else if (execute_syscall(SYSCALL_FORK, 0, 0, 0, 0) == 0) {
+		while (1) {
+			execute_syscall(SYSCALL_WRITE, '0' + (x++ % 10), 0, 0, 0);
+			//execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0);
+		}
+	} else if (execute_syscall(SYSCALL_FORK, 0, 0, 0, 0) == 0) {
+		while (1) {
+			execute_syscall(SYSCALL_WRITE, 'A' + (x++ % 26), 0, 0, 0);
+			//execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0);
+		}
+	} else if (execute_syscall(SYSCALL_FORK, 0, 0, 0, 0) == 0) {
+		while (1) {
+			execute_syscall(SYSCALL_WRITE, 'a' + (x++ % 26), 0, 0, 0);
+			//execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0);
 		}
 	} else {
 		while (1)
-			execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0);
+			;//execute_syscall(SYSCALL_SCHED_YIELD, 0, 0, 0, 0);
 	}
 }
 
@@ -100,6 +138,8 @@ void sched_run_bsp(void)
 	while (atomic_read32(&schedulers_waiting) < smp_nr_cpus())
 		;
 
+	lapic_timer_enable();
+	// TODO: Possible race condition here, if we get rescheduled before sched_yield happens
 	sched_yield();
 }
 
@@ -114,5 +154,7 @@ void sched_run_ap(void)
 	while (atomic_read32(&schedulers_waiting) < smp_nr_cpus())
 		;
 
+	lapic_timer_enable();
+	// TODO: Possible race condition here, if we get rescheduled before sched_yield happens
 	sched_yield();
 }

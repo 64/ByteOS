@@ -66,7 +66,4 @@ void kmain(physaddr_t mboot_info_phys)
 
 	// Run the scheduler
 	sched_run_bsp();
-
-	// We should never get here
-	panic("BSP scheduler returned");
 }

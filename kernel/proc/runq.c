@@ -34,7 +34,7 @@ void runq_init(struct task *initial_parent)
 	idle->state = TASK_RUNNABLE;
 	idle->tid = 0; // Idle task always has ID 0
 	idle->tgid = 0;
-	dlist_set_next(idle, list, (struct task *)NULL);
+	idle->flags = TASK_NEED_PREEMPT; // This is always set
 	rq->idle = idle;
 }
 

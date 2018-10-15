@@ -17,7 +17,7 @@ load_idt:
 	lidt [rax]
 	ret
 
-%macro isr_common_fn 1
+%macro isr_common_fn 2
 	push rdi
 	push rsi
 	push rdx
@@ -33,15 +33,15 @@ load_idt:
 	extern %1
 	call %1
 	
-	extern ret_from_interrupt
-	jmp ret_from_interrupt
+	extern %2
+	jmp %2
 %endmacro
 
 isr_common_exception:
-	isr_common_fn exception_handler
+	isr_common_fn exception_handler, ret_direct
 
 isr_common_irq:
-	isr_common_fn irq_handler
+	isr_common_fn irq_handler, ret_and_reschedule
 
 %macro isr_stub_err 1
 global isr_stub_%1
@@ -78,7 +78,7 @@ isr_stub_%1:
 global isr_stub_%1
 isr_stub_%1:
 	push qword %1
-	isr_common_fn ipi_%2
+	isr_common_fn ipi_%2, ret_direct
 %endmacro
 
 ; Exceptions
@@ -334,11 +334,11 @@ isr_stub_irq 244
 isr_stub_irq 245
 isr_stub_irq 246
 isr_stub_irq 247
-isr_stub_irq 248
-isr_stub_ipi 249, sched_hint
-isr_stub_ipi 250, tlb_shootdown
-isr_stub_ipi 251, abort ; Must match interrupts.h
-isr_stub_noerr 252 ; NMI
-isr_stub_irq 253 ; LINT0
-isr_stub_irq 254 ; LINT1
+isr_stub_ipi 248, sched_hint
+isr_stub_ipi 249, tlb_shootdown
+isr_stub_ipi 250, abort ; Must match interrupts.h
+isr_stub_noerr 251 ; NMI
+isr_stub_irq 252 ; LINT0
+isr_stub_irq 253 ; LINT1
+isr_stub_irq 254 ; LAPIC timer
 isr_stub_nop 255 ; APIC Spurious interrupt vector

@@ -20,6 +20,7 @@ struct lapic_info {
 	uint8_t id;
 	uint8_t acpi_id;
 	uint8_t present;
+	uint32_t ticks_per_10ms;
 };
 
 void apic_init(void);
@@ -28,6 +29,8 @@ void lapic_enable(void);
 void lapic_eoi(uint8_t);
 uint8_t lapic_id(void);
 void lapic_send_ipi(uint8_t target, uint32_t flags);
+uint32_t lapic_timer_prepare(void);
+void lapic_timer_enable(void);
 
 void ioapic_init(void);
 void ioapic_redirect(uint32_t gsi, uint8_t source, uint16_t flags, uint8_t target_apic);

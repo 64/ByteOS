@@ -9,8 +9,8 @@ typedef uint8_t cpuid_t;
 #include "interrupts.h"
 #include "atomic.h"
 #include "limits.h"
-
-cpuid_t smp_cpu_id(void);
+#include "percpu.h"
+cpuid_t smp_cpu_id_full(void);
 void smp_init(void);
 void smp_ap_kmain(void);
 
@@ -35,7 +35,12 @@ void cpuset_dump(cpuset_t *cpus);
 
 extern atomic32_t smp_nr_cpus_ready;
 
-static inline uint64_t smp_nr_cpus(void)
+static inline uint32_t smp_nr_cpus(void)
 {
 	return atomic_read32(&smp_nr_cpus_ready);
+}
+
+static inline cpuid_t smp_cpu_id(void)
+{
+	return percpu_get(id);
 }

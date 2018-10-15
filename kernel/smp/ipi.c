@@ -15,8 +15,8 @@ void ipi_send_fixed(cpuid_t id, uint8_t vec)
 // Begins running the scheduler
 void ipi_sched_hint(struct isr_ctx *UNUSED(regs))
 {
+	lapic_eoi(IRQ_IPI_SCHED_HINT);
 	sched_run_ap();
-	panic("AP scheduler returned");
 }
 
 void ipi_abort(struct isr_ctx *UNUSED(regs))
@@ -31,4 +31,5 @@ void ipi_tlb_shootdown(struct isr_ctx *UNUSED(regs))
 		tlb_flush_single((virtaddr_t)i);
 	}
 	atomic_dec_read32(&tlb_remaining_cpus);
+	lapic_eoi(IRQ_IPI_TLB_SHOOTDOWN);
 }

@@ -8,10 +8,10 @@ section .text
 global idle_task
 idle_task:
 .loop:
-	extern kprintf
-	mov rdi, msg
-	xor rax, rax
-	call kprintf
+	;extern kprintf
+	;mov rdi, msg
+	;xor rax, rax
+	;call kprintf
 	sti
 	hlt
 	jmp .loop

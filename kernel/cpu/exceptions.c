@@ -95,7 +95,7 @@ void exception_handler(struct isr_ctx *regs)
 			panic(
 				"%s:\n"
 				"\trip: %p, rsp: %p\n"
-				"\tint_no: %u, err_code: %lu\n",
+				"\tint_no: %u, err_code: %lu",
 				exception_messages[int_no],
 				(void *)regs->rip, (void *)regs->rsp,
 				int_no, (regs->info & 0xFFFFFFFF)

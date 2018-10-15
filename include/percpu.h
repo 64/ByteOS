@@ -12,7 +12,7 @@ struct percpu {
 	struct task *current_task;
 	virtaddr_t rsp_scratch;
 	virtaddr_t tss;
-	uint32_t preempt_count;
+	uint64_t preempt_count;
 
 	cpuid_t id;
 	uint8_t apic_id;

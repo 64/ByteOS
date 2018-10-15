@@ -10,7 +10,8 @@
 
 #define IRQ_APIC_SPURIOUS 0xFF
 #define IRQ_APIC_BASE 0x30
-#define IRQ_LINT_BASE (IRQ_APIC_SPURIOUS - 2) // One for each LINT pin.
+#define IRQ_LINT_BASE (IRQ_APIC_SPURIOUS - 3) // One for each LINT pin, one for timer
+#define IRQ_LINT_TIMER (IRQ_LINT_BASE + 2)
 #define IRQ_NMI (IRQ_LINT_BASE - 1)
 
 #define IRQ_IPI_TOP (IRQ_NMI - 1)

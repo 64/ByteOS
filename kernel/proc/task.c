@@ -35,7 +35,7 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t clone_fla
 	uintptr_t kstack = TASK_KSTACK_SIZE + (uintptr_t)page_to_virt(pmm_alloc_order(TASK_KSTACK_ORDER, GFP_NONE));
 	uint64_t *stack = (uint64_t *)kstack;
 	// TODO: Remove this variable. We can work out the stack top by masking rsp
-	// given that the stack size is fixed at compile time, and allocs are aligned.
+	// given that the kernel stack size is fixed at compile time, and allocs are aligned.
 	t->rsp_original = (virtaddr_t)kstack;
 
 	// Copy MMU information and set up the kernel stack

@@ -15,4 +15,3 @@
 - [ ] Implement out of memory checks (killing a process appropriately)
 - [ ] Use unions in struct page
 - [ ] Per-CPU IDT
-- [ ] 4 cores

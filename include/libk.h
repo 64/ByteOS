@@ -29,6 +29,7 @@ __attribute__((noreturn)) void __stack_chk_fail(void);
 
 #define panic(...) do { \
 		irq_disable(); \
+		cli(); \
 		kprintf_nolock( \
 			"\n\x1B[0m--------------------------------------------------------------------------------\x1B[0m" \
 			"\x1B[1;41;37mpanic at %s:%s:%u CPU %d\x1B[0m\n", \

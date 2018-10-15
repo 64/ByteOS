@@ -13,12 +13,16 @@
 #define FORK_KTHREAD (1 << 0)
 #define FORK_UTHREAD (1 << 1)
 
+// Preempt a program after 5 time slices
+#define MAX_SLICES 5
+
 typedef int32_t tgid_t;
 typedef int32_t tid_t;
 
 struct sched_entity {
 	struct rb_node node;
 	uint64_t vruntime; // Key for red-black tree
+	uint32_t num_slices; // Number of time slices since was last preempted
 };
 
 struct task {
@@ -26,9 +30,7 @@ struct task {
 	virtaddr_t rsp_top;
 	virtaddr_t rsp_original;
 	struct mmu_info *mmu; // For kernel threads, this is &kernel_mmu
-
-	// Scheduler information
-	struct dlist_entry list;
+	uint64_t flags; // Includes TASK_NEED_PREEMPT flag
 
 	// Process state
 	enum task_state {
@@ -38,9 +40,6 @@ struct task {
 		TASK_BLOCKED,
 		TASK_ZOMBIE,
 	} state;
-
-	// Includes TASK_NEED_PREEMPT flag
-	uint64_t flags; 
 
 	// Task identifiers
 	tid_t tid;

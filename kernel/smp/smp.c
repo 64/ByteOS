@@ -20,8 +20,8 @@ atomic32_t smp_nr_cpus_ready = { 0 };
 #define TRAMPOLINE_START 0x1000
 // TODO: Add a define for the kernel stack size
 
-// This is slow, but we store the value in the per-CPU data structure, so use that instead
-cpuid_t smp_cpu_id(void)
+// TODO: This is slow, but we store the value in the per-CPU data structure, so use that instead
+cpuid_t smp_cpu_id_full(void)
 {
 	cpuid_t lid = lapic_id();
 	for (size_t i = 0; i < lapic_list_size; i++)
@@ -65,7 +65,6 @@ static void smp_boot_ap(size_t index)
 	smp_ap_stack = NULL;
 
 	// Check flag is set
-	klog("smp", "CPU %zu online\n", index);
 }
 
 // Boots all the cores
@@ -99,6 +98,10 @@ void smp_init(void)
 		pmm_free_order(virt_to_page((virtaddr_t)stack_top), 2);
 	}
 
+	// Wait for other CPUs to fully finish initialisation
+	while (smp_nr_cpus() < lapic_list_size)
+		;
+
 	klog("smp", "Finished AP boot sequence\n");
 }
 
@@ -108,5 +111,6 @@ void smp_ap_kmain(void)
 	irq_enable();
 	syscall_enable();
 
+	klog("smp", "CPU %u online\n", smp_cpu_id());
 	atomic_inc_read32(&smp_nr_cpus_ready);
 }

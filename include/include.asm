@@ -16,7 +16,7 @@
 %define PERCPU_CURRENT gs:0x0
 %define PERCPU_RSP_SCRATCH gs:0x8
 %define PERCPU_TSS gs:0x10
-%define PERCPU_PREEMPT_COUNT 0x18
+%define PERCPU_PREEMPT_COUNT gs:0x18
 %define PERCPU_ID gs:0x1C
 %define PERCPU_RUN_QUEUE gs:0x20
 
