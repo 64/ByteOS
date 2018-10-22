@@ -39,7 +39,7 @@ struct mmap {
 
 // Describes a contiguous block of memory
 struct zone {
-	struct slist_entry list;
+	struct slist_node list;
 	physaddr_t pa_start; // Start of available memory in zone
 	size_t len; // Length of available memory in zone
 	struct page *free_lists[MAX_ORDER];
@@ -47,7 +47,7 @@ struct zone {
 
 // Describes a region of virtual memory
 struct vm_area {
-	struct slist_entry list;
+	struct slist_node list;
 	uintptr_t base;
 	size_t len;
 	uint32_t type;

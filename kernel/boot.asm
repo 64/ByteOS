@@ -9,10 +9,15 @@ header_start:
 	; Checksum
 	dd 0x100000000 - (0xE85250D6 + 0 + (header_end - header_start))
 
+	; Page align modules (simplifies initrd logic)
+	dw 6
+	dw 0
+	dd 8
+
 	; Required end tag
-	dw 0 ; Type
-	dw 0 ; Flags
-	dd 8 ; Size
+	dw 0
+	dw 0
+	dd 8
 header_end:
 
 section .bss

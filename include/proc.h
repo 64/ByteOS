@@ -4,6 +4,7 @@
 
 #include "mm.h"
 #include "smp.h"
+#include "fs.h"
 #include "ds/rbtree.h"
 
 #define TASK_KTHREAD (1 << 0)
@@ -44,6 +45,9 @@ struct task {
 	// Task identifiers
 	tid_t tid;
 	tgid_t tgid;
+
+	// VFS information
+	struct path *root, *cwd;
 
 	cpuset_t affinity; // Defines which processors this task can run on
 

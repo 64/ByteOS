@@ -16,6 +16,7 @@
 #define APIC_TIMER_PERIODIC 0x20000U
 
 #define APIC_REG_ID 0x20
+#define APIC_REG_VERSION 0x30
 #define APIC_REG_EOI 0xB0
 #define APIC_REG_SPURIOUS 0xF0U
 #define APIC_REG_LINT0 0x350U
@@ -155,6 +156,8 @@ void lapic_enable(void)
 
 	// Make sure APIC is globally enabled
 	kassert((msr_read(0x1B) & (1 << 11)) > 0); 
+
+	klog_verbose("lapic", "LAPIC Version: %u\n", lapic_read(APIC_REG_VERSION) & 0xFF);
 
 	for (size_t i = 0; i < nmi_list_size; i++)
 		if (nmi_list[i]->acpi_id == lapic->acpi_id || nmi_list[i]->acpi_id == 0xFF)

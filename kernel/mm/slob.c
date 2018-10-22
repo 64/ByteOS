@@ -19,13 +19,13 @@
 static spinlock_t slob_lock;
 
 struct slob_large_alloc {
-	struct slist_entry list;
+	struct slist_node list;
 	virtaddr_t addr;
 	uint8_t order;
 };
 
 struct slob_header {
-	struct slist_entry list; // Pointer to next
+	struct slist_node list; // Pointer to next
 	size_t units; // bytes = units * sizeof(struct slob_header)
 };
 

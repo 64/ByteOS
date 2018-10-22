@@ -19,7 +19,7 @@ struct page {
 	//union {
 		// PMM information
 		struct {
-			struct dlist_entry list;
+			struct dlist_node list;
 			int8_t order;
 		};
 		struct {

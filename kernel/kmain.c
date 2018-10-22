@@ -13,12 +13,14 @@
 #include "drivers/acpi.h"
 #include "drivers/smbios.h"
 
+struct multiboot_info *mboot_info;
+
 void kmain(physaddr_t);
 
 void kmain(physaddr_t mboot_info_phys)
 {
 	// Get the virtual address of the multiboot info structure
-	struct multiboot_info *mboot_info_virt = phys_to_kern(mboot_info_phys);
+	mboot_info = phys_to_kern(mboot_info_phys);
 
 	// Initialise our per-CPU data area
 	percpu_init_bsp();
@@ -27,7 +29,7 @@ void kmain(physaddr_t mboot_info_phys)
 	vmm_init();
 
 	// Create the bootstrapping memory allocator
-	struct mmap *mem_map = mmap_init(mboot_info_virt);
+	struct mmap *mem_map = mmap_init(mboot_info);
 
 	// Linearly map all physical memory
 	vmm_map_all(mem_map);
@@ -63,6 +65,9 @@ void kmain(physaddr_t mboot_info_phys)
 
 	// Boot all the cores
 	smp_init();
+
+	// Enable the vfs
+	vfs_init();
 
 	// Run the scheduler
 	sched_run_bsp();

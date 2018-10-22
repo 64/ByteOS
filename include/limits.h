@@ -3,6 +3,8 @@
 #define MAX_CORES 20
 #define MAX_ORDER 12
 
+#define NAME_MAX 32
+
 #define PAGE_SIZE 0x1000
 
 #define KERNEL_TEXT_BASE 0xFFFFFFFF80000000

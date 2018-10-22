@@ -29,6 +29,12 @@ static inline uint32_t atomic_dec_read32(atomic32_t *a)
 	return __atomic_sub_fetch(&a->var, 1, __ATOMIC_SEQ_CST);
 }
 
+static inline void atomic_write32(atomic32_t *a, uint32_t val)
+{
+	__atomic_store_n(&a->var, val, __ATOMIC_SEQ_CST);
+}
+
+
 static inline uint64_t atomic_read64(atomic64_t *a)
 {
 	return __atomic_load_n(&a->var, __ATOMIC_SEQ_CST);
@@ -42,6 +48,11 @@ static inline uint64_t atomic_inc_read64(atomic64_t *a)
 static inline uint64_t atomic_dec_read64(atomic64_t *a)
 {
 	return __atomic_sub_fetch(&a->var, 1, __ATOMIC_SEQ_CST);
+}
+
+static inline void atomic_write64(atomic64_t *a, uint32_t val)
+{
+	__atomic_store_n(&a->var, val, __ATOMIC_SEQ_CST);
 }
 
 static inline void kref_inc(kref_t *k)

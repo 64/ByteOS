@@ -1,4 +1,4 @@
-#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma once
 
 /*  multiboot2.h - Multiboot 2 header file.  */
 /*  Copyright (C) 1999,2003,2007,2008,2009,2010  Free Software Foundation, Inc.
@@ -21,8 +21,7 @@
  *  IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef MULTIBOOT_HEADER
-#define MULTIBOOT_HEADER 1
+#pragma GCC diagnostic ignored "-Wpedantic"
 
 /* How many bytes from the start of the file we search for the header.  */
 #define MULTIBOOT_SEARCH			32768
@@ -88,8 +87,6 @@
 
 #define MULTIBOOT_CONSOLE_FLAGS_CONSOLE_REQUIRED 1
 #define MULTIBOOT_CONSOLE_FLAGS_EGA_TEXT_SUPPORTED 2
-
-#ifndef ASM_FILE
 
 typedef unsigned char		multiboot_uint8_t;
 typedef unsigned short		multiboot_uint16_t;
@@ -420,6 +417,4 @@ struct multiboot_tag_load_base_addr
 	multiboot_uint32_t load_base_addr;
 };
 
-#endif /* ! ASM_FILE */
-
-#endif /* ! MULTIBOOT_HEADER */
+extern struct multiboot_info *mboot_info;
