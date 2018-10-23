@@ -36,7 +36,7 @@ LIBK_OBJ	:= $(addsuffix .o,$(shell find libk -not -path "*tests*" -name '*.c' -o
 KERNEL_OBJ_RAW	:= $(addsuffix .o,$(shell find kernel -path kernel/crt -prune -type f -o -name '*.c' -o -name '*.asm'))
 KERNEL_OBJ_ALL	:= $(CRTI_OBJ) $(CRTN_OBJ) $(KERNEL_OBJ_RAW) $(LIBK_OBJ)
 KERNEL_OBJ	:= $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(KERNEL_OBJ_RAW) $(LIBK_OBJ) $(CRTEND_OBJ) $(CRTN_OBJ)
-KERNEL_SRC_DEPS := include/gen/syscall_gen.h include/gen/syscall_gen.c include/gen/syscall_gen.asm
+KERNEL_SRC_DEPS := include/gen/syscall_gen.h include/gen/err_gen.h include/gen/syscall_gen.c include/gen/syscall_gen.asm
 
 DEPFILES	:= $(patsubst %.o,%.d,$(KERNEL_OBJ_ALL))
 
@@ -170,5 +170,8 @@ include/gen/syscall_gen.c:
 	@$(PYTHON) util/syscall_gen.py c
 include/gen/syscall_gen.asm: util/syscall_gen.py
 	@$(PYTHON) util/syscall_gen.py asm
+# Error generation code
+include/gen/err_gen.h: util/err_gen.py
+	@$(PYTHON) util/err_gen.py
 
 -include $(DEPFILES)

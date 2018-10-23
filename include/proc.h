@@ -99,3 +99,5 @@ void runq_balance_pull(void);
 struct task *runq_next(void);
 
 void idle_task(void);
+
+void init_kernel(void);

@@ -28,6 +28,7 @@
 	((uintptr_t)_val & ((uintptr_t)_align - 1)) == 0; })
 
 #define UNUSED(x) x __attribute__((unused))
+#define WARN_UNUSED __attribute__((warn_unused_result))
 
 void __attribute__((error("Static assertion failed"))) __error_fn(void);
 #define _static_assert(cond) ({ \

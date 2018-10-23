@@ -9,7 +9,15 @@ static struct inode *initrd_alloc_inode(struct super_block *super)
 	struct initrd_inode *rd_inode = kmalloc(sizeof *rd_inode, KM_NONE);
 	memset(rd_inode, 0, sizeof *rd_inode);
 	rd_inode->i.sb = super;
+	kprintf("%p\n", &rd_inode->i);
 	return &rd_inode->i;
+}
+
+static void initrd_dealloc_inode(struct inode *inode)
+{
+	struct initrd_inode *rd_inode = container_of(inode, struct initrd_inode, i);
+	if (rd_inode != NULL)
+		kfree(rd_inode);
 }
 
 static err_t initrd_read_inode(struct super_block *sb, struct inode *inode)
@@ -49,7 +57,7 @@ static struct super_operations initrd_super_ops = {
 	.alloc_inode = initrd_alloc_inode,
 	.read_inode = initrd_read_inode,
 	.write_inode = NULL,
-	.dealloc_inode = NULL
+	.dealloc_inode = initrd_dealloc_inode
 };
 
 struct super_block *initrd_get_super(void)

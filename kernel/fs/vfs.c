@@ -34,8 +34,11 @@ err_t vfs_mount(struct inode *mount_point, dev_t dev)
 	return 0;
 }
 
+// Must call inode_put after the result is used
 err_t vfs_lookup(struct inode *dir, const char *path, size_t len, struct inode **result)
 {
+	*result = NULL;
+
 	if (!I_ISDIR(dir))
 		return ENOTDIR;
 	else if (!HASOP(dir, lookup))

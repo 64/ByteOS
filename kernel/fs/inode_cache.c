@@ -1,14 +1,15 @@
 #include "fs.h"
 #include "libk.h"
-#include "ds/linked.h"
+#include "mutex.h"
+#include "ds/hash.h"
 
 #define TAB_SHIFT 8
 #define TAB_SIZE (1 << TAB_SHIFT)
 
 static struct {
-	rwlock_t rw;
+	mutex_t mutex;
 
-	struct slist_node buckets[TAB_SIZE];
+	struct hlist_bucket buckets[TAB_SIZE];
 } inode_cache;
 
 // https://gist.github.com/lh3/974ced188be2f90422cc
@@ -28,47 +29,65 @@ static inline uint64_t hash_inode(ino_t ino, dev_t dev)
 struct inode *inode_get(struct super_block *sb, ino_t ino)
 {
 	uint64_t hash = hash_inode(ino, sb->dev);
+	struct inode *inode = NULL;
+	struct hlist_bucket *bucket = &inode_cache.buckets[hash];
 
-	write_lock(&inode_cache.rw);
+	mutex_lock(&inode_cache.mutex);
 	
-	// If in list
-	// 	Remove from list
-	struct inode *cur = slist_entry(inode_cache.buckets[hash].next, struct inode, node);
-	for (struct inode *prev = NULL; cur != NULL; cur = slist_get_next(cur, node), prev = cur) {
+	// If in list, return pointer
+	hlist_foreach(cur, struct inode, node, bucket) {
 		if (cur->ino == ino && cur->sb->dev == sb->dev) {
-			kref_inc(&cur->rc);
-
-			// Delete from list
-			if (prev == NULL)
-				inode_cache.buckets[hash].next = NULL;
-			else
-				slist_set_next(prev, node, slist_get_next(cur, node));
+			inode = cur;
+			break;
 		}
 	}
 
 	// Else alloc and read
-	if (!cur) {
-		kassert(HASOP(sb, alloc_inode));
-		cur = sb->ops->alloc_inode(sb);
-		kassert(cur != NULL); // TODO: Fix
-		cur->ino = ino;
+	if (inode == NULL) {
+		kassert_dbg(HASOP(sb, alloc_inode));
+		inode = sb->ops->alloc_inode(sb);
+		kassert(inode != NULL); // TODO: Add kmalloc can't fail requirement
+		inode->ino = ino;
 
 		kassert(HASOP(sb, read_inode));
-		err_t rv = sb->ops->read_inode(sb, cur);
+		err_t rv = sb->ops->read_inode(sb, inode);
 		if (rv) {
 			klog_warn("vfs", "read_inode fail: %ld\n", rv);
 
-			kassert(HASOP(sb, dealloc_inode));
-			sb->ops->dealloc_inode(cur);
+			kassert_dbg(HASOP(sb, dealloc_inode));
+			sb->ops->dealloc_inode(inode);
 
-			cur = NULL;		
+			inode = NULL;		
 		} else {
 			// Add to list
-			__slist_append(&inode_cache.buckets[hash], &cur->node);
+			kassert_dbg(kref_read(&inode->rc) == 0);
+			hlist_add(bucket, &inode->node);
 		}
 	}
 
-	write_unlock(&inode_cache.rw);
+	kref_inc(&inode->rc);
 
-	return cur;
+	mutex_unlock(&inode_cache.mutex);
+
+	return inode;
+}
+
+void inode_put(struct inode *inode)
+{
+	kprintf("%p\n", inode);
+	uint64_t hash = hash_inode(inode->ino, inode->sb->dev);
+
+	mutex_lock(&inode_cache.mutex);
+
+	if (kref_dec_read(&inode->rc) == 0) {
+		// No references left, delete this from the cache safely
+		hlist_remove(&inode_cache.buckets[hash], &inode->node);
+
+		kassert_dbg(HASOP(inode->sb, dealloc_inode));
+		inode->sb->ops->dealloc_inode(inode);
+	}
+
+	mutex_unlock(&inode_cache.mutex);
+
+	// TODO: Delete inode from underlying superblock
 }

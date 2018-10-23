@@ -43,7 +43,7 @@ struct inode {
 	struct inode_operations *ops;
 
 	struct inode *mounted; // When mode is I_MOUNT, this points to the mounted inode
-	struct slist_node node; // Used by inode_cache
+	struct dlist_node node; // Used by inode_cache
 };
 
 struct inode_operations {
@@ -55,8 +55,9 @@ struct inode_operations {
 
 extern struct inode vfs_root;
 
-struct inode *inode_get(struct super_block *sb, ino_t ino);
+struct inode *inode_get(struct super_block *, ino_t);
+void inode_put(struct inode *);
 
 void vfs_init(void);
-err_t vfs_mount(struct inode *mount_point, dev_t dev);
-err_t vfs_lookup(struct inode *dir, const char *path, size_t len, struct inode **result);
+RETURNS_ERROR vfs_mount(struct inode *mount_point, dev_t dev);
+RETURNS_ERROR vfs_lookup(struct inode *dir, const char *path, size_t len, struct inode **result);

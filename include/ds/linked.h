@@ -12,13 +12,9 @@ struct dlist_node {
 	struct dlist_node *next, *prev;
 };
 
-#define slist_entry(ptr, type, member) ({ \
-	const struct slist_node *__node = ptr; \
-	__node == NULL ? NULL : container_of(__node, type, member); }) 
+#define slist_entry(ptr, type, member) container_of(ptr, type, member)
 
-#define dlist_entry(ptr, type, member) ({ \
-	const struct dlist_node *__node = ptr; \
-	__node == NULL ? NULL : container_of(__node, type, member); }) 
+#define dlist_entry(ptr, type, member) container_of(ptr, type, member)
 
 #define slist_get_next(ptr, member) ({ \
 	const struct slist_node *__next = (ptr)->member.next; \

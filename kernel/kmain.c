@@ -66,9 +66,6 @@ void kmain(physaddr_t mboot_info_phys)
 	// Boot all the cores
 	smp_init();
 
-	// Enable the vfs
-	vfs_init();
-
 	// Run the scheduler
 	sched_run_bsp();
 }
