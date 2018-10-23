@@ -4,7 +4,7 @@
 #include "atomic.h"
 #include "limits.h"
 #include "err.h"
-#include "spin.h"
+#include "sync.h"
 #include "ds/linked.h"
 
 #define HASOP(value, op) ((value)->ops && (value)->ops->op)

@@ -71,7 +71,7 @@ static inline pte_t alloc_pgtab(unsigned int alloc_flags)
 void vmm_dump_tables(struct mmu_info *mmu)
 {
 	// Careful of deadlocks here
-	read_lock(&mmu->pgtab_lock);
+	read_spin_lock(&mmu->pgtab_lock);
 	for (size_t i = 0; i < (1 << 7); i++) {
 		struct page_table *pgtab = pgtab_extract_virt_addr(mmu->p4, i);
 		if (pgtab == NULL)
@@ -79,7 +79,7 @@ void vmm_dump_tables(struct mmu_info *mmu)
 		kprintf("P3: %lx\n", mmu->p4->pages[i] & ~PTE_ADDR_MASK);
 		dump_page_tables_p2(pgtab, 0xFFFF000000000000 | (i << 39));
 	}
-	read_unlock(&mmu->pgtab_lock);
+	read_spin_unlock(&mmu->pgtab_lock);
 }
 
 static void dump_page_tables_p2(struct page_table *p3, uintptr_t addr_bits)
@@ -147,15 +147,15 @@ pte_t *vmm_get_pte(struct mmu_info *mmu, const void *addr)
 bool vmm_has_flags(struct mmu_info *mmu, void *addr, uint64_t flags)
 {
 	kassert_dbg(addr != NULL);
-	read_lock(&mmu->pgtab_lock);
+	read_spin_lock(&mmu->pgtab_lock);
 	pte_t *pte = vmm_get_pte(mmu, addr);
 	if (pte == NULL) {
-		read_unlock(&mmu->pgtab_lock);
+		read_spin_unlock(&mmu->pgtab_lock);
 		return false;
 	}
 
 	bool rv = (*pte & flags) != 0;
-	read_unlock(&mmu->pgtab_lock);
+	read_spin_unlock(&mmu->pgtab_lock);
 	return rv;
 }
 
@@ -175,7 +175,7 @@ void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsign
 	// When the bit is on, execution is disabled, so we need to toggle the bit
 	flags ^= PAGE_EXECUTABLE;
 
-	write_lock(&mmu->pgtab_lock);
+	write_spin_lock(&mmu->pgtab_lock);
 
 	struct page_table *p3_table = pgtab_extract_virt_addr(mmu->p4, p4_index);
 	if (p3_table == NULL) {
@@ -227,6 +227,6 @@ void vmm_map_page(struct mmu_info *mmu, physaddr_t phys, virtaddr_t virt, unsign
 	tlb_flush_single(virt);
 
 release_and_ret:
-	write_unlock(&mmu->pgtab_lock);
+	write_spin_unlock(&mmu->pgtab_lock);
 	return;
 }

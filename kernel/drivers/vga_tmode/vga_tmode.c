@@ -4,7 +4,7 @@
 #include "drivers/cansid.h"
 #include "drivers/serial.h"
 #include "asm.h"
-#include "spin.h"
+#include "sync.h"
 #include "libk.h"
 
 // No spinlock here. All writes are serialised by kprintf.

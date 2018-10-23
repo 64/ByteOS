@@ -7,7 +7,7 @@
 #include "syscall.h"
 #include "drivers/apic.h"
 #include "drivers/pit.h"
-#include "spin.h"
+#include "sync.h"
 
 extern uintptr_t smp_trampoline_start;
 extern uintptr_t smp_trampoline_end;

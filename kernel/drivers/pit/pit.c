@@ -1,7 +1,7 @@
 #include "libk.h"
 #include "util.h"
 #include "asm.h"
-#include "spin.h"
+#include "sync.h"
 #include "interrupts.h"
 #include "drivers/pit.h"
 #include "drivers/apic.h"

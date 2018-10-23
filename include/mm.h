@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include "multiboot2.h"
 #include "smp.h"
-#include "spin.h"
+#include "sync.h"
 #include "atomic.h"
 #include "mm_types.h"
 #include "ds/linked.h"

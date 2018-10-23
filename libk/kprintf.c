@@ -2,7 +2,7 @@
 #include <stdbool.h>
 
 #include "libk.h"
-#include "spin.h"
+#include "sync.h"
 #include "drivers/vga_tmode.h"
 #include "drivers/serial.h"
 

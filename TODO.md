@@ -13,5 +13,6 @@
 - [ ] Per-CPU IDT
 - [ ] RAII style mutex macro
 - [ ] Rewrite the shitty bits
-- [ ] strerror
-- [ ] Generic hash table
+- [ ] Inode locking
+- [ ] Proper mutex, rename rwspin
+- [ ] Process table

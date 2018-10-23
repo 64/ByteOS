@@ -5,7 +5,7 @@
 
 #include "limits.h"
 #include "smp.h"
-#include "spin.h"
+#include "sync.h"
 #include "atomic.h"
 #include "addr.h"
 #include "ds/linked.h"
@@ -62,7 +62,7 @@ struct vm_area {
 
 struct mmu_info {
 	struct page_table *p4; // This should stay as the first member
-	rwlock_t pgtab_lock;
+	rwspinlock_t pgtab_lock;
 
 	// users: Number of threads with this mmu_info set as active
 	kref_t users;

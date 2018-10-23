@@ -58,10 +58,14 @@ static void page_fault(struct isr_ctx *regs)
 
 	if (current != NULL) {
 		virtaddr_t aligned_addr = (virtaddr_t)(faulting_address & ~(PAGE_SIZE - 1));
-		write_lock(&current->mmu->pgtab_lock);
+
+		write_spin_lock(&current->mmu->pgtab_lock);
+
 		pte_t *pte = vmm_get_pte(current->mmu, aligned_addr);
 		bool done = regs->info & PAGE_FAULT_RW && cow_handle_write(pte, aligned_addr);
-		write_unlock(&current->mmu->pgtab_lock);
+
+		write_spin_unlock(&current->mmu->pgtab_lock);
+
 		if (done)
 			return;
 	}

@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 #include "atomic.h"
-#include "spin.h"
+#include "sync.h"
 #include "limits.h"
 #include "ds/linked.h"
 

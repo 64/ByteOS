@@ -2,7 +2,7 @@
 #include "multiboot2.h"
 #include "mm.h"
 #include "smp.h"
-#include "spin.h"
+#include "sync.h"
 #include "interrupts.h"
 #include "proc.h"
 #include "util.h"

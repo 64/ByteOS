@@ -1,7 +1,7 @@
 #include "mm.h"
 #include "libk.h"
 #include "util.h"
-#include "spin.h"
+#include "sync.h"
 
 #define UNIT sizeof(struct slob_header)
 

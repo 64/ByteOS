@@ -1,6 +1,6 @@
 #pragma once
 
-#include "spin.h"
+#include "sync.h"
 
 // TODO: Add sleeping
 
