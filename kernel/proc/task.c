@@ -79,31 +79,32 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t clone_fla
 	cpuset_copy(&t->affinity, &parent->affinity);
 
 	// Add the task to the scheduler
-	t->state = TASK_NOT_STARTED;
+	t->state = TASK_S_NOT_STARTED;
 	return t;
 }
 
 void task_wakeup(struct task *t)
 {
-	if (t->state == TASK_RUNNING)
+	if (t->flags & TASK_RUNNING)
 		klog_warn("task", "Task tried to wake itself\n");
 
-	if (t->state != TASK_RUNNABLE && t->state != TASK_RUNNING) {
-		t->state = TASK_RUNNABLE;
+	if (t->state != TASK_S_RUNNABLE) {
+		t->state = TASK_S_RUNNABLE;
 		sched_add(t);
 	}
 }
 
 void task_exit(struct task *t, int UNUSED(code))
 {
-	if (t->state == TASK_RUNNABLE || TASK_RUNNING)
+	if (t->state == TASK_S_RUNNABLE)
 		runq_remove(t);
-	t->state = TASK_ZOMBIE;
+
+	t->state = TASK_S_ZOMBIE;
 
 	mmu_dec_users(t->mmu);
 
 	if (t == current) {
-		// TODO: Reap ourselves
+		// TODO: Put ourselves on scheduler cleanup list if necessary
 		sched_yield();
 		panic("Schedule returned at the end of task_exit");
 	}

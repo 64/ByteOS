@@ -113,4 +113,6 @@ void smp_ap_kmain(void)
 
 	klog("smp", "CPU %u online\n", smp_cpu_id());
 	atomic_inc_read32(&smp_nr_cpus_ready);
+
+	sched_run_ap();
 }

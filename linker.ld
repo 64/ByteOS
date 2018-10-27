@@ -23,6 +23,11 @@ SECTIONS
         {
                 _text_begin_phys = . - offset;
                 *(.text)
+                *(.text*)
+		*(.init)
+		*(.fini)
+		*(.ctors)
+		*(.dtors)
                 _text_end_phys = . - offset;
         }
 

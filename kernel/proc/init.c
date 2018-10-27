@@ -11,12 +11,12 @@ void init_kernel(void)
 {
 	vfs_init();
 
-	struct inode *out;
+	/*struct inode *out;
 	err_t e;
 	if ((e = vfs_lookup(&vfs_root, "/", 2, &out)))
 		panic("Failed to find root directory: %s", strerror(e));
 
-	inode_put(out);
+	inode_put(out);*/
 
 	task_execve(init_user, NULL, 0);
 }

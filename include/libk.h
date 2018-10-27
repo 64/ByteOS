@@ -7,6 +7,7 @@
 #else
 #include "asm.h"
 #include "smp.h"
+#include "sync.h"
 #define LIBK_FN(name) name
 #endif
 
@@ -25,9 +26,10 @@ __attribute__((noreturn)) void abort_self(void);
 
 #ifndef LIBK_TEST
 __attribute__((noreturn)) void __stack_chk_fail(void);
+extern spinlock_t kprintf_lock;
 #endif
 
-#define panic(...) do { \
+#define panic_nolock(...) ({ \
 		irq_disable(); \
 		cli(); \
 		kprintf_nolock( \
@@ -37,7 +39,12 @@ __attribute__((noreturn)) void __stack_chk_fail(void);
 		); \
 		kprintf_nolock(__VA_ARGS__); \
 		abort(); \
-	} while(0)
+	})
+
+#define panic(...) ({ \
+		spin_lock(&kprintf_lock); \
+		panic_nolock(__VA_ARGS__); \
+	})
 
 #define kassert(condition) do { \
 		if (!(condition)) \

@@ -36,8 +36,15 @@ void ps2kbd_init(void)
 
 	// Don't send any commands after this point, since the interrupt handler will eat the data
 	uint8_t vec = ISA_TO_INTERRUPT(1);
-	irq_register_handler(vec, ps2kbd_irq_handler);
-	irq_unmask(ISA_TO_INTERRUPT(1));
+
+	struct isr_info ps2kbd_info = {
+		.type = ISR_IRQ,
+		.handler = ps2kbd_irq_handler,
+	};
+
+	isr_set_info(vec, &ps2kbd_info);
+	isr_irq_unmask(vec);
+
 	klog("ps2kbd", "Initialised keyboard on IRQ %u\n", vec);
 
 	// Flush the output buffer (again)

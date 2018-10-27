@@ -9,7 +9,6 @@ static struct inode *initrd_alloc_inode(struct super_block *super)
 	struct initrd_inode *rd_inode = kmalloc(sizeof *rd_inode, KM_NONE);
 	memset(rd_inode, 0, sizeof *rd_inode);
 	rd_inode->i.sb = super;
-	kprintf("%p\n", &rd_inode->i);
 	return &rd_inode->i;
 }
 

@@ -33,6 +33,9 @@ switch_to:
 	extern mmu_switch
 	call mmu_switch
 
+	; Re-enable preemption
+	lock dec qword [PERCPU_PREEMPT_COUNT]
+
 	pop r15
 	pop r14
 	pop r13

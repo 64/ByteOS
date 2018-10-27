@@ -28,13 +28,16 @@ void runq_init(struct task *initial_parent)
 
 	// Create the idle task
 	struct task *idle = task_fork(initial_parent, idle_task, TASK_KTHREAD, NULL);
+
+	// Pin to this CPU
 	cpuset_clear(&idle->affinity);
 	cpuset_set_id(&idle->affinity, percpu_get(id), 1);
 	cpuset_pin(&idle->affinity);
-	idle->state = TASK_RUNNABLE;
-	idle->tid = 0; // Idle task always has ID 0
-	idle->tgid = 0;
-	idle->flags = TASK_NEED_PREEMPT; // This is always set
+	
+	// Set flags
+	idle->state = TASK_S_RUNNABLE;
+	idle->tid = TID_IDLE; // Idle task always has ID 0
+
 	rq->idle = idle;
 }
 
@@ -72,7 +75,7 @@ void runq_add(struct task *t)
 	spin_lock(&rq->lock);
 
 	// If this hasn't run in a while, set the vruntime to the min_vruntime
-	if (t->state == TASK_NOT_STARTED || t->state == TASK_BLOCKED)
+	if (t->state != TASK_S_RUNNABLE)
 		t->sched.vruntime = min_vruntime(rq);
 
 	tree_insert(rq, t);

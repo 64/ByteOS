@@ -7,15 +7,16 @@
 
 #define IDT_INSTALL_CLI(index, ist) ({ \
 	void ISR_NAME(index)(void); \
-	idt_set_isr(index, ISR_NAME(index), ist, 0x8E); })
+	idt_set_gate(index, ISR_NAME(index), ist, 0x8E); })
 
 #define IDT_INSTALL_STI(index, ist) ({ \
 	void ISR_NAME(index)(void); \
-	idt_set_isr(index, ISR_NAME(index), ist, 0x8F); })
+	idt_set_gate(index, ISR_NAME(index), ist, 0x8F); })
 
-void idt_set_isr(uint8_t index, virtaddr_t entry, uint8_t ist, uint8_t type_attr)
+extern struct idt_entry idt64[256];
+
+void idt_set_gate(uint8_t index, virtaddr_t entry, uint8_t ist, uint8_t type_attr)
 {
-	kassert(ist == 0 || index < 32);
 	uintptr_t p = (uintptr_t)entry;
 	struct idt_entry e = {
 		.offset_low = (p & 0xFFFF),
@@ -282,7 +283,7 @@ void idt_init(void)
 	IDT_INSTALL_STI(249, IST_NONE);
 	IDT_INSTALL_STI(250, IST_NONE);
 	IDT_INSTALL_STI(251, IST_NONE);
-	IDT_INSTALL_CLI(252, IST_NONE); // NMI
+	IDT_INSTALL_CLI(252, IST_NMI); // NMI
 	IDT_INSTALL_STI(253, IST_NONE);
 	IDT_INSTALL_STI(254, IST_NONE);
 	IDT_INSTALL_STI(255, IST_NONE);

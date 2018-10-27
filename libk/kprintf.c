@@ -9,7 +9,7 @@
 #define to_hex_char(x) ((x) < 10 ? (x) + '0' : (x) - 10 + 'A')
 #define ATOI_BUFLEN 256
 
-static spinlock_t kprintf_lock;
+spinlock_t kprintf_lock;
 
 static inline void kprintf_write_char(char c)
 {

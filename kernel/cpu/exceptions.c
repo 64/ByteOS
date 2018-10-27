@@ -43,7 +43,7 @@ static const char *const exception_messages[32] = {
 	"(reserved exception 31)"
 };
 
-static void page_fault(struct isr_ctx *regs)
+static void page_fault_handler(struct isr_ctx *regs)
 {
 	uintptr_t faulting_address;
 	asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
@@ -85,12 +85,12 @@ kernel_panic:
 	);
 }
 
-void exception_handler(struct isr_ctx *regs)
+static void exception_handler(struct isr_ctx *regs)
 {
 	uint8_t int_no = (uint8_t)(regs->info >> 32);
 	switch (int_no) {
 		case INT_PAGE_FAULT:
-			page_fault(regs);
+			__builtin_unreachable();
 			break;
 		case IRQ_NMI:
 			int_no = 2;
@@ -105,5 +105,25 @@ void exception_handler(struct isr_ctx *regs)
 				int_no, (regs->info & 0xFFFFFFFF)
 			);
 	}
+}
+
+void exceptions_init(void)
+{
+	for (uint8_t i = 0; i < 32; i++) {
+		struct isr_info info = {
+			.type = ISR_EXCEPTION,
+			.handler = i == INT_PAGE_FAULT ? exception_handler : page_fault_handler,
+		};
+
+		isr_set_info(i, &info);
+	}
+
+	// Set handler for NMI
+	struct isr_info info = {
+		.type = ISR_EXCEPTION,
+		.handler = exception_handler,
+	};
+
+	isr_set_info(IRQ_NMI, &info);
 }
 

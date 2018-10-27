@@ -23,6 +23,14 @@ long_mode_entry:
 	extern vga_tmode_init
 	call vga_tmode_init
 
+	; Set up BSP per-CPU data area
+	extern percpu_init_bsp
+	call percpu_init_bsp
+
+	; Initialise scheduler (set dummy task)
+	extern sched_init
+	call sched_init
+
 	; Load interrupt descriptor table
 	extern interrupts_init
 	call interrupts_init

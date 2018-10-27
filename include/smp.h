@@ -10,6 +10,7 @@ typedef uint8_t cpuid_t;
 #include "atomic.h"
 #include "limits.h"
 #include "percpu.h"
+
 cpuid_t smp_cpu_id_full(void);
 void smp_init(void);
 void smp_ap_kmain(void);

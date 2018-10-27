@@ -43,7 +43,17 @@ struct isr_ctx {
 	uint64_t ss;
 };
 
-typedef void (*irq_handler_t)(struct isr_ctx *);
+typedef void (*isr_handler_t)(struct isr_ctx *);
+
+struct isr_info {
+	enum isr_type {
+		ISR_IRQ, // Normal IRQs that require EOI
+		ISR_EXCEPTION, // CPU exceptions like page faults
+		ISR_IPI, // IPIs like TLB shootdown
+		ISR_NOP, // NOP for spurious interrupts
+	} type;
+	isr_handler_t handler;
+};
 
 struct idt_entry {
 	uint16_t offset_low;
@@ -55,18 +65,15 @@ struct idt_entry {
 	uint32_t __zero;
 };
 
-extern struct idt_entry idt64[256];
-
-void exception_handler(struct isr_ctx *);
+void exceptions_init(void);
 
 void idt_init(void);
-void idt_set_isr(uint8_t index, virtaddr_t entry, uint8_t ist, uint8_t type_attr);
+void idt_load(void); // Defined in isr_stubs.asm (TODO: should really be in flush.asm)
+void idt_set_gate(uint8_t index, virtaddr_t entry, uint8_t ist, uint8_t type_attr);
 
-void load_idt(void);
-
-void irq_init(void);
-void irq_handler(struct isr_ctx *);
-void irq_eoi(uint8_t);
-void irq_mask(uint8_t);
-void irq_unmask(uint8_t);
-void irq_register_handler(uint8_t vec, irq_handler_t irq);
+void isr_init(void);
+void isr_set_info(uint8_t, struct isr_info *);
+void isr_global_handler(struct isr_ctx *);
+void isr_irq_eoi(uint8_t);
+void isr_irq_mask(uint8_t);
+void isr_irq_unmask(uint8_t);

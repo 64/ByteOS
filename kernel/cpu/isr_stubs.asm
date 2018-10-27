@@ -11,13 +11,13 @@ idt64:
 	dq idt64
 
 section .text
-global load_idt
-load_idt:
-	mov rax, idt64.pointer ; Is this needed?
+global idt_load
+idt_load:
+	mov rax, idt64.pointer
 	lidt [rax]
 	ret
 
-%macro isr_common_fn 2
+isr_common:
 	push rdi
 	push rsi
 	push rdx
@@ -28,20 +28,22 @@ load_idt:
 	push r10
 	push r11
 
-	; Call the handler
+	; Call the ISR handler
 	mov rdi, rsp
-	extern %1
-	call %1
+	extern isr_global_handler
+	call isr_global_handler
 	
-	extern %2
-	jmp %2
-%endmacro
-
-isr_common_exception:
-	isr_common_fn exception_handler, ret_direct
-
-isr_common_irq:
-	isr_common_fn irq_handler, ret_and_reschedule
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	pop rax
+	pop rcx
+	pop rdx
+	pop rsi
+	pop rdi
+	add rsp, 8 ; Info field
+	iretq
 
 %macro isr_stub_err 1
 global isr_stub_%1
@@ -49,7 +51,7 @@ isr_stub_%1:
 	; Store the interrupt number in the highest four bytes of the error code
 	; This way we can always increment rsp by 8 before iretq and no memory is wasted.
 	mov dword [rsp + 4], %1
-	jmp isr_common_exception
+	jmp isr_common
 %endmacro
 
 %macro isr_stub_noerr 1
@@ -58,19 +60,20 @@ isr_stub_%1:
 	; For consistency with the err variant
 	push qword 0
 	mov dword [rsp + 4], %1
-	jmp isr_common_exception
+	jmp isr_common
 %endmacro
 
 %macro isr_stub_irq 1
 global isr_stub_%1
 isr_stub_%1:
 	push qword %1
-	jmp isr_common_irq
+	jmp isr_common
 %endmacro
 
 %macro isr_stub_nop 1
 global isr_stub_%1
 isr_stub_%1:
+	; TODO: Should we call the handler anyway?
 	iretq
 %endmacro
 
@@ -78,7 +81,7 @@ isr_stub_%1:
 global isr_stub_%1
 isr_stub_%1:
 	push qword %1
-	isr_common_fn ipi_%2, ret_direct
+	jmp isr_common
 %endmacro
 
 ; Exceptions
@@ -334,9 +337,11 @@ isr_stub_irq 244
 isr_stub_irq 245
 isr_stub_irq 246
 isr_stub_irq 247
+
+; Careful changing these! They must match the values in interrupts.h
 isr_stub_ipi 248, sched_hint
 isr_stub_ipi 249, tlb_shootdown
-isr_stub_ipi 250, abort ; Must match interrupts.h
+isr_stub_ipi 250, abort 
 isr_stub_noerr 251 ; NMI
 isr_stub_irq 252 ; LINT0
 isr_stub_irq 253 ; LINT1

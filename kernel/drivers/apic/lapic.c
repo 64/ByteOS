@@ -86,9 +86,8 @@ void lapic_eoi(uint8_t vec)
 
 void lapic_send_ipi(uint8_t target, uint32_t flags)
 {
-	// LAPIC hasn't been initialised yet
 	if (lapic_base == NULL)
-		return;
+		panic("Tried to send IPI before LAPIC was initialized");
 	
 	// Getting preempted could mean a race condition here
 	preempt_inc();
@@ -103,6 +102,7 @@ uint32_t lapic_timer_prepare(void)
 {
 	const uint32_t test_ms = 30;
 	const uint32_t ticks_initial = 0xFFFFFFFF;
+
 	lapic_write(APIC_REG_TIMER_DIVIDE, 0x3);
 	lapic_write(APIC_REG_TIMER_INITIAL, ticks_initial);
 
@@ -112,6 +112,7 @@ uint32_t lapic_timer_prepare(void)
 
 	uint32_t ticks_per_10ms = (ticks_initial - lapic_read(APIC_REG_TIMER_CURRENT)) / (test_ms / 10);
 	klog_verbose("lapic", "CPU%u timer: %u/10ms\n", smp_cpu_id(), ticks_per_10ms);
+
 	return ticks_per_10ms;
 }
 
@@ -120,10 +121,11 @@ static void lapic_timer_callback(struct isr_ctx *UNUSED(regs))
 	struct task *t = current;
 
 	// Preempt a task after it's ran for 5 time slices
-	if ((t->flags & TASK_NEED_PREEMPT) == 0) {
+	if (!percpu_get(reschedule)) {
 		t->sched.num_slices++;
+
 		if (t->sched.num_slices >= MAX_SLICES)
-			t->flags |= TASK_NEED_PREEMPT;
+			percpu_set(reschedule, true);
 	}
 }
 
@@ -169,8 +171,15 @@ void lapic_enable(void)
 	// Calibrate timer
 	lapic->ticks_per_10ms = lapic_timer_prepare();
 
-	// Register timer callback
-	irq_register_handler(IRQ_LINT_TIMER, lapic_timer_callback);
+	// Register timer callback (only do this once)
+	if (id == 0) {
+		struct isr_info timer_info = {
+			.type = ISR_IRQ,
+			.handler = lapic_timer_callback,
+		};
+
+		isr_set_info(IRQ_LINT_TIMER, &timer_info);
+	}
 
 	// Clear any pending interrupts
 	lapic_write(APIC_REG_EOI, 0);

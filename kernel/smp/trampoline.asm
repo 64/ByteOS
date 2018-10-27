@@ -82,8 +82,8 @@ smp_trampoline_64:
 	extern percpu_init_ap
 	call percpu_init_ap
 
-	extern load_idt
-	call load_idt
+	extern idt_load
+	call idt_load
 
 	extern smp_ap_kmain
 	call smp_ap_kmain
