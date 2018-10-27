@@ -85,9 +85,6 @@ struct task *task_fork(struct task *parent, virtaddr_t entry, uint64_t clone_fla
 
 void task_wakeup(struct task *t)
 {
-	if (t->flags & TASK_RUNNING)
-		klog_warn("task", "Task tried to wake itself\n");
-
 	if (t->state != TASK_S_RUNNABLE) {
 		t->state = TASK_S_RUNNABLE;
 		sched_add(t);

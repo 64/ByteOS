@@ -174,7 +174,7 @@ void mmu_clone_cow(struct mmu_info *dest, struct mmu_info *mmu)
 	// Copy mappings from the parent
 	write_spin_lock(&mmu->pgtab_lock);
 	dest->p4 = clone_pgtab(mmu->p4, 4);
-	write_spin_lock(&mmu->pgtab_lock);
+	write_spin_unlock(&mmu->pgtab_lock);
 
 	// Since the entire address space got mapped as read only, we need to invalidate all of it
 	tlb_flush_all();
