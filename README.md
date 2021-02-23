@@ -8,7 +8,9 @@ The design is heavily influenced by the Linux kernel, and as such you may find m
 
 This repository is licensed under the GPLv3. See `LICENSE.md` for more details.
 
-If you have questions, you can open an issue on GitHub or find me on the [OSDev Discord](https://discord.gg/5TCadrT).
+## Historical Note
+
+I wrote most of the code here when I was 16-17 and didn't know better. There are some parts (mainly the bits involving atomics) that I'm not particularly proud of, so copy at your own peril. If you find a problem, feel free to open an issue or send a PR.
 
 ## Building
 
